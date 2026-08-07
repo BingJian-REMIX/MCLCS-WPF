@@ -1,11 +1,11 @@
 # MCLCS — Minecraft 启动器 (WPF)
 
-> **当前版本：v2.2 final** — Core 0 错误 · App 0 错误（Roslyn 跨平台编译）· 单元測试 57/57 通过
+> **当前版本：v2.4 final** — Core 0 错误 · App 0 错误（Roslyn 跨平台编译）· 单元測试 57/57 通过
 > 281 个源文件 · 约 39K 行代码 · 21 个工具箱面板 · 4 个主标签（四色索引贴）
 
 MCLCS（Minecraft Launcher CSharp）是一个使用 **C# / WPF / .NET 8** 实现的 Minecraft 启动器，
 覆盖原版 / Fabric / Forge / Quilt / NeoForge 安装、智能 Java 选择、参数解析与变量替换、原生库处理、
-崩溃分析与**非破坏性智能修复**、Modrinth / CurseForge / 像素茶艺下载中心、**Microsoft / Authlib-Injector
+崩溃分析与**非破坏性智能修复**、Modrinth / CurseForge / 像素茶艺地图站API接入、**Microsoft / Authlib-Injector
 登录、多账号管理、CLI 命令行、Mod 管理、皮肤编辑器（含 3D 预览）、HUD 叠加、年度报告、挂机工作流**等。
 
 ---
@@ -185,6 +185,10 @@ Java 自动安装使用 Adoptium API，Modrinth 使用官方 API，CurseForge �
 地图使用像素茶艺 API（`https://goto.pixelmap.cc`）。
 
 ---
+
+## 温馨提示
+- 本项目提交于26/8/7，此时还未完成Windows环境测试，不保证项目可用。
+- 建议对该项目持续追踪，万一哪一天完成测试并修复了最终bug（icon相关）呢？
 
 ## 已知限制与后续路线
 
