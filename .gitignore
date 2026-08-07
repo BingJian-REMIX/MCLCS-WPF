@@ -1,0 +1,37 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.vs/
+
+# 构建产物
+*.dll
+*.exe
+*.pdb
+*.nupkg
+!tools/MCLCS.SelfCheck/bin/**
+!tests/**/bin/**
+!src/**/bin/**
+
+# NuGet
+packages/
+.nuget/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.part
+*.log
+
+# Rider
+_ReSharper.Caches/
