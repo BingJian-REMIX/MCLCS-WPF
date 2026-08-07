@@ -5,7 +5,7 @@
 ## 时间线
 
 ```
-VB 原型（已剔除，见下）
+批处理 / PowerShell 原型（.bat / .ps1 手搓期，本仓库最早雏形）
   └─ UI 迭代原型（纯 HTML 探索期）
        └─ v0.1 – v1.1（WPF 起步 + 下载中心 + 崩溃修复）
             └─ v2.0 – v2.4（重写期：四色索引贴、工具箱、AI、皮肤编辑器）
@@ -23,6 +23,7 @@ VB 原型（已剔除，见下）
 | `像素茶艺地图站开放平台...html` | 地图下载 API 平台文档（整合进下载页地图子页的依据）。 |
 | `新会话交接提示词.md` | 跨会话交接模板，内含 **Roslyn 在 Linux 沙箱编译 net8.0-windows WPF** 的完整方法（参考程序集来源、全局 using 规则、XAML partial 桩），是后续在 Linux 验证 App 层 0 错误的关键。 |
 | `123.md` | 早期零散笔记。 |
+| `批处理原型/` | MCLCS 最早的形态——纯 `.bat` / `.ps1` 手搓启动器：`mclb.bat`（主菜单/版本管理/启动）、`install_java.bat`（Java 自动安装）、`crash_analyzer.bat`（崩溃分析）、`mclb_downloader.ps1` / `mclb_launcher.ps1`（下载与启动）。C#/WPF 之前的真实雏形。 |
 
 ## 与主线版本对照
 
@@ -36,3 +37,5 @@ VB 原型（已剔除，见下）
 
 `MCLCS.7z` 原始包内含 `MODdownload.vb.txt`、`ModMinecraft.vb.txt` 两个 **VB 原型文件**。
 这两份为借鉴自第三方开源项目的代码、并非本项目原创产出，按原作者要求**不纳入本仓库历史**，仅保留真正属于本项目的演进素材。
+
+> 注：本仓库「批处理原型 /」目录下的 `.bat` / `.ps1` 脚本为**本项目原创**的早期雏形（MCLB = Minecraft Launcher Batch），与上方剔除的借鉴 VB 代码无关，已正常归档。
