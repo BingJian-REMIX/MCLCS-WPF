@@ -1,66 +1,84 @@
-# MCLCS — Minecraft 启动器
+# MCLCS — Minecraft 启动器 (WPF)
 
-一个使用 **C# / WPF / .NET 8** 实现的 Minecraft 启动器，覆盖原版 / Fabric / Forge 安装、
-智能 Java 选择、参数解析与变量替换、原生库处理、崩溃分析、**崩溃智能修复**、Modrinth 下载中心、
-**Microsoft / Authlib-Injector 登录、多账号管理、CLI 命令行、Mod 管理（含依赖检查）、
-整合包安装（Modrinth .mrpack + CurseForge .zip）、皮肤预览、多语言（zh_CN / en_US）、
-亮色/暗色主题切换、工具箱、下载队列、AI 助手**。
+> **当前版本：v2.2 final** — Core 0 错误 · App 0 错误（Roslyn 跨平台编译）· 单元測试 57/57 通过
+> 281 个源文件 · 约 39K 行代码 · 21 个工具箱面板 · 4 个主标签（四色索引贴）
 
-> v1.1 新增（当前版本）：
-> - **四页式界面**：首页（快速启动 + 游玩统计 + 智能推荐）、下载（版本列表/安装/下载中心/Mod 管理 Tab）、工具箱、设置；底部状态栏实时显示 Java、已装数量、运行实例、下载进度与网络状态。
-> - **工具箱 10 面板**：日志（按级别着色/筛选/导出）、存档、种子（提取/创建世界/搜索）、截图（打包分享）、性能（实例/时长/CPU）、网络诊断（LED 状态）、快捷方式、冗余文件清理、整合包导入导出、AI 助手。
-> - **设置 7 大类**：常规、启动、下载、智能推荐、账号、AI、外观、关于（共 8 个分区）。
-> - **下载队列**：可加入队列、批量开始、单项暂停/取消，进度实时回传状态栏。
-> - **多账号**：离线 / Microsoft（设备流 OAuth2）/ Authlib-Injector；设置内增删切换。
-> - **AI 助手**：分层设置——总开关默认关闭（关闭时零资源占用）；开启后可选「外部 API（填 Key 即用）」或「本地部署 Ollama」；本地部署支持一键安装 Ollama、模型拉取（Qwen2.5-Coder-1.5B / InternLM2-1.8B / Phi-3.5-mini-3.8B）、服务状态指示灯；外部 API 支持地址/Key/模型与测试连接（按地址自动补全模型名）；崩溃解读、推荐理由、Mod 翻译三项能力可独立开关。
-> - **统一启动协调器**：首页与版本列表共用 `LaunchCoordinator`，统一「存档兼容提示 → 缺失依赖自动安装 → 启动 → 崩溃自动修复循环」。
->
-> v0.4 新增：**崩溃智能处理模块** —— 游戏崩溃后自动分析崩溃报告，识别可修复问题
-> （内存不足 / Java 不兼容 / 缺失依赖库），提供"尝试自动修复"按钮，确认后自动修复并重新启动，
-> 循环直至成功或无法继续修复；在设置中提供"始终开启 / 每次询问 / 始终拒绝"策略。
-> 所有修复操作均不删除、不修改游戏原文件。
->
-> v0.5 新增：**存档兼容性与降级** —— ① §二.4 启动前扫描 `saves/*/level.dat` 的 DataVersion，
-> 与目标游戏版本比较，存档版本过高时弹窗给出「降级 / 安装对应版本 / 忽略」三选项；
-> ② §三 存档降级：方案 A（改写 DataVersion 快速降级）、方案 B（调用 Amulet 真正转换），
-> 操作前强制备份、输出变更摘要、原档始终保留；③ §四.2 降级联动：若崩溃疑似由降级引起，
-> 在崩溃报告中提供「回滚备份 / 改用其他方式 / 安装存档原版本」三选项。另含 Oracle JDK 自动安装、
-> Mod 冲突处理与缺失前置自动安装、智能依赖与推荐系统。
->
-> 版本命名已**通用化**：同时兼容旧方案 `1.X.Y`（如 1.20.1 / 1.21.11）与新方案 `YY.M[.P]`
-> （即年份后二位.月份[.补丁]，如 26.1 / 26.1.2 / 26.2，自 1.21.x 之后、跳过不存在的 1.22.0 起启用），
-> DataVersion 对照表已同步扩充至 26.x。
->
-> v0.3 新增：CurseForge 整合包（.zip）安装、Mod 依赖检查（fabric.mod.json / mods.toml 解析）、
-> 皮肤预览（Mojang API）、多语言支持（简体中文/English）、亮色/暗色主题切换、
-> CLI 扩展（modpack/mods/skin 命令）、logging 日志参数注入。
+MCLCS（Minecraft Launcher CSharp）是一个使用 **C# / WPF / .NET 8** 实现的 Minecraft 启动器，
+覆盖原版 / Fabric / Forge / Quilt / NeoForge 安装、智能 Java 选择、参数解析与变量替换、原生库处理、
+崩溃分析与**非破坏性智能修复**、Modrinth / CurseForge / 像素茶艺下载中心、**Microsoft / Authlib-Injector
+登录、多账号管理、CLI 命令行、Mod 管理、皮肤编辑器（含 3D 预览）、HUD 叠加、年度报告、挂机工作流**等。
+
+---
+
+## 主界面（四色索引贴）
+
+顶部标题栏右侧四个主标签，从右向左为 **游戏（绿）/ 下载（蓝）/ 工具箱（橙）/ 设置（灰）**，
+圆角长条相邻重叠、选中向左展开并带同色细线，切换时细线平滑滑动 200ms。
+点击后无需钉住，悬停展开侧边栏，移出延迟自动收起。
+
+| 主标签 | 核心内容 |
+|---|---|
+| **游戏** | 快速启动区（版本/用户名/内存/启动）· 局域网游戏卡片 · 服务器列表（延迟灯）· 智能推荐（Top4 + 玩法分区）· 统计区（最近版本/本周时长/崩溃次数/年度报告入口） |
+| **下载** | 副标签 Mod / 光影 / 材质包 / 整合包 / 地图 · 全局搜索栏（关键词/版本/加载器过滤，切换副标签保留输入）· 卡片网格 · 底部下载队列（进度/暂停/取消）· 地图集成像素茶艺 API |
+| **工具箱** | 左侧副标签 21 个功能面板（见下） |
+| **设置** | 副标签 通用 / 启动 / 下载 / 推荐 / 账号 / AI / 外观 / 关于 |
 
 ---
 
 ## 功能一览
 
-| 模块 | 说明 |
-|---|---|
-| 主界面（四页） | 首页 / 下载 / 工具箱 / 设置 四个页面切换；底部状态栏显示 Java、已装版本数、运行实例、下载进度、网络状态；页面切换带淡入+位移动画（可在设置关闭） |
-| 首页 | 快速启动下拉 + 一键启动、游玩统计卡片（时长/次数）、Top 4 智能推荐卡片（区分依赖补全/同类替换/玩法推荐） |
-| 游戏启动 | 智能 Java 选择（≥21）、arguments 条件规则与变量替换、classpath 构建、natives 解压、内存/用户名/JVM 参数自定义、退出后崩溃检测、log4j 配置注入 |
-| 崩溃分析 | 识别 OutOfMemoryError / UnsupportedClassVersionError / ClassNotFoundException / OpenGL 等 8 种异常，展示完整报告与手动建议 |
-| 崩溃智能修复 | 自动识别可修复问题（内存不足 / Java 不兼容 / 缺失库）；"尝试自动修复"按钮；确认后修复并重启、循环直至成功或不可修复；设置策略：始终开启 / 每次询问 / 始终拒绝；全程不删不改游戏原文件 |
-| 启动协调器 | 首页与版本列表共用 `LaunchCoordinator`：存档兼容提示 → 缺失依赖自动安装 → 启动 → 崩溃自动修复循环 |
-| 存档管理 | §二.4 启动前兼容性检测（DataVersion 比对）+ §三 存档降级（方案 A 改写 DataVersion / 方案 B Amulet，强制备份、原档保留）+ §四.2 降级联动（回滚备份 / 改用其他方式 / 安装原版本） |
-| 版本安装 | 原版 / Fabric / Forge / Modrinth 整合包（.mrpack）/ CurseForge 整合包（.zip） |
-| 下载中心 | Modrinth 搜索，按版本/加载器（Fabric/Forge/Quilt/NeoForge）/类型过滤；支持加入**下载队列**，后台批量下载、单项暂停/取消、进度回传状态栏 |
-| 账号系统 | 离线 / Microsoft（设备流 OAuth2）/ Authlib-Injector（Yggdrasil）；多账号存储与切换；设置内增删 |
-| Mod 管理 | 扫描已安装、元数据解析（fabric.mod.json / mods.toml）、依赖检查、更新检查、卸载 |
-| 工具箱 | 10 面板：日志、存档、种子、截图、性能、网络诊断、快捷方式、冗余文件清理、整合包导入导出、AI 助手 |
-| AI 助手 | 分层设置：总开关默认关（零占用）；部署方式二选一——外部 API（填 Key 即用，测试连接按地址自动补全模型名）或本地部署 Ollama（一键安装 + 模型拉取 + 服务状态灯）；本地模型 Qwen2.5-Coder-1.5B / InternLM2-1.8B / Phi-3.5-mini-3.8B；崩溃解读、推荐理由、Mod 翻译三项能力独立开关 |
-| 皮肤预览 | 通过 Mojang API 查询正版玩家皮肤（支持 slim/classic 模型） |
-| 多语言 | 简体中文 / English，内置翻译无需额外文件 |
-| 主题 | 亮色/暗色主题切换 + 主题色/字体缩放/背景图，偏好持久化 |
-| CLI 命令行 | launch / list / install / modpack / mods / skin / version |
-| 辅助功能 | Java 自动安装（Temurin 21 / Oracle）、管理员权限提示、启动器自更新检查 |
+### 游戏启动与版本安装
+- **智能 Java 选择**（≥21，自动探测 Temurin/Oracle）；arguments 条件规则与变量替换；classpath 构建含 natives jar；`-Djava.library.path` / `-Dorg.lwjgl.librarypath` 配置；内存/用户名/JVM 参数自定义。
+- **版本安装**：原版（JSON+核心JAR+libraries+natives+资源索引）· Fabric（合并+自动装 Fabric API）· Forge（BMCLAPI 优先，失败回退官方，运行 installer）· Quilt / NeoForge · Modrinth `.mrpack` / CurseForge `.zip` 整合包。
+- **启动前存档兼容性检测**：扫描 `saves/*/level.dat` 的 DataVersion，过高则弹窗三选项：① 安装对应版本 ② 降级（A 改写 DataVersion / B Amulet 转换，强制备份、原档保留）③ 忽略；降级联动崩溃时提示回滚/换方案/装原版。
+- **启动预热**（设置开关）：后台预读最近 7 天内游玩前 2 的版本的 Java 与核心库到系统缓存，不阻塞、不实际运行 Java。
 
-**零第三方运行时依赖**：核心逻辑仅使用 .NET 内置 API，MVVM 基类自研。
+### 崩溃智能处理
+- 识别 8 类异常（OutOfMemoryError / UnsupportedClassVersionError / ClassNotFoundException / OpenGL 等），输出报告与修复建议。
+- 可自动修复（内存/Java 不兼容/缺失库），用户确认后修复并重启，循环至成功或不可修复。
+- 策略：始终 / 询问 / 拒绝；全程不删不改游戏原文件。
+
+### 下载中心
+- Modrinth / CurseForge 搜索，按版本 / 加载器（Fabric/Forge/Quilt/NeoForge）/ 类型过滤。
+- 镜像策略：BMCLAPI 优先，失败回退官方；下载队列管理，进度回传状态栏。
+- 地图（像素茶艺 API `https://goto.pixelmap.cc/api/open/v1/maps`）：分类/版本/排序下拉，详情窗，解压至 `saves`，自定义 User-Agent。
+
+### Mod 管理
+- 扫描解析元数据（fabric.mod.json / mods.toml）；依赖检查、更新检查、卸载；依赖补全红色标记。
+
+### 智能推荐与依赖补全
+- 本地规则引擎（必装/场景/更新推荐）+ 热门榜单（Modrinth 周榜/总榜，每小时缓存）；首页 Top4 卡片；玩法分区过滤；一键安装、不感兴趣。
+
+### 工具箱（21 面板）
+日志管理 · 存档管理（内嵌成就）· 截图管理 · 性能/实例监控 · 网络诊断 · 快捷方式 · 冗余清理 ·
+整合包导入导出 · 备份管理器（定时/数量限制/手动恢复前自动备份）· NBT 编辑器 · 数据包冲突检测 ·
+服务器资源包缓存 · 文件变更检测（启动/焦点回归时检测手动丢入文件，右下角非阻塞通知 5s）·
+年度报告（12.31 展示，统计启动次数/时长/最爱/挂机比例/成就，AI 解读，导出 Token 分享）·
+AI 助手 · 音乐播放器（本地/在线/MC原声，游戏启动自动暂停）· 挂机工作流配置 · 开发工具（Mod骨架/NBT/资源包创建/命令表）·
+皮肤编辑器（36 面 UV 映射 + 3D 预览，对称绘制，导出 PNG）· 光影配置 Token（短码编码/复制/导入）· 成就展示。
+
+### 皮肤与外观
+- **皮肤预览**：Mojang Sessionserver API 查询，区分 slim/classic；离线皮肤编辑与导出。
+- **多语言**：简体中文 / English（zh_CN / en_US），内置无需额外文件。
+- **主题**：暗/亮主题 + 主题色 / 字体缩放 / 背景图 / 索引贴四色独立设置，偏好持久化。
+
+### HUD 叠加
+- 设置开关（默认关），非侵入独立窗口、点击穿透、跟随游戏窗口；全屏不隐藏、位置可拖拽、字体可调；显示 FPS/内存/CPU/GPU/延迟，数据失败静默处理；仅在游戏运行时激活。
+
+### AI 助手
+- 总开关默认关（零占用）；部署方式：外部 API（填 Key 即用）或本地 Ollama（一键安装 + 模型拉取 + 服务状态灯）。
+- 本地模型：Qwen2.5-Coder-1.5B / InternLM2-1.8B / Phi-3.5-mini-3.8B。
+- 功能子开关：崩溃解读 / 推荐理由 / Mod 翻译；语音助手（系统原生识别，不可用时置灰）；崩溃解读/配装推荐为**显式触发**。
+
+### 挂机工作流与 Token
+- 工作流 Token（离线解析）：`v1F10;D4;L3;K39;C1-500;*0`，动作类型含帧率限制/渲染距离/音量/视角/模拟按键/鼠标连点/循环标记。
+- 完全离线解析，复制/导入后自动填充配置界面。
+
+### 账号系统
+- 离线（离线 UUID）/ Microsoft（OAuth2 设备流）/ Authlib-Injector（serverUrl/email/password）；多账号存储与切换。
+
+### CLI 命令行
+- `launch / list / install / modpack / mods / skin / version`
 
 ---
 
@@ -71,43 +89,50 @@ MCLCS/
 ├── MCLCS.sln
 ├── src/
 │   ├── MCLCS.Core/          # 平台无关核心逻辑（net6.0，无 WPF 引用，Linux 可编译）
-│   │   ├── Models/          # VersionJson / Library / Rule / FabricMeta / ForgeMeta /
-│   │   │                   #   ModrinthModels / CurseForgeModels / ModMetaModels
+│   │   ├── Ai/              # Assistant, OllamaManager
+│   │   ├── Auth/            # Offline / Microsoft / AuthlibInjector
+│   │   ├── Download/        # HttpDownloader, MirrorPolicy, ModrinthClient,
+│   │   │                   #   CurseForgeClient, PixelmapClient, MapInstaller,
+│   │   │                   #   ModrinthModpackSource, ModpackSource, ExtraResourceInstaller
+│   │   ├── Installers/      # Vanilla / Fabric / Forge / Quilt / NeoForge /
+│   │   │                   #   ModpackInstaller / CurseForgeModpackInstaller / LibraryRepair
 │   │   ├── Launcher/        # JavaDetector, JavaInstaller, ArgumentProcessor,
 │   │   │                   #   ClasspathBuilder, VersionMerger, GameLauncher,
-│   │   │                   #   CrashDetector, CrashAnalyzer, CrashRepairEngine,
-│   │   │                   #   CrashRepairPolicy, CrashRepairModels, RuleEvaluator
-│   │   ├── Save/            # Nbt（读写库）, DataVersionMap, SaveCompatibilityDetector,
+│   │   │                   #   CrashAnalyzer, CrashDetector, CrashRepairEngine,
+│   │   │                   #   CrashRepairPolicy, LaunchPrewarmer, RuleEvaluator
+│   │   ├── Save/            # Nbt, DataVersionMap, SaveCompatibilityDetector,
 │   │   │                   #   SaveDowngrader, DowngradeCrashLinkage, SaveModels
-│   │   ├── Installers/      # Vanilla / Fabric / Forge / ModpackInstaller /
-│   │   │                   #   CurseForgeModpackInstaller / LibraryRepair
-│   │   ├── Download/        # HttpDownloader, MirrorPolicy, ModrinthClient, CurseForgeClient
-│   │   ├── Auth/            # IAuthenticator, Offline, Microsoft, AuthlibInjector
-│   │   ├── Profiles/        # LauncherProfile, ProfileStore, AccountStore
+│   │   ├── Servers/         # LanServerScanner, ServerListStore, ServerPinger
+│   │   ├── Skin/            # SkinFetcher
+│   │   ├── Statistics/      # AnnualReport, PlaytimeTracker
+│   │   ├── Hud/             # HudConfig, HudMetricsProvider
+│   │   ├── Resources/       # ResourcePackRepairer, ServerResourcePackCache
+│   │   ├── Tokens/          # AfkWorkflowToken, ShaderConfigToken
+│   │   ├── Toolbox/         # BackupManager, DataPackConflictDetector, FileChangeDetector,
+│   │   │                   #   LogManager, ModpackExporter, MusicPlayer, NbtEditor,
+│   │   │                   #   NetworkDiagnostics, RedundantFileCleaner, ScreenshotManager,
+│   │   │                   #   SeedLibrary, ShortcutGenerator, SkinEditor, ToolboxCatalog
+│   │   ├── Recommend/       # RecommendationEngine, RuleEngine, HotRanking, GameplayCategory
 │   │   ├── Mods/            # ModManager, ModEntry, ModMetadataParser
-│   │   ├── Skin/            # SkinFetcher (Mojang Sessionserver API)
+│   │   ├── Profiles/        # LauncherProfile, ProfileStore, AccountStore, VersionIsolation
 │   │   ├── Localization/    # LocaleManager (zh_CN / en_US)
 │   │   ├── Theme/           # ThemeManager (Light / Dark)
 │   │   ├── Mvvm/            # ObservableObject, RelayCommand（零依赖）
-│   │   └── Utils/           # GameConstants, PathEx, Unzip, HashUtil, Elevation
-│   └── MCLCS.App/           # WPF 界面（net8.0-windows / .NET 8，仅 Windows）
-│       ├── Views/           # 四页：Home / DownloadPage / Toolbox / Settings
-│       │                   #   下载子页：VersionList / Install / DownloadCenter / Mods
-│       │                   #   工具箱面板：Log / Saves / Seed / Screenshot / Perf /
-│       │                   #     NetworkDiag / Shortcut / RedundantClean / Modpack / AiAssist
-│       │                   #   其它：CrashAnalysis / CrashReport / SaveCompatPrompt /
-│       │                   #     Recommendation / Skin
-│       ├── ViewModels/      # MVVM 视图模型 + StatusBarViewModel（状态栏单例）
-│       ├── Converters/      # BoolToColor / LogSeverityToColor / StringToBrush
-│       ├── Themes/          # DarkTheme.xaml / LightTheme.xaml
-│       └── Services/        # LauncherService, LaunchCoordinator, UIService
-├── tests/MCLCS.Core.Tests/  # xUnit 单元测试
+│   │   └── Utils/           # GameConstants, PathEx, Unzip, HashUtil, Elevation, IconCache
+│   └── MCLCS.App/           # WPF 界面（net8.0-windows，仅 Windows 运行）
+│       ├── Views/           # 游戏/下载/工具箱/设置 + 21 工具箱面板 + HUD/年度报告等窗口
+│       ├── ViewModels/      # MVVM 视图模型
+│       ├── Controls/        # ModalDialog, SkinPreview3D, SkinModel3D
+│       ├── Converters/      # BoolToColor / LogSeverityToColor / StringToBrush 等
+│       ├── Themes/          # DarkTheme.xaml / LightTheme.xaml / Palette.xaml / Icons.cs
+│       └── Services/        # LauncherService, LaunchCoordinator, ToastService, UIService
+├── tests/MCLCS.Core.Tests/  # xUnit 单元测试（57/57 通过）
 ├── tools/
 │   ├── MCLCS.Cli/           # 命令行启动器
-│   └── MCLCS.SelfCheck/     # 离线自检（265 项全部通过）
-└── docs/
-    ├── README.md
-    └── BUILD.md
+│   ├── MCLCS.SelfCheck/     # 离线自检
+│   └── build-app-linux.sh   # Linux 下 Roslyn 跨平台编译脚本
+├── dist/                    # 各里程碑备份（T0–T4, v2.2-final）
+└── docs/                    # README / BUILD / 备份说明
 ```
 
 ---
@@ -115,13 +140,13 @@ MCLCS/
 ## 快速使用
 
 ### GUI
-1. 启动器打开后，在「设置」中配置 Java 路径、内存、用户名、主题、语言并保存。
-2. 在「下载」页的「安装新版本」中选择类型与版本号安装。
-3. 在「首页」选择版本一键启动，或在「下载 → 版本列表」中启动；崩溃自动弹出分析报告。
-4. 在「下载 → 下载中心」搜索 Mod/光影/资源包，可「加入队列」批量下载，单项可暂停/取消。
-5. 在「工具箱」使用日志、种子、截图、性能、网络诊断、快捷方式、冗余清理、整合包、AI 助手。
-6. 在「设置 → 账号」添加并切换离线 / Microsoft / Authlib-Injector 账号。
-7. 在「设置 → AI 助手」开启总开关：选「外部 API」填地址/Key（可点测试连接自动补全模型名）；或选「本地部署」一键安装 Ollama 并拉取模型；在「AI 功能」中独立开关崩溃解读 / 推荐理由 / Mod 翻译。
+1. 在「设置」配置 Java 路径、内存、用户名、主题、语言并保存。
+2. 在「下载」页选择类型与版本号安装（或导入整合包）。
+3. 在「游戏」页选版本一键启动；崩溃自动弹分析报告，可一键修复。
+4. 在「下载 → 下载中心」搜索 Mod/光影/材质包/地图，加入队列批量下载。
+5. 在「工具箱」使用 21 个面板（日志、存档、皮肤编辑器、音乐、AI、挂机工作流、年度报告等）。
+6. 在「设置 → 账号」增删切换离线 / Microsoft / Authlib-Injector 账号。
+7. 在「设置 → AI」开启总开关，选外部 API 或本地 Ollama 部署。
 
 ### CLI
 ```powershell
@@ -139,10 +164,25 @@ mclcs version
 
 ---
 
+## 构建
+
+### Windows（生成 EXE）
+需 Windows + .NET 8 SDK：
+```powershell
+dotnet publish src/MCLCS.App/MCLCS.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+```
+
+### Linux（跨平台编译校验）
+使用 Roslyn 直接引用 .NET 8 参考程序集（华为云镜像）完成 App 层交叉编译，配合 XAML 桩生成，
+可在 Linux CI 上验证 App 0 错误。详见 `tools/build-app-linux.sh` 与 [BUILD.md](./BUILD.md)。
+
+---
+
 ## 镜像策略
 
 所有下载优先走 **BMCLAPI**（`bmclapi2.bangbang93.com`），失败自动回退官方源。
-Java 自动安装使用 Adoptium API，Modrinth 使用官方 API，CurseForge 使用公开 v1 API。
+Java 自动安装使用 Adoptium API，Modrinth 使用官方 API，CurseForge 使用公开 v1 API，
+地图使用像素茶艺 API（`https://goto.pixelmap.cc`）。
 
 ---
 
