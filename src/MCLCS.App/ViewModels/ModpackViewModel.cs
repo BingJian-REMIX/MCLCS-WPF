@@ -133,7 +133,7 @@ public class ModpackViewModel : ObservableObject
             StatusMessage = $"正在导入 {Path.GetFileName(path)} …";
             if (!path.EndsWith(".mrpack", StringComparison.OrdinalIgnoreCase))
             {
-                StatusMessage = "仅支持 Modrinth .mrpack 整合包，CurseForge .zip 尚未接入。";
+                StatusMessage = "仅支持 Modrinth .mrpack 整合包。";
                 return;
             }
             var installer = new ModpackInstaller(root, client, downloader, LauncherService.Instance);

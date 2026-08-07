@@ -428,7 +428,7 @@
                 <Grid x:Name="GridAppearance" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" Text="外观" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
@@ -456,6 +456,12 @@
                         <Slider Minimum="0.8" Maximum="1.5" TickFrequency="0.1" Value="{Binding FontScale}" Width="200"/>
                         <TextBlock Text="{Binding FontScale, StringFormat={}{0:F1}x}" VerticalAlignment="Center" Margin="8,0,0,0"/>
                     </StackPanel>
+                    <WrapPanel Grid.Row="5" Margin="0,4">
+                        <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
+                                      IsChecked="{Binding HighDpiEnabled, Mode=TwoWay}"/>
+                        <TextBlock Text="适配高分辨率屏幕（启用 2x 图标）" VerticalAlignment="Center" Margin="8,0,0,0"
+                                   Foreground="{DynamicResource PrimaryForeground}"/>
+                    </WrapPanel>
                 </Grid>
 
                 <!-- 关于 -->

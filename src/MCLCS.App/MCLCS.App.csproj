@@ -21,4 +21,20 @@
     <ProjectReference Include="..\MCLCS.Core\MCLCS.Core.csproj" />
   </ItemGroup>
 
+  <!-- PNG UI 图标：编译进程序集（Resource），不复制到输出目录，运行时不可被直接篡改/读取。
+       嵌入 1x（light/dark）与 2x 高清（light@2x/dark@2x），后者供“适配高分辨率屏幕”开关启用。 -->
+  <ItemGroup>
+    <Resource Include="Resources\Icons\light\**\*.png" />
+    <Resource Include="Resources\Icons\dark\**\*.png" />
+    <Resource Include="Resources\Icons\light@2x\**\*.png" />
+    <Resource Include="Resources\Icons\dark@2x\**\*.png" />
+  </ItemGroup>
+
+  <!-- 解决 UseWPF 隐式 using 与代码同名类型冲突（CS0104）：
+       System.IO.Path vs System.Windows.Shapes.Path；MCLCS.Core.Toolbox.Track vs System.Windows.Controls.Primitives.Track -->
+  <ItemGroup>
+    <Using Include="Path" Alias="System.IO.Path" />
+    <Using Include="Track" Alias="MCLCS.Core.Toolbox.Track" />
+  </ItemGroup>
+
 </Project>

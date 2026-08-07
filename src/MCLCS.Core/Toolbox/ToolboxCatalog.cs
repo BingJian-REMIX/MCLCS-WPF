@@ -61,7 +61,6 @@ public static class ToolboxCatalog
         new("saves",      "存档管理",     "存档兼容性检测、降级与备份回滚",         ToolboxGroup.Content,     "database",   5),
         new("backup",     "备份管理器",   "定时备份存档 / 配置，一键恢复",          ToolboxGroup.Content,     "archive",    6, since2: true),
         new("screenshot", "截图管理",     "浏览、重命名与导出游戏截图",             ToolboxGroup.Content,     "image",      7),
-        new("seed",       "种子库",       "搜索与收藏世界种子",                     ToolboxGroup.Content,     "sprout",     8),
         new("clean",      "冗余清理",     "清理重复库文件与失效缓存",               ToolboxGroup.Content,     "trash",      9),
         new("export",     "整合包导出",   "把当前实例打包为可分享的整合包",         ToolboxGroup.Content,     "package",   10),
         new("music",      "音乐播放器",   "挂机时播放本地音乐，支持四种播放模式",   ToolboxGroup.Content,     "music",     11, since2: true),

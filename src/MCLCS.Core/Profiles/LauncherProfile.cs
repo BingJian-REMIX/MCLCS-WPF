@@ -115,6 +115,10 @@ public class LauncherProfile
     [JsonPropertyName("fontScale")]
     public double FontScale { get; set; } = 1.0;
 
+    /// <summary>适配高分辨率屏幕：启用后 UI 图标加载 2x 高清资源（设置 → 外观，默认关闭）。</summary>
+    [JsonPropertyName("highDpiIcons")]
+    public bool HighDpiIcons { get; set; }
+
     // ---- 关于 / 更新 ----
 
     [JsonPropertyName("autoUpdateCheck")]

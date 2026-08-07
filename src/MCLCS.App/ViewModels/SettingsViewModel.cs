@@ -16,6 +16,7 @@ using MCLCS.Core.Theme;
 using MCLCS.Core.Update;
 using MCLCS.Core.Utils;
 using MCLCS.App.Services;
+using MCLCS.App.Themes;
 
 namespace MCLCS.App.ViewModels;
 
@@ -99,6 +100,7 @@ public class SettingsViewModel : ObservableObject
     private string _themeColor = "#3a7b4f";
     private string _backgroundImagePath = "";
     private double _fontScale = 1.0;
+    private bool _highDpiEnabled;
 
     // ---- 关于 / 更新 ----
     private bool _autoUpdateCheck = true;
@@ -270,6 +272,17 @@ public class SettingsViewModel : ObservableObject
     public string BackgroundImagePath { get => _backgroundImagePath; set => SetField(ref _backgroundImagePath, value); }
     public double FontScale { get => _fontScale; set => SetField(ref _fontScale, value); }
 
+    /// <summary>适配高分辨率屏幕：开启后图标加载 2x 高清资源（规格 2.4 — 外观）。实时驱动 IconManager。</summary>
+    public bool HighDpiEnabled
+    {
+        get => _highDpiEnabled;
+        set
+        {
+            if (SetField(ref _highDpiEnabled, value))
+                IconManager.HighDpi = value;
+        }
+    }
+
     // ===== 关于 / 更新 =====
     public bool AutoUpdateCheck { get => _autoUpdateCheck; set => SetField(ref _autoUpdateCheck, value); }
     public string UpdateMessage { get => _updateMessage; set => SetField(ref _updateMessage, value); }
@@ -387,6 +400,7 @@ public class SettingsViewModel : ObservableObject
         ThemeColor = profile.ThemeColor;
         BackgroundImagePath = profile.BackgroundImagePath ?? "";
         FontScale = profile.FontScale;
+        HighDpiEnabled = profile.HighDpiIcons;
 
         // 关于
         AutoUpdateCheck = profile.AutoUpdateCheck;
@@ -462,6 +476,7 @@ public class SettingsViewModel : ObservableObject
             ThemeColor = ThemeColor,
             BackgroundImagePath = string.IsNullOrWhiteSpace(BackgroundImagePath) ? null : BackgroundImagePath,
             FontScale = FontScale,
+            HighDpiIcons = HighDpiEnabled,
 
             // 关于 / 更新
             AutoUpdateCheck = AutoUpdateCheck,

@@ -89,16 +89,7 @@ public partial class MainWindow : Window
         }
     }
 
-    // ===== 索引贴构建 =====
-
-    /// <summary>主标签 → 矢量图标 token（见 <see cref="Icons"/>）。</summary>
-    private static readonly Dictionary<MainTabKind, string> TabIconToken = new()
-    {
-        [MainTabKind.Game] = "game",
-        [MainTabKind.Download] = "download",
-        [MainTabKind.Toolbox] = "toolbox",
-        [MainTabKind.Settings] = "settings"
-    };
+    // ===== 索引贴构建（纯文字 + 四色贴，无图标） =====
 
     private void BuildTabs()
     {
@@ -128,16 +119,14 @@ public partial class MainWindow : Window
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(12, 0, 14, 0)
             };
-            var icon = Icons.Make(TabIconToken.GetValueOrDefault(def.Kind, "info"), 16);
             var title = new TextBlock
             {
                 Text = def.Title,
                 Foreground = Brushes.White,
                 FontSize = 13,
-                Margin = new Thickness(6, 0, 0, 0),
+                Margin = new Thickness(0, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            inner.Children.Add(icon);
             inner.Children.Add(title);
 
             var underline = new Rectangle
@@ -157,7 +146,7 @@ public partial class MainWindow : Window
             TabPanel.Children.Add(grid);
             Panel.SetZIndex(grid, def.ZIndex);
 
-            _tabs[def.Kind] = new TabParts(grid, bg, icon, title, underline);
+            _tabs[def.Kind] = new TabParts(grid, bg, title, underline);
         }
     }
 
@@ -246,7 +235,7 @@ public partial class MainWindow : Window
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(14, 0, 12, 0)
             };
-            var icon = Icons.Make(it.Icon, 18, (Brush)FindResource("SecondaryForeground"));
+            var icon = new PngIcon { Token = it.Icon, Size = 18 };
             var title = new TextBlock
             {
                 Text = it.Title,
@@ -282,7 +271,6 @@ public partial class MainWindow : Window
             p.Indicator.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
             var fg = active ? Brushes.White : (Brush)FindResource("SecondaryForeground");
             p.Title.Foreground = fg;
-            p.Icon.Stroke = fg;
             if (active) p.Row.Background = (Brush)FindResource("ControlHoverBackground");
         }
     }
@@ -291,9 +279,24 @@ public partial class MainWindow : Window
     {
         _sidebarState.Select(id);
         UpdateSidebarSelection();
-        // 路由到当前主视图（下载页按副标签切换卡片内容；规格 2.2）
-        if (_currentKind == MainTabKind.Download)
-            (_pages[MainTabKind.Download] as DownloadPageView)?.ShowSubTab(id);
+        RouteSidebar(id);
+    }
+
+    /// <summary>把全局侧边栏副标签的点击路由到对应主视图（规格 1.4：侧边栏点击切换内容区）。</summary>
+    private void RouteSidebar(string id)
+    {
+        switch (_currentKind)
+        {
+            case MainTabKind.Download:
+                (_pages[MainTabKind.Download] as DownloadPageView)?.ShowSubTab(id);
+                break;
+            case MainTabKind.Toolbox:
+                (_pages[MainTabKind.Toolbox] as ToolboxView)?.ShowPanel(id);
+                break;
+            case MainTabKind.Settings:
+                (_pages[MainTabKind.Settings] as SettingsView)?.ShowSidebarItem(id);
+                break;
+        }
     }
 
     private void Sidebar_MouseEnter(object sender, MouseEventArgs e)
@@ -359,9 +362,8 @@ public partial class MainWindow : Window
         BuildSidebar(kind);
         AnimateSidebar(Sidebar.Has(kind) ? _sidebarState.Width : 0, _sidebarState.Expanded);
 
-        // 进入下载页时加载初始副标签内容（规格 2.2）
-        if (kind == MainTabKind.Download)
-            (_pages[MainTabKind.Download] as DownloadPageView)?.ShowSubTab(_sidebarState.SelectedId);
+        // 进入各主视图时同步加载当前选中的副标签内容（规格 1.4 / 2.2）
+        RouteSidebar(_sidebarState.SelectedId);
 
         if (_animations) PlayPageTransition();
     }
@@ -420,7 +422,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private sealed record TabParts(Grid Root, Border Bg, System.Windows.Shapes.Path Icon, TextBlock Title, Rectangle Underline);
+    private sealed record TabParts(Grid Root, Border Bg, TextBlock Title, Rectangle Underline);
 
-    private sealed record SidebarParts(Grid Row, Rectangle Indicator, TextBlock Title, System.Windows.Shapes.Path Icon);
+    private sealed record SidebarParts(Grid Row, Rectangle Indicator, TextBlock Title, FrameworkElement Icon);
 }

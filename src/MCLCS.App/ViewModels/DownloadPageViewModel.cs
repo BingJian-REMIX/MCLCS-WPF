@@ -595,10 +595,10 @@ public class DownloadPageViewModel : ObservableObject
     {
         var (type, fallback) = CurrentSubTab switch
         {
-            "shader" => (ModrinthProjectType.Shader, "sparkles"),
-            "resourcepack" => (ModrinthProjectType.ResourcePack, "image"),
-            "modpack" => (ModrinthProjectType.Modpack, "box"),
-            _ => (ModrinthProjectType.Mod, "package")
+            "shader" => (ModrinthProjectType.Shader, "shader"),
+            "resourcepack" => (ModrinthProjectType.ResourcePack, "tex"),
+            "modpack" => (ModrinthProjectType.Modpack, "pack"),
+            _ => (ModrinthProjectType.Mod, "mod")
         };
 
         var loader = SelectedLoader == "Any" ? LoaderType.Any : Enum.Parse<LoaderType>(SelectedLoader);
@@ -646,7 +646,7 @@ public class DownloadPageViewModel : ObservableObject
                 Author = it.Author,
                 Summary = it.Summary,
                 IconUrl = it.IconUrl,
-                FallbackToken = "box",
+                FallbackToken = "pack",
                 Source = it.Source,
                 SubTab = "modpack",
                 MetaText = string.Join(" · ", meta)

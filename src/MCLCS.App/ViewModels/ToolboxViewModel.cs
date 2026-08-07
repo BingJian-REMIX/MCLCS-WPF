@@ -8,6 +8,8 @@ namespace MCLCS.App.ViewModels;
 /// <summary>工具箱侧边栏的一个面板条目。</summary>
 public class ToolboxPanelItem : ObservableObject
 {
+    /// <summary>与全局侧边栏 <see cref="SidebarModel"/> 的 Toolbox 项 Id 对齐，用于路由。</summary>
+    public string Id { get; init; } = "";
     public string Icon { get; init; } = "";
     public string Title { get; init; } = "";
 
@@ -70,33 +72,33 @@ public class ToolboxViewModel : ObservableObject
 
     public ToolboxViewModel()
     {
-        var items = new (string Icon, string Title, Func<UserControl> Factory)[]
+        var items = new (string Id, string Icon, string Title, Func<UserControl> Factory)[]
         {
-            ("\U0001F4CB", "日志管理",     () => new LogView()),
-            ("\U0001F4BE", "存档管理",     () => new SavesView()),
-            ("\U0001F4F7", "截图管理",     () => new ScreenshotView()),
-            ("\u26A1",     "性能/实例",    () => new PerfView()),
-            ("\U0001F310", "网络诊断",     () => new NetworkDiagView()),
-            ("\U0001F517", "快捷方式",     () => new ShortcutView()),
-            ("\U0001F9F9", "冗余清理",     () => new RedundantCleanView()),
-            ("\U0001F4E6", "整合包",       () => new ModpackView()),
-            ("\U0001F6E1", "备份管理器",   () => new BackupView()),
-            ("\U0001F527", "NBT 编辑器",   () => new NbtView()),
-            ("\u26A0",     "数据包冲突检测", () => new DataPackView()),
-            ("\U0001F5C4", "资源包缓存",   () => new ServerPackView()),
-            ("\U0001F50D", "文件变更检测", () => new FileWatchView()),
-            ("\U0001F4CA", "年度报告",     () => new AnnualReportView()),
-            ("\U0001F916", "AI 助手",      () => new AiAssistView()),
-            ("\U0001F3B5", "音乐播放器",   () => new MusicPlayerView()),
-            ("\U0001F5A5", "挂机工作流",   () => new AfkWorkflowView()),
-            ("\U0001F6E0", "开发工具",     () => new DevToolsView()),
-            ("\U0001F3A8", "皮肤编辑器",   () => new SkinEditorView()),
-            ("\u2600",     "光影配置",     () => new ShaderTokenView()),
-            ("\U0001F3C6", "成就展示",     () => new AchievementView()),
+            ("log",        "\U0001F4CB", "日志管理",     () => new LogView()),
+            ("saves",      "\U0001F4BE", "存档管理",     () => new SavesView()),
+            ("screenshot", "\U0001F4F7", "截图管理",     () => new ScreenshotView()),
+            ("perf",       "\u26A1",     "性能/实例",    () => new PerfView()),
+            ("network",    "\U0001F310", "网络诊断",     () => new NetworkDiagView()),
+            ("shortcut",   "\U0001F517", "快捷方式",     () => new ShortcutView()),
+            ("clean",      "\U0001F9F9", "冗余清理",     () => new RedundantCleanView()),
+            ("modpackio",  "\U0001F4E6", "整合包",       () => new ModpackView()),
+            ("backup",     "\U0001F6E1", "备份管理器",   () => new BackupView()),
+            ("nbt",        "\U0001F527", "NBT 编辑器",   () => new NbtView()),
+            ("datapack",   "\u26A0",     "数据包冲突检测", () => new DataPackView()),
+            ("serverpack", "\U0001F5C4", "资源包缓存",   () => new ServerPackView()),
+            ("filewatch",  "\U0001F50D", "文件变更检测", () => new FileWatchView()),
+            ("annual",     "\U0001F4CA", "年度报告",     () => new AnnualReportView()),
+            ("aichat",     "\U0001F916", "AI 助手",      () => new AiAssistView()),
+            ("music",      "\U0001F3B5", "音乐播放器",   () => new MusicPlayerView()),
+            ("afk",        "\U0001F5A5", "挂机工作流",   () => new AfkWorkflowView()),
+            ("dev",        "\U0001F6E0", "开发工具",     () => new DevToolsView()),
+            ("skin",       "\U0001F3A8", "皮肤编辑器",   () => new SkinEditorView()),
+            ("shadertoken","\u2600",     "光影配置",     () => new ShaderTokenView()),
+            ("achievement","\U0001F3C6", "成就展示",     () => new AchievementView()),
         };
 
-        foreach (var (icon, title, factory) in items)
-            PanelItems.Add(new ToolboxPanelItem { Icon = icon, Title = title, Factory = factory });
+        foreach (var (id, icon, title, factory) in items)
+            PanelItems.Add(new ToolboxPanelItem { Id = id, Icon = icon, Title = title, Factory = factory });
 
         // 默认选中第一项
         SelectedPanel = PanelItems.FirstOrDefault();

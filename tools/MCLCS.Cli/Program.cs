@@ -174,7 +174,7 @@ internal static class Program
             }
             else
             {
-                Console.Error.WriteLine("整合包类型当前仅支持 modrinth（CurseForge .zip 尚未接入）。");
+                Console.Error.WriteLine("整合包类型当前仅支持 Modrinth .mrpack。");
                 return 1;
             }
             Console.WriteLine("整合包安装完成。");

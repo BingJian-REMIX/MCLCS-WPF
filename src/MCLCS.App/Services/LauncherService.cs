@@ -47,7 +47,7 @@ public class LauncherService : ILogger
 
         Pixelmap = new PixelmapClient(_client);
 
-        // 整合包在线源：Modrinth 免 Key 常驻可用；CurseForge 等需私有 Key 的源尚未接入。
+        // 整合包在线源：Modrinth 免 Key 常驻可用。
         _modpackSources = new IModpackSource[]
         {
             new ModrinthModpackSource(_client)

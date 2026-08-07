@@ -8,16 +8,14 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MCLCS.App.Services;
 using MCLCS.Core.Utils;
-// 本文件同时引用 System.IO（文件路径）与 WPF 形状 Path（图标占位），
-// 显式别名避免与静态类 System.IO.Path 撞名（CS0723）。
-using Path = System.Windows.Shapes.Path;
 
 namespace MCLCS.App.Themes;
 
 /// <summary>
-/// 外联图标控件：先显示矢量占位（<see cref="Icons"/> 注册表中的 token），再异步从 <see cref="Url"/> 加载真实封面图，
-/// 加载完成后淡入替换占位；任意失败保留占位。封面文件走 <see cref="IconCache"/> 落盘复用。
-/// <para>用法：<c>&lt;themes:ExternalIcon Url="{Binding IconUrl}" FallbackToken="package" /&gt;</c></para>
+/// 外联图标控件：先显示 PNG 占位（<see cref="IconImage"/> 按 <see cref="FallbackToken"/> 从内嵌资源取），
+/// 再异步从 <see cref="Url"/> 加载真实封面图，加载完成后替换占位；任意失败保留占位。
+/// 封面文件走 <see cref="IconCache"/> 落盘复用。
+/// <para>用法：<c>&lt;themes:ExternalIcon Url="{Binding IconUrl}" FallbackToken="pack" /&gt;</c></para>
 /// <para>这是「外联 icon 文件」在 UI 层的统一入口——未来接入皮肤、画廊图等外部图像时，沿用本控件即可。</para>
 /// </summary>
 public class ExternalIcon : ContentControl
@@ -27,7 +25,7 @@ public class ExternalIcon : ContentControl
         DependencyProperty.Register(nameof(Url), typeof(string), typeof(ExternalIcon),
             new PropertyMetadata(null, OnUrlChanged));
 
-    /// <summary>占位图标 token（对应 <see cref="Icons"/>，未知则回退 image）。</summary>
+    /// <summary>占位图标 token（对应内嵌 PNG 文件名，未知则显示空白占位）。</summary>
     public static readonly DependencyProperty FallbackTokenProperty =
         DependencyProperty.Register(nameof(FallbackToken), typeof(string), typeof(ExternalIcon),
             new PropertyMetadata("image", OnFallbackChanged));
@@ -55,15 +53,20 @@ public class ExternalIcon : ContentControl
         set => SetValue(CornerRadiusProperty, value);
     }
 
-    private readonly Path _fallback;
+    private readonly Image _fallback;
     private CancellationTokenSource? _cts;
 
     public ExternalIcon()
     {
-        _fallback = Icons.Make("image", 30,
-            (Brush)Application.Current.FindResource("SecondaryForeground"));
-        _fallback.HorizontalAlignment = HorizontalAlignment.Center;
-        _fallback.VerticalAlignment = VerticalAlignment.Center;
+        _fallback = new Image
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Stretch = Stretch.Uniform,
+            SnapsToDevicePixels = true,
+            UseLayoutRounding = true
+        };
+        RefreshFallback();
         Content = _fallback;
 
         Clip = NewClip();
@@ -89,7 +92,7 @@ public class ExternalIcon : ContentControl
         self.Clip = self.NewClip();
     }
 
-    private void RefreshFallback() => _fallback.Data = Icons.Get(FallbackToken);
+    private void RefreshFallback() => _fallback.Source = IconImage.Get(FallbackToken, 30);
 
     private void Refresh()
     {
@@ -138,7 +141,7 @@ public class ExternalIcon : ContentControl
             }
             catch
             {
-                // 保留矢量占位
+                // 保留 PNG 占位
             }
         }, token);
     }

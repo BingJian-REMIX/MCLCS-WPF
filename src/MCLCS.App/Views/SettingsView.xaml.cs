@@ -30,7 +30,8 @@ public partial class SettingsView : UserControl
             ShowCategory(item.Tag as string ?? "General");
     }
 
-    private void ShowCategory(string tag)
+    /// <summary>按分类 tag 切换可见的设置面板（General/Launch/...）。</summary>
+    public void ShowCategory(string tag)
     {
         GridGeneral.Visibility = tag == "General" ? Visibility.Visible : Visibility.Collapsed;
         GridLaunch.Visibility = tag == "Launch" ? Visibility.Visible : Visibility.Collapsed;
@@ -41,6 +42,20 @@ public partial class SettingsView : UserControl
         GridAppearance.Visibility = tag == "Appearance" ? Visibility.Visible : Visibility.Collapsed;
         GridAbout.Visibility = tag == "About" ? Visibility.Visible : Visibility.Collapsed;
     }
+
+    /// <summary>由 MainWindow 全局侧边栏路由调用（id 对应 <see cref="SidebarModel.Settings"/>）。</summary>
+    public void ShowSidebarItem(string id) => ShowCategory(id switch
+    {
+        "general" => "General",
+        "launch" => "Launch",
+        "download" => "Download",
+        "recommend" => "Recommend",
+        "account" => "Accounts",
+        "ai" => "Ai",
+        "appearance" => "Appearance",
+        "about" => "About",
+        _ => "General"
+    });
 
     private void AddAuthlib_Click(object sender, RoutedEventArgs e)
     {

@@ -111,7 +111,7 @@
                 <TextBlock VerticalAlignment="Center" Margin="12,0,0,0"
                            Foreground="{DynamicResource AccentBrush}">
                     <Run Text="{Binding SelectedFace.Display}"/>
-                </TextText>
+                </TextBlock>
             </WrapPanel>
 
             <!-- 2D 面编辑 -->

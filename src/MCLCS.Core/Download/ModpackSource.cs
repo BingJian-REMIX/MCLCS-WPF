@@ -122,7 +122,7 @@ public class ModpackDetail
 
 /// <summary>
 /// 整合包在线源抽象（规格 2.2 → 整合包：在线浏览 Modrinth，一键安装）。
-/// 当前仅内置 Modrinth 源（免 Key 常驻可用）；CurseForge 等需要私有 Key 的源尚未接入。
+/// 当前仅内置 Modrinth 源（免 Key 常驻可用）。
 /// </summary>
 public interface IModpackSource
 {

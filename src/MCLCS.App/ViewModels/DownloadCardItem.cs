@@ -3,7 +3,7 @@ namespace MCLCS.App.ViewModels;
 /// <summary>
 /// 下载页卡片模型：统一承载 Modrinth 与像素茶艺的搜索结果。
 /// 封面图走外联 URL（<see cref="IconUrl"/>），由 <see cref="ExternalIcon"/> 异步加载并缓存，
-/// <see cref="FallbackToken"/> 指定加载失败时的矢量占位。
+/// <see cref="FallbackToken"/> 指定加载失败时的内嵌 PNG 占位（对应 Resources/Icons 文件名）。
 /// </summary>
 public class DownloadCardItem
 {
@@ -17,8 +17,8 @@ public class DownloadCardItem
     /// <summary>外联封面 URL（空表示无封面，直接显示占位）。</summary>
     public string? IconUrl { get; init; }
 
-    /// <summary>占位图标 token（对应 Icons 注册表）。</summary>
-    public string FallbackToken { get; init; } = "image";
+    /// <summary>占位图标 token（对应内嵌 PNG 文件名）。</summary>
+    public string FallbackToken { get; init; } = "mod";
 
     /// <summary>来源：Modrinth / PixelMap。</summary>
     public string Source { get; init; } = "";

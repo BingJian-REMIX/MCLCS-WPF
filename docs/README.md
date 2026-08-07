@@ -29,7 +29,7 @@ MCLCS（Minecraft Launcher CSharp）是一个使用 **C# / WPF / .NET 8** 实现
 
 ### 游戏启动与版本安装
 - **智能 Java 选择**（≥21，自动探测 Temurin/Oracle）；arguments 条件规则与变量替换；classpath 构建含 natives jar；`-Djava.library.path` / `-Dorg.lwjgl.librarypath` 配置；内存/用户名/JVM 参数自定义。
-- **版本安装**：原版（JSON+核心JAR+libraries+natives+资源索引）· Fabric（合并+自动装 Fabric API）· Forge（BMCLAPI 优先，失败回退官方，运行 installer）· Quilt / NeoForge · Modrinth `.mrpack` 整合包（CurseForge `.zip` 尚未接入）。
+- **版本安装**：原版（JSON+核心JAR+libraries+natives+资源索引）· Fabric（合并+自动装 Fabric API）· Forge（BMCLAPI 优先，失败回退官方，运行 installer）· Quilt / NeoForge · Modrinth `.mrpack` 整合包。
 - **启动前存档兼容性检测**：扫描 `saves/*/level.dat` 的 DataVersion，过高则弹窗三选项：① 安装对应版本 ② 降级（A 改写 DataVersion / B Amulet 转换，强制备份、原档保留）③ 忽略；降级联动崩溃时提示回滚/换方案/装原版。
 - **启动预热**（设置开关）：后台预读最近 7 天内游玩前 2 的版本的 Java 与核心库到系统缓存，不阻塞、不实际运行 Java。
 

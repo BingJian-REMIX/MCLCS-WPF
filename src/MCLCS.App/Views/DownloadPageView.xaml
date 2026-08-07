@@ -339,7 +339,7 @@
 
                     <!-- 封面 -->
                     <Border Grid.Row="1" Background="{DynamicResource ControlBackground}" CornerRadius="8" Margin="0,12,0,0">
-                        <theme:ExternalIcon Url="{Binding CurrentModpackDetail.IconUrl}" FallbackToken="box" CornerRadius="8"/>
+                        <theme:ExternalIcon Url="{Binding CurrentModpackDetail.IconUrl}" FallbackToken="pack" CornerRadius="8"/>
                     </Border>
 
                     <!-- 元信息：作者 / 下载 / 加载器 / 版本 -->
