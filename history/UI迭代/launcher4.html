@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCLCS 启动器 — UI 最终修正版</title>
+<style>
+:root{
+  --bg:#0e1116; --panel:#161b22; --panel2:#1c2230; --border:#2a313c; --border2:#21262d;
+  --text:#e6edf3; --sec:#8b949e; --dim:#6e7681; --accent:#58a6ff;
+  --green:#4CAF50; --blue:#2196F3; --orange:#FF9800; --gray:#607D8B;
+  --theme:#4CAF50; --radius:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif;font-size:14px;overflow:hidden}
+button{font-family:inherit}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* 标题栏 */
+.titlebar{height:52px;background:var(--theme);display:flex;align-items:center;padding:0 16px;position:relative;flex-shrink:0;transition:background .3s;gap:12px}
+.brand{color:#fff;font-weight:800;font-size:17px;letter-spacing:-.5px;text-shadow:0 1px 2px rgba(0,0,0,.25);flex-shrink:0}
+/* 圆形进度环 */
+.dl-ring{flex-shrink:0;width:32px;height:32px;border-radius:50%;position:relative;display:none;cursor:pointer}
+.dl-ring.active{display:block}
+.dl-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.dl-ring .bg{fill:none;stroke:rgba(255,255,255,.2);stroke-width:3}
+.dl-ring .fg{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .3s}
+.dl-ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:700}
+/* 下载面板（点击进度环展开） */
+.dl-panel{position:absolute;top:100%;left:0;right:0;background:var(--panel);border:1px solid var(--border);border-top:none;max-height:0;overflow:hidden;transition:max-height .2s ease;z-index:50;border-radius:0 0 var(--radius) var(--radius)}
+.dl-panel.open{max-height:300px;overflow-y:auto}
+.dl-panel-item{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border2)}
+.dl-panel-item .fn{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-panel-item .bar{flex:2;height:6px;background:var(--bg);border-radius:4px;overflow:hidden}
+.dl-panel-item .bar .fill{height:100%;background:var(--blue);width:0%;transition:width .3s}
+.dl-panel-item .pct{font-size:12px;min-width:36px;color:var(--sec)}
+.dl-panel-item .cancel{background:transparent;border:none;color:var(--sec);cursor:pointer;font-size:16px}
+.dl-panel-item .cancel:hover{color:var(--text)}
+/* 全局搜索 */
+.global-search{flex:0 1 280px;min-width:160px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:18px;padding:6px 14px;color:#fff;font-size:13px;outline:none;transition:background .2s}
+.global-search::placeholder{color:rgba(255,255,255,.6)}
+.global-search:focus{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.4)}
+/* 索引贴大页（扑克牌样式） */
+.tabs{display:flex;align-items:flex-end;height:100%;flex-shrink:0;position:relative}
+.tab{height:34px;width:56px;padding:0 8px;border:none;cursor:pointer;color:transparent;font-size:13px;font-weight:600;border-radius:10px 10px 0 0;position:relative;transition:transform .25s ease,width .25s ease,color .2s,filter .15s,left .25s;display:flex;align-items:center;justify-content:center;filter:brightness(.7);z-index:1;overflow:hidden;margin-left:-20px}
+.tab:first-child{margin-left:0}
+/* 层级：游戏最高，设置最低 */
+.tab[data-c="game"]{z-index:4;filter:brightness(1.1);width:130px;color:rgba(255,255,255,.95);padding-left:22px}
+.tab[data-c="game"] .tab-ico{opacity:0}
+.tab[data-c="game"] .tab-txt{opacity:1}
+.tab[data-c="download"]{z-index:3}
+.tab[data-c="toolbox"]{z-index:2}
+.tab[data-c="settings"]{z-index:1}
+.tab .tab-ico{font-size:16px;position:absolute;opacity:1;transition:opacity .2s}
+.tab .tab-txt{opacity:0;transition:opacity .2s;white-space:nowrap}
+.tab .ul{position:absolute;bottom:0;left:8px;right:8px;height:3px;border-radius:3px;opacity:0;transition:opacity .2s}
+.tab.active{filter:brightness(1.12);width:130px;color:rgba(255,255,255,.95);z-index:5;margin-left:-10px;padding-left:22px;transform:translateX(0)}
+.tab.active .tab-ico{opacity:0}
+.tab.active .tab-txt{opacity:1}
+.tab.active .ul{opacity:1}
+/* 展开状态（点击被遮挡标签时，它展开，其他退回） */
+.tab.expanded{filter:brightness(1.12);width:130px;color:rgba(255,255,255,.95);z-index:5;margin-left:-10px;padding-left:22px;transform:translateX(0)}
+.tab.expanded .tab-ico{opacity:0}
+.tab.expanded .tab-txt{opacity:1}
+.tab.expanded .ul{opacity:1}
+.tab:not(.expanded):not([data-c="game"]){filter:brightness(.7);width:56px;margin-left:-20px}
+.tab:not(.expanded):not([data-c="game"]) .tab-ico{opacity:1}
+.tab:not(.expanded):not([data-c="game"]) .tab-txt{opacity:0}
+/* 游戏页始终展开 */
+.tab[data-c="game"]{filter:brightness(1.1);width:130px;color:rgba(255,255,255,.95);margin-left:0;padding-left:22px}
+.tab[data-c="game"] .tab-ico{opacity:0}
+.tab[data-c="game"] .tab-txt{opacity:1}
+.tab[data-c="game"] .ul{opacity:1}
+.tab[data-c="game"]{z-index:4}
+.tab[data-c="download"]{z-index:3}
+.tab[data-c="toolbox"]{z-index:2}
+.tab[data-c="settings"]{z-index:1}
+.tab[data-c="game"]:not(.expanded){margin-left:0;width:130px}
+/* 颜色 */
+.tab[data-c="game"]{background:var(--green)} .tab[data-c="game"] .ul{background:var(--green)}
+.tab[data-c="download"]{background:var(--blue)} .tab[data-c="download"] .ul{background:var(--blue)}
+.tab[data-c="toolbox"]{background:var(--orange)} .tab[data-c="toolbox"] .ul{background:var(--orange)}
+.tab[data-c="settings"]{background:var(--gray)} .tab[data-c="settings"] .ul{background:var(--gray)}
+
+/* 主区域 */
+.main{flex:1;display:flex;min-height:0}
+.sidebar{width:56px;background:var(--panel);border-right:1px solid var(--border);flex-shrink:0;transition:width .2s ease;overflow:hidden;z-index:5}
+.sidebar:hover{width:152px;box-shadow:4px 0 16px rgba(0,0,0,.3)}
+.side-item{height:46px;display:flex;align-items:center;padding:0 16px;cursor:pointer;color:var(--sec);white-space:nowrap;position:relative}
+.side-item:hover{background:var(--panel2);color:var(--text)}
+.side-item.active{color:var(--text);background:var(--panel2)}
+.side-item.active::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--theme);border-radius:0 3px 3px 0}
+.side-ico{width:24px;text-align:center;font-size:17px;flex-shrink:0}
+.side-txt{margin-left:14px;font-size:13px;font-weight:500;opacity:0;transition:opacity .15s}
+.sidebar:hover .side-txt{opacity:1}
+
+/* 内容区 */
+.content{flex:1;overflow-y:auto;padding:22px 26px;position:relative}
+.page{display:none;animation:fade .2s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section-title{font-size:16px;font-weight:700;margin:4px 0 14px;display:flex;align-items:center;gap:8px}
+.section-title .bar{width:4px;height:16px;background:var(--theme);border-radius:2px}
+.muted{color:var(--sec);font-size:13px}
+
+/* 通用组件 */
+.quick{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:22px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--sec)}
+.field input,.field select{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:13px;min-width:150px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--theme)}
+.btn-launch{background:var(--green);color:#fff;border:none;padding:10px 26px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;transition:filter .15s}
+.btn-launch:hover{filter:brightness(1.08)}
+.btn-sm{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:7px;font-size:12px;cursor:pointer;transition:background .15s}
+.btn-sm:hover{background:var(--border)}
+.btn-blue{background:var(--blue);color:#fff;border:none}
+.btn-orange{background:var(--orange);color:#fff;border:none}
+.btn-green{background:var(--green);color:#fff;border:none}
+
+.card-row{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px;min-width:210px;flex-shrink:0;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.card .ttl{font-weight:600;font-size:14px;margin-bottom:4px}
+.card .meta{font-size:12px;color:var(--sec);margin-bottom:8px}
+.light{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.light.g{background:#3fb950}.light.y{background:#d29922}.light.r{background:#e5484d}
+
+.rec-item{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;gap:12px;margin-bottom:10px}
+.rec-item .ic{width:42px;height:42px;border-radius:8px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.rec-item .info{flex:1;min-width:0}
+.rec-item .nm{font-weight:600;font-size:13px}
+.rec-item .ds{font-size:12px;color:var(--sec);margin:2px 0 6px}
+.tag-dep{background:#3d1d1d;color:#ff9d96;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:600}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-box .n{font-size:24px;font-weight:800}
+.stat-box .l{font-size:12px;color:var(--sec);margin-top:3px}
+
+/* 下载页 */
+.dl-top{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.sel{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;outline:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.dl-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:transform .15s,box-shadow .15s}
+.dl-card:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(0,0,0,.35)}
+.dl-cover{height:110px;background:linear-gradient(135deg,var(--panel2),#2a3340);display:flex;align-items:center;justify-content:center;font-size:34px}
+.dl-body{padding:12px}
+.dl-body .nm{font-weight:600;font-size:13px}
+.dl-body .au{font-size:12px;color:var(--sec);margin:2px 0 8px}
+.dl-body .acts{display:flex;gap:8px}
+
+/* 工具箱面板 */
+.panel-view{display:none}
+.panel-view.active{display:block;animation:fade .2s}
+.kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.kv .v{color:var(--sec)}
+.kv .v .light{margin-right:2px}
+
+/* AI 对话 */
+.chat-area{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);height:380px;overflow-y:auto;padding:14px;margin-bottom:10px}
+.bubble{max-width:70%;padding:10px 14px;border-radius:14px;font-size:13px;margin-bottom:10px;line-height:1.5}
+.bubble.user{background:var(--blue);color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.bubble.ai{background:var(--panel);border:1px solid var(--border);border-bottom-left-radius:4px}
+.ai-input-row{display:flex;gap:8px;align-items:center}
+.ai-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none}
+.mic-btn{width:36px;height:36px;border-radius:50%;background:var(--panel2);border:1px solid var(--border);color:var(--sec);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.mic-btn:hover{background:var(--border);color:var(--text)}
+.mic-btn.on{background:var(--orange);color:#fff;border-color:var(--orange);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,152,0,.4)}50%{box-shadow:0 0 0 8px rgba(255,152,0,0)}}
+
+/* 设置 */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border2);max-width:560px}
+.set-row .lab{font-size:14px}
+.set-row .sub{font-size:12px;color:var(--sec);margin-top:2px}
+.toggle{width:44px;height:24px;border-radius:13px;background:var(--border);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle.on{background:var(--theme)}
+.toggle.on::after{left:23px}
+.set-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:7px 10px;font-size:13px;outline:none;width:220px}
+.color-swatches{display:flex;gap:6px;flex-wrap:wrap}
+
+/* 弹窗 */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:22px;width:600px;max-height:80vh;overflow-y:auto;animation:fade .2s}
+.modal h3{margin-bottom:14px}
+
+/* 状态栏 */
+.statusbar{height:30px;background:var(--panel);border-top:1px solid var(--border);display:flex;align-items:center;gap:18px;padding:0 16px;font-size:12px;color:var(--sec);flex-shrink:0}
+.spacer{flex:1}
+
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px}
+
+/* 皮肤编辑器画布 */
+.skin-editor-layout{display:flex;gap:20px;margin-top:8px}
+.skin-side{width:160px;flex-shrink:0}
+.skin-side .part-group{margin-bottom:6px}
+.skin-side .part-group .part-label{font-size:13px;font-weight:600;cursor:pointer;padding:5px 8px;border-radius:4px;display:flex;justify-content:space-between;align-items:center}
+.skin-side .part-group .part-label:hover{background:var(--panel2)}
+.skin-side .part-group .part-label .arrow{transition:transform .2s}
+.skin-side .part-group .sub-list{max-height:0;overflow:hidden;transition:max-height .2s}
+.skin-side .part-group.open .sub-list{max-height:200px}
+.skin-side .part-group .sub-item{padding:4px 8px 4px 20px;font-size:12px;cursor:pointer;border-radius:4px;display:flex;justify-content:space-between}
+.skin-side .part-group .sub-item:hover{background:var(--panel2)}
+.skin-side .part-group .sub-item.active{background:var(--panel2);color:var(--text)}
+.skin-canvas-area{flex:1;min-height:400px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);position:relative;display:flex;flex-direction:column}
+.skin-canvas-area .toolbar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border)}
+.skin-canvas-area .toolbar .title{font-size:14px;font-weight:600}
+.skin-canvas-area .toolbar .actions{display:flex;gap:8px}
+.skin-canvas-area .canvas-wrapper{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+.skin-canvas-area .placeholder{color:var(--dim);text-align:center}
+.skin-canvas-area .placeholder button{margin-top:12px}
+.skin-grid{display:grid;gap:1px;background:var(--border);border:1px solid var(--border)}
+.skin-grid .cell{width:14px;height:14px;background:transparent;cursor:pointer;transition:background .1s}
+.skin-grid .cell:hover{outline:1px solid #fff}
+.skin-preview-modal .preview-img{max-width:100%;max-height:70vh;image-rendering:pixelated}
+/* 音乐控制 */
+.music-controls{display:flex;gap:12px;margin-top:8px}
+.music-controls button{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;transition:background .15s}
+.music-controls button:hover{background:var(--border)}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 标题栏 -->
+  <div class="titlebar" id="titlebar">
+    <div class="brand">MCLCS</div>
+    <!-- 进度环（在搜索框左侧） -->
+    <div class="dl-ring active" id="dlRing" onclick="toggleDlPanel()">
+      <svg viewBox="0 0 32 32">
+        <circle class="bg" cx="16" cy="16" r="14"></circle>
+        <circle class="fg" id="dlRingFg" cx="16" cy="16" r="14" stroke-dasharray="87.96" stroke-dashoffset="26.4"></circle>
+      </svg>
+      <div class="pct" id="dlRingPct">70%</div>
+    </div>
+    <!-- 下载面板（点击环弹出） -->
+    <div class="dl-panel" id="dlPanel">
+      <div class="dl-panel-item"><span class="fn">Sodium-1.21.1.jar</span><div class="bar"><div class="fill" style="width:64%"></div></div><span class="pct">64%</span><button class="cancel" onclick="toast('已取消下载')">✕</button></div>
+      <div class="dl-panel-item"><span class="fn">ComplementaryShaders.zip</span><div class="bar"><div class="fill" style="width:32%"></div></div><span class="pct">32%</span><button class="cancel" onclick="toast('已取消下载')">✕</button></div>
+      <div class="dl-panel-item"><span class="fn">Fabric-API.jar</span><div class="bar"><div class="fill" style="width:88%"></div></div><span class="pct">88%</span><button class="cancel" onclick="toast('已取消下载')">✕</button></div>
+    </div>
+    <input class="global-search" id="globalSearch" placeholder="搜索 Mod / 光影 / 设置 / 工具…" oninput="globalSearch()">
+    <div class="tabs">
+      <button class="tab active expanded" data-c="game" onclick="switchPage('game')"><span class="tab-ico">🏠</span><span class="tab-txt">游戏</span><span class="ul"></span></button>
+      <button class="tab" data-c="download" onclick="switchPage('download')"><span class="tab-ico">⬇️</span><span class="tab-txt">下载</span><span class="ul"></span></button>
+      <button class="tab" data-c="toolbox" onclick="switchPage('toolbox')"><span class="tab-ico">🧰</span><span class="tab-txt">工具箱</span><span class="ul"></span></button>
+      <button class="tab" data-c="settings" onclick="switchPage('settings')"><span class="tab-ico">⚙️</span><span class="tab-txt">设置</span><span class="ul"></span></button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="sidebar" id="sidebar"><div id="sidebarContent"></div></div>
+
+    <div class="content" id="content">
+
+      <!-- 游戏页 -->
+      <div class="page active" id="page-game">
+        <div class="quick">
+          <div class="field"><label>版本</label><select><option>1.21.11</option><option>1.20.1 (Fabric)</option></select></div>
+          <div class="field"><label>用户名</label><input value="Steve"></div>
+          <div class="field"><label>内存 (MB)</label><input value="4096"></div>
+          <button class="btn-launch" onclick="showPreLaunch()">▶ 启动游戏</button>
+        </div>
+        <div class="section-title"><span class="bar"></span>局域网游戏 <button class="btn-sm" style="margin-left:auto">⟳ 刷新</button></div>
+        <div class="card-row">
+          <div class="card"><div class="ttl">生存世界 🔒</div><div class="meta">生存 · 2/5</div><button class="btn-sm btn-blue">加入</button></div>
+          <div class="card"><div class="ttl">创造小服</div><div class="meta">创造 · 1/10</div><button class="btn-sm btn-blue">加入</button></div>
+        </div>
+        <div class="section-title"><span class="bar"></span>服务器列表 <button class="btn-sm" style="margin-left:auto">＋ 添加</button></div>
+        <div class="card-row">
+          <div class="card"><div class="ttl">Hypixel</div><div class="meta"><span class="light g"></span>32ms</div><button class="btn-sm btn-blue">加入</button></div>
+          <div class="card"><div class="ttl">2B2T</div><div class="meta"><span class="light y"></span>210ms</div><button class="btn-sm btn-blue">加入</button></div>
+        </div>
+        <div class="section-title"><span class="bar"></span>智能推荐</div>
+        <div class="rec-item"><div class="ic">🧩</div><div class="info"><div class="nm">Sodium <span class="tag-dep">依赖补全</span></div><div class="ds">检测到缺失前置</div><button class="btn-sm btn-blue">一键安装</button></div></div>
+        <div class="rec-item"><div class="ic">🌟</div><div class="info"><div class="nm">Complementary Shaders</div><div class="ds">同类替换推荐</div><button class="btn-sm btn-blue">一键安装</button></div></div>
+        <div class="section-title"><span class="bar"></span>统计</div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="n" style="color:var(--green)">1.21.11</div><div class="l">最近版本</div></div>
+          <div class="stat-box"><div class="n" style="color:var(--blue)">12.4h</div><div class="l">本周时长</div></div>
+          <div class="stat-box"><div class="n" style="color:var(--orange)">0</div><div class="l">崩溃次数</div></div>
+        </div>
+        <div style="margin-top:16px"><button class="btn-sm btn-orange" style="width:100%;padding:12px" onclick="showAnnual()">🎉 查看年度 Minecraft 报告 (2026)</button></div>
+      </div>
+
+      <!-- 下载页 -->
+      <div class="page" id="page-download">
+        <div class="dl-top">
+          <select class="sel" id="dlVer"><option>全部版本</option><option>1.21.x</option></select>
+          <select class="sel" id="dlLoader"><option>全部加载器</option><option>Fabric</option><option>Forge</option></select>
+        </div>
+        <div class="grid" id="dlGrid"></div>
+      </div>
+
+      <!-- 工具箱页 -->
+      <div class="page" id="page-toolbox">
+        <div class="panel-view active" id="panel-log"><div class="section-title"><span class="bar"></span>日志管理器</div><div class="kv"><span>实时跟踪</span><button class="toggle on" onclick="tog(this)"></button></div><div class="kv"><span>最近日志</span><span class="v">1,204 行</span></div><button class="btn-sm" style="margin-top:12px">导出日志</button></div>
+        <div class="panel-view" id="panel-save"><div class="section-title"><span class="bar"></span>存档管理器</div><div class="kv"><span>New World</span><span class="v">1.21.11 · 1.2 GB</span></div><div class="kv"><span>种子世界</span><span class="v">1.20.1 · 340 MB</span></div><button class="btn-sm" style="margin-top:12px">备份存档</button></div>
+        <div class="panel-view" id="panel-seed">
+          <div class="section-title"><span class="bar"></span>种子库</div>
+          <div style="margin-bottom:12px"><div class="muted" style="margin-bottom:6px">📁 本机存档种子</div>
+            <div class="kv"><span>1.21.11 · 生存世界</span><span class="v">-384920391 <button class="btn-sm" style="margin-left:8px">复制</button></span></div>
+            <div class="kv"><span>1.20.1 · 创造测试</span><span class="v">82374923 <button class="btn-sm" style="margin-left:8px">复制</button></span></div>
+            <div class="kv"><span>1.21.11 · 空岛</span><span class="v">-1203948 <button class="btn-sm" style="margin-left:8px">复制</button></span></div>
+          </div>
+          <div><div class="muted" style="margin-bottom:6px">🔥 推荐种子</div>
+            <div class="card-row">
+              <div class="card"><div class="ttl">生存岛 #1</div><div class="meta">1.21.x</div><button class="btn-sm btn-blue">下载</button></div>
+              <div class="card"><div class="ttl">空岛挑战</div><div class="meta">1.20.x</div><button class="btn-sm btn-blue">下载</button></div>
+              <div class="card"><div class="ttl">蘑菇森林</div><div class="meta">1.21.x</div><button class="btn-sm btn-blue">下载</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-view" id="panel-shot"><div class="section-title"><span class="bar"></span>截图管理器</div><div class="grid" style="grid-template-columns:repeat(4,1fr)"><div style="background:var(--panel2);border-radius:8px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:24px">🖼️</div><div style="background:var(--panel2);border-radius:8px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:24px">🖼️</div><div style="background:var(--panel2);border-radius:8px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:24px">🖼️</div><div style="background:var(--panel2);border-radius:8px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:24px">🖼️</div></div><div style="margin-top:10px;display:flex;gap:8px"><button class="btn-sm">批量删除</button><button class="btn-sm">打包分享</button></div></div>
+        <div class="panel-view" id="panel-perf"><div class="section-title"><span class="bar"></span>性能监控</div><div style="height:180px;background:var(--bg);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--dim)">📈 FPS · 内存 · CPU 实时曲线图</div><div class="stat-grid" style="margin-top:12px"><div class="stat-box"><div class="n" style="color:var(--green)">142</div><div class="l">FPS</div></div><div class="stat-box"><div class="n" style="color:var(--blue)">1.8 GB</div><div class="l">内存</div></div><div class="stat-box"><div class="n" style="color:var(--orange)">14%</div><div class="l">CPU</div></div></div></div>
+        <div class="panel-view" id="panel-net"><div class="section-title"><span class="bar"></span>网络诊断</div><div class="kv"><span>Mojang</span><span class="v"><span class="light g"></span>38ms</span></div><div class="kv"><span>Modrinth</span><span class="v"><span class="light g"></span>52ms</span></div></div>
+        <div class="panel-view" id="panel-shortcut"><div class="section-title"><span class="bar"></span>快捷方式生成器</div><button class="btn-sm">生成桌面快捷方式</button></div>
+        <div class="panel-view" id="panel-clean"><div class="section-title"><span class="bar"></span>清理冗余文件</div><div class="kv"><span>未引用 libraries</span><span class="v">23 项 · 180 MB</span></div><button class="btn-sm btn-orange" style="margin-top:12px">立即清理</button></div>
+        <div class="panel-view" id="panel-modpack"><div class="section-title"><span class="bar"></span>整合包导入导出</div><div class="muted" style="margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;border:2px dashed var(--border)">📦 将整合包文件拖入启动器窗口即可快速导入</div><button class="btn-sm" style="margin-right:8px">导出</button><button class="btn-sm">导入文件</button></div>
+        <div class="panel-view" id="panel-backup"><div class="section-title"><span class="bar"></span>备份管理器</div><div class="kv"><span>定时备份</span><button class="toggle on" onclick="tog(this)"></button></div><div class="kv"><span>频率</span><select class="sel"><option>每天</option><option>每周</option></select></div><button class="btn-sm" style="margin-top:12px">手动备份</button></div>
+        <div class="panel-view" id="panel-dev"><div class="section-title"><span class="bar"></span>开发工具</div><div class="kv"><span>Mod 开发环境</span><button class="btn-sm">生成骨架</button></div><div class="kv"><span>资源包创建器</span><button class="btn-sm">创建</button></div><div class="kv"><span>NBT 编辑器</span><button class="btn-sm">打开</button></div><div class="kv"><span>命令语法表</span><button class="btn-sm">打开</button></div></div>
+        <div class="panel-view" id="panel-dp"><div class="section-title"><span class="bar"></span>数据包冲突检测</div><div class="kv"><span>扫描结果</span><span class="v" style="color:#ff9d96">2 项冲突</span></div><button class="btn-sm btn-orange" style="margin-top:12px">处理冲突</button></div>
+        <!-- 皮肤编辑器 -->
+        <div class="panel-view" id="panel-skin">
+          <div class="section-title"><span class="bar"></span>皮肤编辑器</div>
+          <div class="skin-editor-layout">
+            <div class="skin-side" id="skinSide">
+              <div class="part-group open" data-part="head"><div class="part-label" onclick="togglePart(this)"><span>头部</span><span class="arrow">▾</span></div><div class="sub-list"><div class="sub-item active" data-face="front">正面</div><div class="sub-item" data-face="back">背面</div><div class="sub-item" data-face="left">左侧</div><div class="sub-item" data-face="right">右侧</div><div class="sub-item" data-face="top">顶部</div><div class="sub-item" data-face="bottom">底部</div></div></div>
+              <div class="part-group" data-part="body"><div class="part-label" onclick="togglePart(this)"><span>身体</span><span class="arrow">▾</span></div><div class="sub-list"><div class="sub-item" data-face="front">正面</div><div class="sub-item" data-face="back">背面</div><div class="sub-item" data-face="left">左侧</div><div class="sub-item" data-face="right">右侧</div><div class="sub-item" data-face="top">顶部</div><div class="sub-item" data-face="bottom">底部</div></div></div>
+              <div class="part-group" data-part="left_arm"><div class="part-label" onclick="togglePart(this)"><span>左臂</span><span class="arrow">▾</span></div><div class="sub-list"><div class="sub-item" data-face="front">正面</div><div class="sub-item" data-face="back">背面</div><div class="sub-item" data-face="left">左侧</div><div class="sub-item" data-face="right">右侧</div><div class="sub-item" data-face="top">顶部</div><div class="sub-item" data-face="bottom">底部</div></div></div>
+              <div class="part-group" data-part="right_arm"><div class="part-label" onclick="togglePart(this)"><span>右臂</span><span class="arrow">▾</span></div><div class="sub-list"><div class="sub-item" data-face="front">正面</div><div class="sub-item" data-face="back">背面</div><div class="sub-item" data-face="left">左侧</div><div class="sub-item" data-face="right">右侧</div><div class="sub-item" data-face="top">顶部</div><div class="sub-item" data-face="bottom">底部</div></div></div>
+              <div class="part-group" data-part="left_leg"><div class="part-label" onclick="togglePart(this)"><span>左腿</span><span class="arrow">▾</span></div><div class="sub-list"><div class="sub-item" data-face="front">正面</div><div class="sub-item" data-face="back">背面</div><div class="sub-item" data-face="left">左侧</div><div class="sub-item" data-face="right">右侧</div><div class="sub-item" data-face="top">顶部</div><div class="sub-item" data-face="bottom">底部</div></div></div>
+              <div class="part-group" data-part="right_leg"><div class="part-label" onclick="togglePart(this)"><span>右腿</span><span class="arrow">▾</span></div><div class="sub-list"><div class="sub-item" data-face="front">正面</div><div class="sub-item" data-face="back">背面</div><div class="sub-item" data-face="left">左侧</div><div class="sub-item" data-face="right">右侧</div><div class="sub-item" data-face="top">顶部</div><div class="sub-item" data-face="bottom">底部</div></div></div>
+            </div>
+            <div class="skin-canvas-area" id="skinCanvasArea">
+              <div class="toolbar">
+                <span class="title" id="skinTitle">头部 · 正面</span>
+                <div class="actions">
+                  <button class="btn-sm" onclick="toggleSkinView()">查看全部</button>
+                  <button class="btn-sm btn-blue" onclick="exportSkin()">导出 PNG</button>
+                  <button class="btn-sm" onclick="previewSkin()">预览</button>
+                </div>
+              </div>
+              <div class="canvas-wrapper" id="skinCanvasWrapper">
+                <div class="placeholder" id="skinPlaceholder">
+                  <div style="font-size:48px;margin-bottom:12px">🧍</div>
+                  <div>点击创建新皮肤或导入 PNG</div>
+                  <button class="btn-sm btn-blue" onclick="createNewSkin()" style="margin-top:12px">创建新皮肤</button>
+                  <button class="btn-sm" onclick="importSkin()" style="margin-top:12px;margin-left:8px">导入 PNG</button>
+                </div>
+                <div id="skinCanvasContainer" style="display:none;width:100%;height:100%;overflow:auto;justify-content:center;align-items:center;flex-direction:column">
+                  <div class="skin-grid" id="skinGrid" style="width:auto;grid-template-columns:repeat(8,14px);grid-template-rows:repeat(8,14px)"></div>
+                  <div style="margin-top:12px;display:flex;gap:16px;font-size:12px;color:var(--sec)">
+                    <span>🖱️ 单击填充/清除</span>
+                    <span>🔲 右键选择颜色</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-view" id="panel-music"><div class="section-title"><span class="bar"></span>音乐播放器</div><div class="kv"><span>当前曲目</span><span class="v">Sweden — C418</span></div><div class="kv"><span>音源</span><span class="v">MC 原声</span></div><div class="music-controls"><button>⏮</button><button>⏸</button><button>⏭</button></div></div>
+        <div class="panel-view" id="panel-ai">
+          <div class="section-title"><span class="bar"></span>AI 助手</div>
+          <div class="chat-area" id="aiChat">
+            <div class="bubble ai">你好！我是 MCLCS AI 助手。可直接输入问题，支持崩溃分析、Mod 推荐、翻译等。点击下方麦克风按钮可使用语音输入。</div>
+            <div class="bubble user">帮我分析上次崩溃</div>
+            <div class="bubble ai">崩溃原因：Fabric API 版本不兼容。当前需要 ≥0.92.0，安装了 0.87.2。<br><br>建议更新 Fabric API 到最新版。</div>
+          </div>
+          <div class="ai-input-row">
+            <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="语音输入">🎤</button>
+            <input class="ai-input" placeholder="输入问题…">
+            <button class="btn-sm btn-blue">发送</button>
+          </div>
+        </div>
+        <div class="panel-view" id="panel-fcd"><div class="section-title"><span class="bar"></span>文件变更检测</div><div class="kv"><span>启动前检测</span><button class="toggle on" onclick="tog(this)"></button></div><div class="kv"><span>本次新文件</span><span class="v">mods/ 3 个</span></div></div>
+      </div>
+
+      <!-- 设置页 -->
+      <div class="page" id="page-settings">
+        <div class="panel-view active" id="set-general">
+          <div class="section-title"><span class="bar"></span>通用</div>
+          <div class="set-row"><div><div class="lab">语言</div></div><select class="sel"><option>中文</option><option>English</option></select></div>
+          <div class="set-row"><div><div class="lab">开机自启</div></div><button class="toggle" onclick="tog(this)"></button></div>
+          <div class="set-row"><div><div class="lab">关闭时收起到托盘</div><div class="sub">点击关闭或最小化按钮时不退出，收起到系统托盘</div></div><button class="toggle on" onclick="tog(this)"></button></div>
+          <div class="set-row"><div><div class="lab">界面动画</div></div><button class="toggle on" onclick="tog(this)"></button></div>
+          <div class="set-row"><div><div class="lab">文件变更检测</div></div><button class="toggle on" onclick="tog(this)"></button></div>
+          <div class="set-row"><div><div class="lab">启动游戏后启动器行为</div></div><select class="sel"><option>保持窗口</option><option>最小化到任务栏</option><option>收起到托盘</option></select></div>
+          <div class="set-row"><div><div class="lab">历史年度报告入口</div></div><button class="btn-sm" onclick="showAnnual()">查看</button></div>
+        </div>
+        <div class="panel-view" id="set-launch">
+          <div class="section-title"><span class="bar"></span>启动</div>
+          <div class="set-row"><div><div class="lab">默认内存 (MB)</div></div><input class="set-input" value="4096"></div>
+          <div class="set-row"><div><div class="lab">默认用户名</div></div><input class="set-input" value="Steve"></div>
+          <div class="set-row"><div><div class="lab">Java 路径</div></div><input class="set-input" placeholder="C:\Program Files\Java\..." value=""></div>
+          <div class="set-row"><div><div class="lab">额外 JVM 参数</div></div><input class="set-input" value="-XX:+UseG1GC"></div>
+          <div class="set-row"><div><div class="lab">修复策略</div></div><select class="sel"><option>每次询问</option><option>始终开启</option><option>始终拒绝</option></select></div>
+          <div class="set-row"><div><div class="lab">启动预热</div><div class="sub">后台预读最近常玩版本核心文件到系统缓存，不占用额外内存</div></div><button class="toggle" onclick="tog(this)"></button></div>
+          <div class="set-row"><div><div class="lab">HUD 叠加</div></div><button class="toggle" onclick="tog(this)"></button></div>
+          <div class="set-row"><div><div class="lab">启动前兼容性检测</div></div><button class="toggle on" onclick="tog(this)"></button></div>
+        </div>
+        <div class="panel-view" id="set-download">
+          <div class="section-title"><span class="bar"></span>下载</div>
+          <div class="set-row"><div><div class="lab">镜像策略</div><div class="sub">BMCLAPI 优先：国内镜像，速度快；失败时回退官方源</div></div><select class="sel"><option>BMCLAPI 优先</option><option>官方源</option></select></div>
+          <div class="set-row"><div><div class="lab">最大并发数</div></div><input class="set-input" value="4"></div>
+          <div class="set-row"><div><div class="lab">自动安装缺失前置</div><div class="sub">始终：自动安装；询问：弹窗决定；关闭：不检测</div></div><select class="sel"><option>询问</option><option>始终</option><option>关闭</option></select></div>
+          <div class="set-row"><div><div class="lab">资源包自动修复</div><div class="sub">仅自动调整 pack_format 版本号，不修改贴图或模型</div></div><button class="toggle on" onclick="tog(this)"></button></div>
+        </div>
+        <div class="panel-view" id="set-recommend"><div class="section-title"><span class="bar"></span>推荐</div>
+          <div class="set-row"><div><div class="lab">推荐开关</div></div><select class="sel"><option>启用</option><option>仅本地</option></select></div>
+          <div class="set-row"><div><div class="lab">玩法偏好</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn-sm" style="background:var(--theme);color:#fff">科技</button><button class="btn-sm">魔法</button><button class="btn-sm">建筑</button><button class="btn-sm">冒险</button></div></div>
+        </div>
+        <div class="panel-view" id="set-account"><div class="section-title"><span class="bar"></span>账号</div>
+          <div class="kv"><span>👤 Steve（离线）</span><span class="v">当前</span></div>
+          <div style="margin-top:10px"><button class="btn-sm">Microsoft 登录</button><button class="btn-sm" style="margin-left:8px">Authlib-Injector</button></div>
+        </div>
+        <div class="panel-view" id="set-ai">
+          <div class="section-title"><span class="bar"></span>AI 助手</div>
+          <div class="set-row"><div><div class="lab">总开关</div></div><button class="toggle" onclick="tog(this)"></button></div>
+          <div class="set-row"><div><div class="lab">部署方式</div></div><select class="sel" id="aiDeploy" onchange="toggleAiDeploy()"><option value="api">外部 API</option><option value="local">本地 Ollama</option></select></div>
+          <div id="aiApiSettings">
+            <div class="set-row"><div><div class="lab">Endpoint</div></div><input class="set-input" value="https://api.deepseek.com/v1"></div>
+            <div class="set-row"><div><div class="lab">API Key</div></div><input class="set-input" type="password" value="sk-xxx"></div>
+            <div class="set-row"><div><div class="lab">模型名称</div></div><input class="set-input" value="deepseek-chat"></div>
+          </div>
+          <div id="aiLocalSettings" style="display:none">
+            <div class="set-row"><div><div class="lab">Ollama 状态</div></div><span style="color:var(--green)">✅ 已安装</span></div>
+            <div class="set-row"><div><div class="lab">模型</div></div><select class="sel"><option>Qwen2.5-Coder-1.5B (已下载)</option><option>InternLM2-1.8B <button class="btn-sm" style="margin-left:8px">下载</button></option><option>Phi-3.5-mini-3.8B <button class="btn-sm" style="margin-left:8px">下载</button></option></select></div>
+          </div>
+          <div class="section-title" style="margin-top:16px"><span class="bar"></span>功能子开关</div>
+          <div class="set-row"><div><div class="lab">崩溃解读</div></div><button class="toggle on" onclick="tog(this)"></button></div>
+          <div class="set-row"><div><div class="lab">推荐理由生成</div></div><button class="toggle on" onclick="tog(this)"></button></div>
+          <div class="set-row"><div><div class="lab">Mod 描述翻译</div></div><button class="toggle on" onclick="tog(this)"></button></div>
+        </div>
+        <div class="panel-view" id="set-appearance"><div class="section-title"><span class="bar"></span>外观</div>
+          <div class="set-row"><div><div class="lab">主题色</div></div><div class="color-swatches" id="themeSw"></div></div>
+          <div class="set-row"><div><div class="lab">索引贴四色独立设置</div></div><div style="display:flex;gap:8px"><span>🏠</span><input type="color" value="#4CAF50" style="width:36px;height:36px;border:none;background:transparent"><span>⬇️</span><input type="color" value="#2196F3" style="width:36px;height:36px;border:none;background:transparent"><span>🧰</span><input type="color" value="#FF9800" style="width:36px;height:36px;border:none;background:transparent"><span>⚙️</span><input type="color" value="#607D8B" style="width:36px;height:36px;border:none;background:transparent"></div></div>
+        </div>
+        <div class="panel-view" id="set-about"><div class="section-title"><span class="bar"></span>关于</div>
+          <div class="kv"><span>版本</span><span class="v">v2.0.0</span></div>
+          <div class="kv"><span>内核</span><span class="v">.NET 8 / C# 12 / WPF</span></div>
+          <div style="margin-top:12px"><button class="btn-sm">检查更新</button><button class="btn-sm" style="margin-left:8px">开源许可</button></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 状态栏 -->
+  <div class="statusbar">
+    <span>☕ Java 21</span><span>📦 已装 6</span><span>🟢 运行中 1</span><span><span class="light g"></span>网络正常</span>
+    <span class="spacer"></span><span>🔔 MCLCS v2.0.0</span>
+  </div>
+</div>
+
+<!-- 年度总结弹窗 -->
+<div class="modal-overlay" id="modalAnnual">
+  <div class="modal">
+    <h3>🎉 年度 Minecraft 报告 (2026)</h3>
+    <div class="stat-grid"><div class="stat-box"><div class="n">318</div><div class="l">游玩次数</div></div><div class="stat-box"><div class="n">214h</div><div class="l">总时长</div></div><div class="stat-box"><div class="n" style="color:var(--orange)">3.2%</div><div class="l">崩溃率</div></div></div>
+    <div class="muted" style="margin-top:14px">最爱版本 1.21.11 · 最爱存档 New World · 夜猫子比例 41% · 最长连续 12 天。</div>
+    <div class="muted" style="margin-top:6px">🏆 达成最多：「资深怪物猎人」· 从未达成：「探索的时光」· 紫色成就 2 个。</div>
+    <div style="margin-top:14px;background:var(--bg);border-radius:8px;padding:12px;color:var(--sec);font-size:13px">🤖 AI 解读：这一年你在 Minecraft 中度过了 214 个小时，是个不折不扣的「夜猫子玩家」。2027 年，试试红石科技吧！</div>
+    <div style="margin-top:14px;display:flex;justify-content:flex-end"><button class="btn-sm" onclick="closeModal('modalAnnual')">关闭</button></div>
+  </div>
+</div>
+
+<!-- 启动前弹窗 -->
+<div class="modal-overlay" id="modalPreLaunch">
+  <div class="modal">
+    <h3>⚠️ 启动前检测到以下兼容性问题</h3>
+    <div style="margin-bottom:14px">
+      <div style="padding:8px;background:var(--bg);border-radius:6px;margin-bottom:6px;font-size:13px">📁 <b>1.21.11-Fabric</b>：Sodium → 缺少 Fabric API <span style="color:var(--green)">可修复</span></div>
+      <div style="padding:8px;background:var(--bg);border-radius:6px;margin-bottom:6px;font-size:13px">📁 <b>1.21.11-Fabric</b>：xxx-shader.zip → 格式不兼容 <span style="color:var(--green)">可修复</span></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn-sm btn-green" onclick="closeModal('modalPreLaunch');toast('已修复')">一键修复</button>
+      <button class="btn-sm" onclick="closeModal('modalPreLaunch');toast('已忽略，正在启动')">忽略并启动</button>
+      <button class="btn-sm" onclick="closeModal('modalPreLaunch')">取消</button>
+      <button class="btn-sm" onclick="closeModal('modalPreLaunch')">稍后处理</button>
+    </div>
+  </div>
+</div>
+
+<!-- 皮肤预览弹窗 -->
+<div class="modal-overlay" id="skinPreviewModal">
+  <div class="modal skin-preview-modal">
+    <h3>皮肤预览</h3>
+    <div style="text-align:center;padding:20px"><img id="skinPreviewImg" src="" alt="预览" class="preview-img" style="width:256px;height:256px;background:repeating-conic-gradient(#222 0% 25%,#333 0% 50%);background-size:16px 16px;border-radius:8px"></div>
+    <div style="display:flex;justify-content:flex-end"><button class="btn-sm" onclick="closeModal('skinPreviewModal')">关闭</button></div>
+  </div>
+</div>
+
+<script>
+// 副标签定义
+const SIDEBAR={
+  download:[{id:'mod',t:'Mod',icon:'🧩'},{id:'shader',t:'光影',icon:'🌟'},{id:'tex',t:'材质包',icon:'🎨'},{id:'pack',t:'整合包',icon:'📦'},{id:'map',t:'地图',icon:'🗺️'}],
+  toolbox:[{id:'log',t:'日志管理器',icon:'📜'},{id:'save',t:'存档管理器',icon:'💾'},{id:'seed',t:'种子库',icon:'🌱'},{id:'shot',t:'截图管理器',icon:'🖼️'},{id:'perf',t:'性能监控',icon:'📈'},{id:'net',t:'网络诊断',icon:'🌐'},{id:'shortcut',t:'快捷方式',icon:'🔗'},{id:'clean',t:'清理冗余',icon:'🧹'},{id:'modpack',t:'整合包',icon:'📦'},{id:'backup',t:'备份管理器',icon:'🛡️'},{id:'dev',t:'开发工具',icon:'🛠️'},{id:'dp',t:'数据包冲突',icon:'⚠️'},{id:'skin',t:'皮肤编辑器',icon:'🎨'},{id:'music',t:'音乐播放器',icon:'🎵'},{id:'ai',t:'AI 助手',icon:'🤖'},{id:'fcd',t:'文件变更检测',icon:'📡'}],
+  settings:[{id:'general',t:'通用',icon:'⚙️'},{id:'launch',t:'启动',icon:'🚀'},{id:'download',t:'下载',icon:'⬇️'},{id:'recommend',t:'推荐',icon:'💡'},{id:'account',t:'账号',icon:'👤'},{id:'ai',t:'AI',icon:'🤖'},{id:'appearance',t:'外观',icon:'🎨'},{id:'about',t:'关于',icon:'ℹ️'}]
+};
+const HAS_SIDEBAR={download:1,toolbox:1,settings:1};
+
+// 下载页各副标签内容
+const DL_CONTENT={
+  mod:[
+    {icon:'🧩',name:'Sodium',author:'CaffeineMC',desc:'性能优化模组，大幅提升 FPS'},
+    {icon:'🧩',name:'JEI',author:'mezz',desc:'物品配方查看，必备工具'},
+    {icon:'🧩',name:'Fabric API',author:'FabricMC',desc:'Fabric 核心前置 API'},
+    {icon:'🧩',name:'Iris Shaders',author:'IrisMC',desc:'光影加载器，兼容 Sodium'}
+  ],
+  shader:[
+    {icon:'🌟',name:'Complementary',author:'EminGT',desc:'综合光影，画面精美'},
+    {icon:'🌟',name:'BSL Shaders',author:'Capt Tatsu',desc:'经典光影，性能友好'},
+    {icon:'🌟',name:'SEUS',author:'Sonic Ether',desc:'顶级光影，真实光照'}
+  ],
+  tex:[
+    {icon:'🎨',name:'Faithful 64x',author:'Faithful',desc:'经典高清材质'},
+    {icon:'🎨',name:'John Smith',author:'JSL',desc:'中世纪风格材质'}
+  ],
+  pack:[
+    {icon:'📦',name:'Pixelmon',author:'Pixelmon',desc:'宝可梦整合包'},
+    {icon:'📦',name:'RLCraft',author:'Shivaxi',desc:'硬核生存整合包'}
+  ],
+  map:[
+    {icon:'🗺️',name:'Skyblock Islands',author:'pixelmap',views:'12.4k'},
+    {icon:'🗺️',name:'City Build',author:'pixelmap',views:'8.1k'}
+  ]
+};
+
+let curPage='game',curSub='mod';
+let skinData = null; // 存储皮肤像素数据
+let currentPart = 'head';
+let currentFace = 'front';
+let skinViewMode = 'single'; // 'single' or 'all'
+
+function switchPage(p){
+  curPage=p;
+  // 更新tab状态：游戏始终展开，其他根据是否选中决定
+  document.querySelectorAll('.tab').forEach(t=>{
+    const isActive = t.dataset.c === p;
+    t.classList.toggle('active', isActive);
+    t.classList.toggle('expanded', isActive || t.dataset.c === 'game');
+  });
+  document.getElementById('titlebar').style.background={game:'var(--green)',download:'var(--blue)',toolbox:'var(--orange)',settings:'var(--gray)'}[p];
+  renderSidebar(p);
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(p==='download') renderDlCards();
+}
+function renderSidebar(p){
+  const sb=document.getElementById('sidebar'),sc=document.getElementById('sidebarContent');
+  if(!HAS_SIDEBAR[p]){sb.style.display='none';return;}
+  sb.style.display='block';
+  const items=SIDEBAR[p]||[];
+  sc.innerHTML=items.map(it=>`<div class="side-item" data-id="${it.id}" onclick="switchPanel('${p}','${it.id}')"><span class="side-ico">${it.icon}</span><span class="side-txt">${it.t}</span></div>`).join('');
+  const first=items[0]?.id; if(first) switchPanel(p,first);
+}
+function switchPanel(p,id){
+  curSub=id;
+  document.querySelectorAll('#sidebarContent .side-item').forEach(s=>s.classList.toggle('active',s.dataset.id===id));
+  const prefix=p==='settings'?'set-':'panel-',container=p==='settings'?'page-settings':'page-toolbox';
+  document.querySelectorAll('#'+container+' .panel-view').forEach(pv=>pv.classList.remove('active'));
+  const target = document.getElementById(prefix+id);
+  if(target) target.classList.add('active');
+  if(p==='download') renderDlCards();
+}
+function renderDlCards(){
+  const grid=document.getElementById('dlGrid'),list=DL_CONTENT[curSub]||[];
+  grid.innerHTML=list.map(d=>`
+    <div class="dl-card">
+      <div class="dl-cover">${d.icon}</div>
+      <div class="dl-body">
+        <div class="nm">${d.name}</div>
+        <div class="au">${d.author}${d.views?' · 👁 '+d.views:''}</div>
+        <div class="au" style="margin-bottom:6px">${d.desc||''}</div>
+        <div class="acts"><button class="btn-sm btn-blue" onclick="toast('已加入下载队列')">加入队列</button><button class="btn-sm">详情</button></div>
+      </div>
+    </div>`) .join('') || '<div class="empty-hint">无匹配结果</div>';
+}
+
+// 全局搜索
+function globalSearch(){
+  const q=document.getElementById('globalSearch').value.toLowerCase();if(!q)return;
+  if(q.includes('设置')||q.includes('内存')||q.includes('java')){switchPage('settings');switchPanel('settings','launch');}
+  else if(q.includes('日志')||q.includes('ai')||q.includes('皮肤')){switchPage('toolbox');switchPanel('toolbox',q.includes('ai')?'ai':q.includes('皮肤')?'skin':'log');}
+  else if(q.includes('mod')||q.includes('光影')||q.includes('材质')){switchPage('download');switchPanel('download','mod');}
+  toast('已跳转到：'+q);
+}
+
+// 开关
+function tog(btn){btn.classList.toggle('on');}
+
+// 语音
+let micOn=false;
+function toggleMic(){micOn=!micOn;const b=document.getElementById('micBtn');b.classList.toggle('on',micOn);b.textContent=micOn?'⏹':'🎤';}
+
+// 弹窗
+function showAnnual(){document.getElementById('modalAnnual').classList.add('show');}
+function showPreLaunch(){document.getElementById('modalPreLaunch').classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('show');});});
+
+// Toast
+let toastTimer;
+function toast(msg){
+  let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:48px;left:50%;transform:translateX(-50%);background:#1c2230;color:#e6edf3;border:1px solid #30363d;padding:10px 18px;border-radius:8px;font-size:13px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4);transition:opacity .2s';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.opacity='0',2000);
+}
+
+// 下载面板展开/收起
+let dlPanelOpen = false;
+function toggleDlPanel(){
+  const panel = document.getElementById('dlPanel');
+  dlPanelOpen = !dlPanelOpen;
+  panel.classList.toggle('open', dlPanelOpen);
+}
+// 点击外部关闭面板
+document.addEventListener('click', function(e){
+  const ring = document.getElementById('dlRing');
+  const panel = document.getElementById('dlPanel');
+  if(!ring.contains(e.target) && !panel.contains(e.target)){
+    panel.classList.remove('open');
+    dlPanelOpen = false;
+  }
+});
+
+// 皮肤编辑器
+function createNewSkin(){
+  // 初始化 64x64 透明数据 (RGBA)
+  const size = 64;
+  skinData = new Uint8Array(size * size * 4);
+  // 默认填充透明 (0,0,0,0)
+  skinData.fill(0);
+  // 可选：给头部区域填默认肤色 (只是为了演示)
+  // 实际可以空白
+  document.getElementById('skinPlaceholder').style.display='none';
+  document.getElementById('skinCanvasContainer').style.display='flex';
+  renderSkinCanvas();
+}
+function renderSkinCanvas(){
+  if(!skinData) return;
+  const container = document.getElementById('skinGrid');
+  const size = 8; // 当前显示单个面 8x8
+  const partMap = {
+    'head': { u: 0, v: 0, w: 8, h: 8 },
+    'body': { u: 16, v: 0, w: 8, h: 12 },
+    'left_arm': { u: 40, v: 0, w: 4, h: 12 },
+    'right_arm': { u: 32, v: 0, w: 4, h: 12 },
+    'left_leg': { u: 8, v: 0, w: 4, h: 12 },
+    'right_leg': { u: 0, v: 0, w: 4, h: 12 }
+  };
+  // 根据部位和面决定裁剪区域 (简化，实际需根据面映射不同区域)
+  // 这里只做演示，实际应映射到对应的UV区域
+  // 因为展示单个面，我们只显示对应面的8x8区域
+  // 这里简化：显示对应部位的第一层区域（实际需完整实现）
+  // 因篇幅，不展开全部UV映射，仅做演示界面
+  // 改为显示整个64x64的缩略图预览，但这里直接展示8x8网格
+  container.innerHTML = '';
+  container.style.gridTemplateColumns = `repeat(${size}, 14px)`;
+  for(let y=0; y<size; y++){
+    for(let x=0; x<size; x++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      // 简单演示：根据坐标填充颜色
+      const idx = (y*64 + x)*4;
+      const r = skinData[idx] || 0;
+      const g = skinData[idx+1] || 0;
+      const b = skinData[idx+2] || 0;
+      const a = skinData[idx+3] || 0;
+      if(a>0) cell.style.background = `rgba(${r},${g},${b},${a/255})`;
+      cell.onclick = function(e){
+        // 填充/清除
+        const cur = this.style.background;
+        if(cur && cur !== 'transparent'){
+          this.style.background = 'transparent';
+        } else {
+          this.style.background = '#e2b38c';
+        }
+        // 实际需更新skinData
+      };
+      container.appendChild(cell);
+    }
+  }
+  // 更新标题
+  const titleMap = {'head':'头部','body':'身体','left_arm':'左臂','right_arm':'右臂','left_leg':'左腿','right_leg':'右腿'};
+  const faceMap = {'front':'正面','back':'背面','left':'左侧','right':'右侧','top':'顶部','bottom':'底部'};
+  document.getElementById('skinTitle').textContent = `${titleMap[currentPart]||currentPart} · ${faceMap[currentFace]||currentFace}`;
+}
+function toggleSkinView(){
+  // 切换查看全部/单面
+  const container = document.getElementById('skinCanvasContainer');
+  if(skinViewMode === 'single'){
+    skinViewMode = 'all';
+    // 显示全部64x64缩略图
+    // 这里改为展示缩略图（简化）
+    document.getElementById('skinTitle').textContent = '全部预览';
+    // 重新渲染为64x64网格
+    const grid = document.getElementById('skinGrid');
+    grid.style.gridTemplateColumns = `repeat(64, 6px)`;
+    grid.style.gridTemplateRows = `repeat(64, 6px)`;
+    grid.innerHTML = '';
+    for(let y=0; y<64; y++){
+      for(let x=0; x<64; x++){
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const idx = (y*64 + x)*4;
+        const a = skinData ? skinData[idx+3] : 0;
+        if(a>0) cell.style.background = `rgba(${skinData[idx]},${skinData[idx+1]},${skinData[idx+2]},${a/255})`;
+        else cell.style.background = 'transparent';
+        cell.style.width = '6px';
+        cell.style.height = '6px';
+        grid.appendChild(cell);
+      }
+    }
+  } else {
+    skinViewMode = 'single';
+    renderSkinCanvas();
+  }
+}
+function importSkin(){
+  toast('导入功能模拟：已加载默认皮肤');
+  createNewSkin();
+}
+function exportSkin(){
+  toast('导出 PNG 模拟');
+}
+function previewSkin(){
+  // 预览弹窗显示当前皮肤拼接图（模拟）
+  const modal = document.getElementById('skinPreviewModal');
+  const img = document.getElementById('skinPreviewImg');
+  // 简单生成一个canvas预览
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if(skinData){
+    const imageData = new ImageData(skinData, 64, 64);
+    ctx.putImageData(imageData, 0, 0);
+  } else {
+    // 默认显示棋盘格
+    ctx.fillStyle = '#aaa';
+    ctx.fillRect(0,0,64,64);
+  }
+  img.src = canvas.toDataURL();
+  modal.classList.add('show');
+}
+function togglePart(el){
+  const group = el.closest('.part-group');
+  if(!group) return;
+  group.classList.toggle('open');
+}
+// 部位选择切换
+document.addEventListener('click', function(e){
+  const subItem = e.target.closest('.sub-item');
+  if(!subItem) return;
+  const group = subItem.closest('.part-group');
+  if(!group) return;
+  const part = group.dataset.part;
+  const face = subItem.dataset.face;
+  if(!part || !face) return;
+  // 更新选中状态
+  group.querySelectorAll('.sub-item').forEach(s=>s.classList.remove('active'));
+  subItem.classList.add('active');
+  currentPart = part;
+  currentFace = face;
+  if(skinData){
+    skinViewMode = 'single';
+    renderSkinCanvas();
+  }
+});
+
+// AI部署切换
+function toggleAiDeploy(){
+  const val = document.getElementById('aiDeploy').value;
+  document.getElementById('aiApiSettings').style.display = (val === 'api') ? 'block' : 'none';
+  document.getElementById('aiLocalSettings').style.display = (val === 'local') ? 'block' : 'none';
+}
+
+// 进度环模拟
+setInterval(()=>{const p=70+Math.floor(Math.random()*5);document.getElementById('dlRingFg').style.strokeDashoffset=87.96-(87.96*p/100);document.getElementById('dlRingPct').textContent=p+'%';},3000);
+
+// 主题色
+const TC=['#4CAF50','#2196F3','#FF9800','#9C6ADE','#E5484D','#607D8B'];
+function buildSw(id,cur){const b=document.getElementById(id);b.innerHTML=TC.map(c=>`<div class="swatch" style="background:${c};width:34px;height:34px;border-radius:8px;cursor:pointer;border:2px solid ${c===cur?'#fff':'transparent'};display:inline-block;margin:3px" onclick="pickSw('${id}','${c}',this)"></div>`).join('');}
+function pickSw(id,c,el){document.querySelectorAll('#'+id+' .swatch').forEach(s=>s.style.border='2px solid transparent');el.style.border='2px solid #fff';if(id==='themeSw')document.documentElement.style.setProperty('--theme',c);}
+buildSw('themeSw','#4CAF50');
+
+// 初始化页面
+switchPage('game');
+</script>
+</body>
+</html>
