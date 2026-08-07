@@ -2261,6 +2261,6 @@ side=""BOTH""
         Check("AfkWorkflows Count=1", profile.AfkWorkflows!.Count == 1);
         Check("ShaderTokens Count=1", profile.ShaderTokens!.Count == 1);
 
-        Check("LauncherVersion=2.0.0", GameConstants.LauncherVersion == "2.0.0");
+        Check("LauncherVersion=2.4.1", GameConstants.LauncherVersion == "2.4.1");
     }
 }
