@@ -34,7 +34,7 @@ public class DownloadQueueItem : ObservableObject
     /// <summary>队列项摘要（卡片副标题），用于队列列表二行展示。</summary>
     public string Summary { get; init; } = "";
 
-    /// <summary>整合包来源（modrinth / curseforge），仅 Kind=modpack 使用。</summary>
+    /// <summary>整合包来源（modrinth），仅 Kind=modpack 使用。</summary>
     public string Source { get; init; } = "modrinth";
 
     /// <summary>

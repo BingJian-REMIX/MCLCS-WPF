@@ -171,16 +171,6 @@
                         <TextBox Text="{Binding MaxConcurrentDownloads, UpdateSourceTrigger=PropertyChanged}" Width="80"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}"/>
                     </StackPanel>
-                    <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,4">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="CF API Key：" VerticalAlignment="Center" Width="90"/>
-                            <PasswordBox x:Name="CurseForgeKeyPw" Width="300" PasswordChanged="CurseForgeKey_PasswordChanged"
-                                         Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
-                                         BorderBrush="{DynamicResource InputBorder}"/>
-                        </StackPanel>
-                        <TextBlock Text="CurseForge 官方 API 强制校验 Key，请填入你自己申请的 Key（留空则下载页不显示该来源）。Key 仅保存在本地，不会上传。"
-                                   FontSize="11" Opacity="0.65" TextWrapping="Wrap" Margin="90,4,0,0" MaxWidth="420"/>
-                    </StackPanel>
                     <WrapPanel Grid.Row="4" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding AutoRepairResourcePacks, Mode=TwoWay}"/>

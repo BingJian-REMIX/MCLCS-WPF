@@ -30,7 +30,7 @@ public class ModpackManifest
 /// <summary>
 /// 整合包导入导出（工具箱功能 9 / 全局功能 7）：将当前版本环境（mods / config /
 /// resourcepacks / shaderpacks / 可选 saves）打包导出为整合包 zip，并写入 mclcs 清单。
-/// 导入由 <see cref="Installers.ModpackInstaller"/> 与 CurseForge 安装器负责。
+/// 导入由 <see cref="Installers.ModpackInstaller"/> 负责。
 /// </summary>
 public static class ModpackExporter
 {

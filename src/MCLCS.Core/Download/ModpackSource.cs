@@ -5,10 +5,10 @@ namespace MCLCS.Core.Download;
 /// <summary>整合包搜索结果条目（源无关的统一视图）。</summary>
 public class ModpackItem
 {
-    /// <summary>源标识：modrinth / curseforge。</summary>
+    /// <summary>源标识：modrinth。</summary>
     public string Source { get; init; } = "";
 
-    /// <summary>源内唯一 Id（Modrinth 为 project_id，CurseForge 为 mod id 字符串）。</summary>
+    /// <summary>源内唯一 Id（Modrinth 为 project_id）。</summary>
     public string Id { get; init; } = "";
 
     public string Title { get; init; } = "";
@@ -121,22 +121,18 @@ public class ModpackDetail
 }
 
 /// <summary>
-/// 整合包在线源抽象（规格 2.2 → 整合包：在线浏览 Modrinth / CurseForge，一键安装）。
-/// <para>
-/// CurseForge 官方 API 对所有端点强制要求 <c>x-api-key</c>（含搜索），且服务条款禁止在开源项目中
-/// 分发共享密钥，因此其实现只有在用户于设置页填入自己的 Key 后才 <see cref="IsAvailable"/>。
-/// 界面层据此隐藏不可用的源标签，避免出现点了没反应的死按钮。
-/// </para>
+/// 整合包在线源抽象（规格 2.2 → 整合包：在线浏览 Modrinth，一键安装）。
+/// 当前仅内置 Modrinth 源（免 Key 常驻可用）；CurseForge 等需要私有 Key 的源尚未接入。
 /// </summary>
 public interface IModpackSource
 {
-    /// <summary>源标识：modrinth / curseforge。</summary>
+    /// <summary>源标识：modrinth。</summary>
     string Id { get; }
 
     /// <summary>界面展示名。</summary>
     string DisplayName { get; }
 
-    /// <summary>当前是否可用（CurseForge 未配置 Key 时为 false）。</summary>
+    /// <summary>当前是否可用（Modrinth 常驻可用）。</summary>
     bool IsAvailable { get; }
 
     /// <summary>不可用原因（界面提示用）；可用时为 null。</summary>

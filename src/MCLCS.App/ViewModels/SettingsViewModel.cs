@@ -60,7 +60,6 @@ public class SettingsViewModel : ObservableObject
     // ---- 下载 ----
     private string _selectedDownloadSource = "MirrorFirst";
     private int _maxConcurrentDownloads = 8;
-    private string _curseForgeApiKey = "";
     private bool _autoRepairResourcePacks = true;
     private bool _serverPackCacheEnabled = true;
 
@@ -170,7 +169,6 @@ public class SettingsViewModel : ObservableObject
     // ===== 下载 =====
     public string SelectedDownloadSource { get => _selectedDownloadSource; set => SetField(ref _selectedDownloadSource, value); }
     public int MaxConcurrentDownloads { get => _maxConcurrentDownloads; set => SetField(ref _maxConcurrentDownloads, value); }
-    public string CurseForgeApiKey { get => _curseForgeApiKey; set => SetField(ref _curseForgeApiKey, value); }
 
     /// <summary>进服时自动修复资源包问题（规格 2.4 — 下载）。</summary>
     public bool AutoRepairResourcePacks
@@ -369,7 +367,6 @@ public class SettingsViewModel : ObservableObject
         // 下载
         SelectedDownloadSource = profile.DownloadSource.ToString();
         MaxConcurrentDownloads = profile.MaxConcurrentDownloads;
-        CurseForgeApiKey = profile.CurseForgeApiKey ?? "";
         AutoRepairResourcePacks = profile.AutoRepairResourcePacks;
         ServerPackCacheEnabled = profile.ServerPackCacheEnabled;
 
@@ -458,7 +455,6 @@ public class SettingsViewModel : ObservableObject
             // 下载
             DownloadSource = Enum.TryParse<DownloadSourcePreference>(SelectedDownloadSource, out var ds) ? ds : DownloadSourcePreference.MirrorFirst,
             MaxConcurrentDownloads = MaxConcurrentDownloads,
-            CurseForgeApiKey = string.IsNullOrWhiteSpace(CurseForgeApiKey) ? null : CurseForgeApiKey,
             AutoRepairResourcePacks = AutoRepairResourcePacks,
             ServerPackCacheEnabled = ServerPackCacheEnabled,
 

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace MCLCS.Core.Tests;
 
-/// <summary>整合包在线源（Modrinth / CurseForge）与版本隔离的纯函数自检。</summary>
+/// <summary>整合包在线源（Modrinth）与版本隔离的纯函数自检。</summary>
 public class ModpackSourceTests
 {
     // ---- ModrinthModpackSource ----
@@ -61,80 +61,6 @@ public class ModpackSourceTests
         Assert.Equal(2, sorted.Count);
         Assert.Equal("1.20.1", sorted[0]);
     }
-
-    // ---- CurseForgeModpackSource ----
-
-    [Fact]
-    public void BuildSearchUrl_IncludesClassAndGameId()
-    {
-        var url = CurseForgeModpackSource.BuildSearchUrl("rlcraft", "1.20.1", "forge", 24, 0);
-        Assert.Contains("gameId=432", url);
-        Assert.Contains("classId=4471", url);
-        Assert.Contains("searchFilter=rlcraft", url);
-        Assert.Contains("gameVersion=1.20.1", url);
-        Assert.Contains("modLoaderType=1", url); // forge
-        Assert.Contains("pageSize=24", url);
-    }
-
-    [Fact]
-    public void BuildSearchUrl_ClampsPageSizeAndOffset()
-    {
-        var url = CurseForgeModpackSource.BuildSearchUrl(null, null, null, 999, -5);
-        Assert.Contains("pageSize=50", url);
-        Assert.Contains("index=0", url);
-    }
-
-    [Theory]
-    [InlineData("forge", 1)]
-    [InlineData("fabric", 4)]
-    [InlineData("quilt", 5)]
-    [InlineData("neoforge", 6)]
-    [InlineData("unknown", 0)]
-    public void LoaderTypeId_MapsCorrectly(string loader, int expected)
-    {
-        Assert.Equal(expected, CurseForgeModpackSource.LoaderTypeId(loader));
-    }
-
-    [Fact]
-    public void ParseSearch_ExtractsModpackItems()
-    {
-        var json = "{\"data\":[{\"id\":12345,\"name\":\"RLCraft\",\"summary\":\"Hardcore survival\"," +
-                   "\"downloadCount\":1234567,\"logo\":{\"thumbnailUrl\":\"https://x/icon.png\"}," +
-                   "\"authors\":[{\"name\":\"Shivaxi\"}],\"latestFilesIndexes\":[{\"gameVersion\":\"1.12.2\"}]}]}";
-        var items = CurseForgeModpackSource.ParseSearch(json);
-        Assert.Single(items);
-        Assert.Equal("12345", items[0].Id);
-        Assert.Equal("RLCraft", items[0].Title);
-        Assert.Equal("Shivaxi", items[0].Author);
-        Assert.Equal("https://x/icon.png", items[0].IconUrl);
-        Assert.Contains("1.12.2", items[0].GameVersions);
-        Assert.Contains("1.2M 次下载", items[0].DownloadsText);
-    }
-
-    [Fact]
-    public void ParseSearch_ReturnsEmptyOnBadJson()
-    {
-        Assert.Empty(CurseForgeModpackSource.ParseSearch("not json"));
-        Assert.Empty(CurseForgeModpackSource.ParseSearch(""));
-    }
-
-    [Fact]
-    public void ParseDetail_SkipsVersionsWithoutDownloadUrl()
-    {
-        var json = "{\"data\":[" +
-                   "{\"id\":1,\"displayName\":\"v1\",\"fileName\":\"a.zip\",\"downloadUrl\":\"https://x/a.zip\"," +
-                   "\"fileLength\":2048,\"gameVersions\":[\"1.20.1\",\"Forge\"]}," +
-                   "{\"id\":2,\"displayName\":\"v2\",\"fileName\":\"b.zip\",\"downloadUrl\":null," +
-                   "\"fileLength\":1024,\"gameVersions\":[\"1.19\",\"Fabric\"]}]}";
-        var detail = CurseForgeModpackSource.ParseDetail(json, "999");
-        Assert.NotNull(detail);
-        Assert.Single(detail!.Versions);          // 第 2 个因 downloadUrl 为 null 被跳过
-        Assert.Equal("https://x/a.zip", detail.Versions[0].FileUrl);
-        Assert.Equal("1.20.1", detail.Versions[0].GameVersion);
-        Assert.Equal("Forge", detail.Versions[0].Loader);
-        Assert.Equal(2048, detail.Versions[0].FileSize);
-    }
-
     // ---- VersionIsolation（独立版本隔离目录）----
 
     [Fact]
@@ -204,3 +130,4 @@ public class ModpackSourceTests
         Assert.Equal(137, r.ModCount);
     }
 }
+

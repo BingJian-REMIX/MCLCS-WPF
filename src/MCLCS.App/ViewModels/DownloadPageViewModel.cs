@@ -28,7 +28,7 @@ public class ModpackSourceEntry
 /// 下载页（规格 2.2）ViewModel：按全局侧边栏副标签（mod / shader / resourcepack / modpack / map）切换内容，
 /// 顶部版本 + 加载器筛选（地图为分类 / 版本 / 排序 / 分页），卡片网格（外联封面由 ExternalIcon 渲染），
 /// 底部下载队列（进度 / 暂停 / 取消）。Mod 类走 Modrinth，地图走像素茶艺（PixelMap），
-/// 整合包在线浏览走 <see cref="IModpackSource"/>（Modrinth 常驻，CurseForge 需设置页填 Key）。
+/// 整合包在线浏览走 <see cref="IModpackSource"/>（当前仅 Modrinth 常驻可用）。
 /// </summary>
 public class DownloadPageViewModel : ObservableObject
 {
@@ -54,7 +54,7 @@ public class DownloadPageViewModel : ObservableObject
     private bool _isDetailOpen;
     private string _detailHint = "";
 
-    // 整合包在线浏览（规格 2.2 → 整合包：在线浏览 Modrinth / CurseForge，一键安装）
+    // 整合包在线浏览（规格 2.2 → 整合包：在线浏览 Modrinth，一键安装）
     private bool _isModpack;
     private ObservableCollection<ModpackSourceEntry> _modpackSources = new();
     private string _selectedModpackSource = "modrinth";
@@ -313,7 +313,6 @@ public class DownloadPageViewModel : ObservableObject
         {
             if (!SetField(ref _currentModpackDetail, value)) return;
             OnPropertyChanged(nameof(ModpackDetailCanInstall));
-            OnPropertyChanged(nameof(ModpackDetailIsCurseForge));
             OnPropertyChanged(nameof(ModpackDetailSourceNote));
             OnPropertyChanged(nameof(ModpackDetailLoaders));
             OnPropertyChanged(nameof(ModpackDetailLatestVersion));
@@ -340,7 +339,7 @@ public class DownloadPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>隔离安装开关（默认开启，符合独立版本隔离目录决策）。CurseForge 不支持隔离。</summary>
+    /// <summary>隔离安装开关（默认开启，符合独立版本隔离目录决策）。</summary>
     public bool InstallIsolated
     {
         get => _installIsolated;
@@ -357,13 +356,8 @@ public class DownloadPageViewModel : ObservableObject
     /// <summary>详情窗：所选版本是否有可直链下载的文件。</summary>
     public bool ModpackDetailCanInstall => !string.IsNullOrEmpty(SelectedModpackVersion?.FileUrl);
 
-    /// <summary>详情窗：当前是否为 CurseForge 整合包（CurseForge 不支持隔离安装）。</summary>
-    public bool ModpackDetailIsCurseForge => CurrentModpackSourceId == "curseforge";
-
-    /// <summary>详情窗：来源相关的提示（如 CurseForge 不支持隔离）。</summary>
-    public string ModpackDetailSourceNote => ModpackDetailIsCurseForge
-        ? "CurseForge 整合包以共享目录方式安装（不支持隔离）。"
-        : "";
+    /// <summary>详情窗：来源相关的提示（当前仅 Modrinth，预留给未来扩展）。</summary>
+    public string ModpackDetailSourceNote => "";
 
     /// <summary>详情窗：从版本列表聚合的加载器摘要（首字母大写、去重）。</summary>
     public string ModpackDetailLoaders
@@ -460,7 +454,7 @@ public class DownloadPageViewModel : ObservableObject
         _ = SearchAsync();
     }
 
-    /// <summary>刷新整合包来源列表（CurseForge 是否可用取决于设置页 Key，可能随时变化）。</summary>
+    /// <summary>刷新整合包来源列表（当前仅 Modrinth 常驻）。</summary>
     private void RefreshModpackSources()
     {
         var list = LauncherService.Instance.ModpackSources
@@ -921,9 +915,7 @@ public class DownloadPageViewModel : ObservableObject
             ModpackDetailHint = detail.HasVersions
                 ? (ModpackDetailCanInstall
                     ? ""
-                    : (ModpackDetailIsCurseForge
-                        ? "作者未开放第三方下载，请前往来源页获取。"
-                        : "该版本无可用的直链下载。"))
+                    : "该版本无可用的直链下载。")
                 : "该整合包暂无可安装版本。";
 
             IsModpackDetailOpen = true;
@@ -938,7 +930,7 @@ public class DownloadPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>按详情窗所选版本安装整合包（支持隔离安装；CurseForge 走共享目录）。</summary>
+    /// <summary>按详情窗所选版本安装整合包（支持隔离安装）。</summary>
     private async Task InstallModpackAsync()
     {
         if (CurrentModpackDetail is null || SelectedModpackVersion is null) return;
@@ -952,7 +944,7 @@ public class DownloadPageViewModel : ObservableObject
                 StatusBarViewModel.Current.DownloadText = $"安装 {CurrentModpackDetail.Title}：{p:P0}";
             });
 
-            var isolated = InstallIsolated && !ModpackDetailIsCurseForge;
+            var isolated = InstallIsolated;
             var result = await LauncherService.Instance.InstallModpackVersionAsync(
                 CurrentModpackSourceId, SelectedModpackVersion, isolated,
                 CurrentModpackDetail.Title, progress, CancellationToken.None);

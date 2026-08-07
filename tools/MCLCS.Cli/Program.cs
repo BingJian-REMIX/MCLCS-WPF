@@ -141,7 +141,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("用法: mclcs modpack <modrinth|curseforge> <文件路径> [--game-dir path]");
+            Console.Error.WriteLine("用法: mclcs modpack <modrinth> <文件路径> [--game-dir path]");
             return 1;
         }
 
@@ -150,9 +150,9 @@ internal static class Program
         var gameRoot = GameConstants.DefaultGameRoot;
         if (args.Length >= 4 && args[2] == "--game-dir") gameRoot = args[3];
 
-        if (packType is not ("modrinth" or "curseforge"))
+        if (packType != "modrinth")
         {
-            Console.Error.WriteLine("整合包类型必须是 modrinth 或 curseforge");
+            Console.Error.WriteLine("整合包类型当前仅支持 modrinth");
             return 1;
         }
 
@@ -174,10 +174,8 @@ internal static class Program
             }
             else
             {
-                var installer = new MCLCS.Core.Installers.CurseForgeModpackInstaller(
-                    gameRoot, new HttpClient(), new MCLCS.Core.Download.HttpDownloader(new HttpClient()),
-                    new CliLogger());
-                await installer.InstallAsync(filePath);
+                Console.Error.WriteLine("整合包类型当前仅支持 modrinth（CurseForge .zip 尚未接入）。");
+                return 1;
             }
             Console.WriteLine("整合包安装完成。");
             return 0;
@@ -298,7 +296,7 @@ internal static class Program
         Console.WriteLine("  launch  <versionId> [--username <name>] [--memory <MB>] [--java <path>] [--game-dir <path>]");
         Console.WriteLine("  list    [--game-dir <path>]");
         Console.WriteLine("  install <vanilla|fabric|forge> <versionId> [--game-dir <path>]");
-        Console.WriteLine("  modpack <modrinth|curseforge> <file> [--game-dir <path>]");
+        Console.WriteLine("  modpack <modrinth> <file> [--game-dir <path>]");
         Console.WriteLine("  mods    <list|check|updates> [--game-dir <path>]");
         Console.WriteLine("  skin    <username>");
         Console.WriteLine("  version");

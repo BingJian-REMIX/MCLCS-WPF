@@ -58,7 +58,7 @@ dotnet run --project tools/MCLCS.SelfCheck
 该命令在任意装有 .NET 6/8 的平台上运行，当前 **265 项全部通过**，覆盖核心算法与 v1.1 新增模块：
 Java 版本解析、Maven 坐标、参数规则/变量/内存注入、classpath、原生库、崩溃识别、
 崩溃修复规划引擎、Fabric 版本合并、离线 UUID、账号存储 CRUD、LaunchOptions 扩展、整合包索引解析、
-Modrinth/CurseForge 模型反序列化、多语言、主题切换、Mod 元数据解析；
+Modrinth 模型反序列化、多语言、主题切换、Mod 元数据解析；
 以及 v1.1 工具箱与系统模块：日志管理、种子库、截图管理、网络诊断、冗余文件清理、
 整合包导入导出、游玩时长统计、多实例追踪、AI 助手（本地规则）、启动器自更新。
 
@@ -82,5 +82,4 @@ Modrinth/CurseForge 模型反序列化、多语言、主题切换、Mod 元数�
 2. **沙箱无法联网还原 NuGet**：本仓库在离线环境交付，`MCLCS.Core.Tests` 的 xUnit 包需在有网环境还原。
 3. **Forge 安装器**：以无头模式（`--installClient`）运行官方 installer；个别版本若失败，会提示用户手动运行 GUI installer。
 4. **Microsoft 登录**：需用户在浏览器手动输入设备码（OAuth2 设备流），CLI 打印到控制台；WPF 版需补充浏览器/WebView 集成。
-5. **镜像地址**基于公开 BMCLAPI / 官方 / Adoptium / Modrinth / CurseForge 端点；若某镜像不可用，代码会自动回退下一个候选源。
-6. **CurseForge API** 使用公开 v1 端点（无需 API key），部分端点可能需要 Cloudflare Worker 代理（非中国大陆网络可能被限速）。
+5. **镜像地址**基于公开 BMCLAPI / 官方 / Adoptium / Modrinth 端点；若某镜像不可用，代码会自动回退下一个候选源。

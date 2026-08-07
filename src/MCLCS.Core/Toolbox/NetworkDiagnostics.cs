@@ -13,7 +13,7 @@ public class DiagnosticResult
 }
 
 /// <summary>
-/// 网络诊断（工具箱功能 6）：检测 Mojang、Modrinth、CurseForge、BMCLAPI 等服务的
+/// 网络诊断（工具箱功能 6）：检测 Mojang、Modrinth、BMCLAPI 等服务的
 /// 连通性与延迟，用于排查下载/启动失败。
 /// </summary>
 public static class NetworkDiagnostics
@@ -24,7 +24,6 @@ public static class NetworkDiagnostics
         ("Mojang 官方元数据", "https://launchermeta.mojang.com/mc/game/version_manifest.json"),
         ("BMCLAPI 镜像", "https://bmclapi2.bangbang93.com/mc/game/version_manifest.json"),
         ("Modrinth API", "https://api.modrinth.com/v2/search?limit=1"),
-        ("CurseForge", "https://www.curseforge.com/minecraft"),
         ("Minecraft 资源", "https://resources.download.minecraft.net/")
     };
 

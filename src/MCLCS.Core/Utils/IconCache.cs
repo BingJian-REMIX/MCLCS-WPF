@@ -10,8 +10,8 @@ namespace MCLCS.Core.Utils;
 /// <summary>
 /// 外联图标 / 封面图缓存。
 /// <para>
-/// 下载页（规格 2.2）的卡片封面来自外部 URL：Modrinth <c>icon_url</c>、像素茶艺 <c>preview_image</c>、
-/// CurseForge <c>icon</c> 等。本类负责把它们下载到本地缓存目录并复用，避免重复联网、支持离线回退。
+/// 下载页（规格 2.2）的卡片封面来自外部 URL：Modrinth <c>icon_url</c>、像素茶艺 <c>preview_image</c> 等。
+/// 本类负责把它们下载到本地缓存目录并复用，避免重复联网、支持离线回退。
 /// </para>
 /// <para>
 /// 这是「外联 icon 文件」的统一落盘位置——任何未来的外部图标（皮肤、画廊图、整合包封面等）都可走这里，

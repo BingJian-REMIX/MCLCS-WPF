@@ -99,7 +99,6 @@ public static class LocaleManager
             "  \"lbl.forge\": \"Forge\",\n" +
             "  \"lbl.modpack\": \"整合包\",\n" +
             "  \"lbl.modrinth_pack\": \"Modrinth 整合包\",\n" +
-            "  \"lbl.curseforge_pack\": \"CurseForge 整合包\",\n" +
             "  \"lbl.account_type\": \"账号类型\",\n" +
             "  \"lbl.offline\": \"离线\",\n" +
             "  \"lbl.microsoft\": \"微软\",\n" +
@@ -187,7 +186,6 @@ public static class LocaleManager
             "  \"lbl.forge\": \"Forge\",\n" +
             "  \"lbl.modpack\": \"Modpack\",\n" +
             "  \"lbl.modrinth_pack\": \"Modrinth Modpack\",\n" +
-            "  \"lbl.curseforge_pack\": \"CurseForge Modpack\",\n" +
             "  \"lbl.account_type\": \"Account Type\",\n" +
             "  \"lbl.offline\": \"Offline\",\n" +
             "  \"lbl.microsoft\": \"Microsoft\",\n" +

@@ -5,7 +5,7 @@
 
 MCLCS（Minecraft Launcher CSharp）是一个使用 **C# / WPF / .NET 8** 实现的 Minecraft 启动器，
 覆盖原版 / Fabric / Forge / Quilt / NeoForge 安装、智能 Java 选择、参数解析与变量替换、原生库处理、
-崩溃分析与**非破坏性智能修复**、Modrinth / CurseForge / 像素茶艺地图站API接入、**Microsoft / Authlib-Injector
+崩溃分析与**非破坏性智能修复**、Modrinth / 像素茶艺地图站API接入、**Microsoft / Authlib-Injector
 登录、多账号管理、CLI 命令行、Mod 管理、皮肤编辑器（含 3D 预览）、HUD 叠加、年度报告、挂机工作流**等。
 
 ---
@@ -29,7 +29,7 @@ MCLCS（Minecraft Launcher CSharp）是一个使用 **C# / WPF / .NET 8** 实现
 
 ### 游戏启动与版本安装
 - **智能 Java 选择**（≥21，自动探测 Temurin/Oracle）；arguments 条件规则与变量替换；classpath 构建含 natives jar；`-Djava.library.path` / `-Dorg.lwjgl.librarypath` 配置；内存/用户名/JVM 参数自定义。
-- **版本安装**：原版（JSON+核心JAR+libraries+natives+资源索引）· Fabric（合并+自动装 Fabric API）· Forge（BMCLAPI 优先，失败回退官方，运行 installer）· Quilt / NeoForge · Modrinth `.mrpack` / CurseForge `.zip` 整合包。
+- **版本安装**：原版（JSON+核心JAR+libraries+natives+资源索引）· Fabric（合并+自动装 Fabric API）· Forge（BMCLAPI 优先，失败回退官方，运行 installer）· Quilt / NeoForge · Modrinth `.mrpack` 整合包（CurseForge `.zip` 尚未接入）。
 - **启动前存档兼容性检测**：扫描 `saves/*/level.dat` 的 DataVersion，过高则弹窗三选项：① 安装对应版本 ② 降级（A 改写 DataVersion / B Amulet 转换，强制备份、原档保留）③ 忽略；降级联动崩溃时提示回滚/换方案/装原版。
 - **启动预热**（设置开关）：后台预读最近 7 天内游玩前 2 的版本的 Java 与核心库到系统缓存，不阻塞、不实际运行 Java。
 
@@ -39,7 +39,7 @@ MCLCS（Minecraft Launcher CSharp）是一个使用 **C# / WPF / .NET 8** 实现
 - 策略：始终 / 询问 / 拒绝；全程不删不改游戏原文件。
 
 ### 下载中心
-- Modrinth / CurseForge 搜索，按版本 / 加载器（Fabric/Forge/Quilt/NeoForge）/ 类型过滤。
+- Modrinth 搜索，按版本 / 加载器（Fabric/Forge/Quilt/NeoForge）/ 类型过滤。
 - 镜像策略：BMCLAPI 优先，失败回退官方；下载队列管理，进度回传状态栏。
 - 地图（像素茶艺 API `https://goto.pixelmap.cc/api/open/v1/maps`）：分类/版本/排序下拉，详情窗，解压至 `saves`，自定义 User-Agent。
 
@@ -92,10 +92,10 @@ MCLCS/
 │   │   ├── Ai/              # Assistant, OllamaManager
 │   │   ├── Auth/            # Offline / Microsoft / AuthlibInjector
 │   │   ├── Download/        # HttpDownloader, MirrorPolicy, ModrinthClient,
-│   │   │                   #   CurseForgeClient, PixelmapClient, MapInstaller,
+│   │   │                   #   PixelmapClient, MapInstaller,
 │   │   │                   #   ModrinthModpackSource, ModpackSource, ExtraResourceInstaller
 │   │   ├── Installers/      # Vanilla / Fabric / Forge / Quilt / NeoForge /
-│   │   │                   #   ModpackInstaller / CurseForgeModpackInstaller / LibraryRepair
+│   │   │                   #   ModpackInstaller / LibraryRepair
 │   │   ├── Launcher/        # JavaDetector, JavaInstaller, ArgumentProcessor,
 │   │   │                   #   ClasspathBuilder, VersionMerger, GameLauncher,
 │   │   │                   #   CrashAnalyzer, CrashDetector, CrashRepairEngine,
@@ -154,7 +154,6 @@ mclcs launch 1.20.1 --username Steve --memory 4096
 mclcs list
 mclcs install fabric 1.20.1
 mclcs modpack modrinth mypack.mrpack
-mclcs modpack curseforge mypack.zip
 mclcs mods list
 mclcs mods check
 mclcs mods updates
@@ -181,7 +180,7 @@ dotnet publish src/MCLCS.App/MCLCS.App.csproj -c Release -r win-x64 --self-conta
 ## 镜像策略
 
 所有下载优先走 **BMCLAPI**（`bmclapi2.bangbang93.com`），失败自动回退官方源。
-Java 自动安装使用 Adoptium API，Modrinth 使用官方 API，CurseForge 使用公开 v1 API，
+Java 自动安装使用 Adoptium API，Modrinth 使用官方 API，
 地图使用像素茶艺 API（`https://goto.pixelmap.cc`）。
 
 ---

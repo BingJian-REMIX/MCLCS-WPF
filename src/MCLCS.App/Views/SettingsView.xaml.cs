@@ -20,7 +20,6 @@ public partial class SettingsView : UserControl
             if (Vm is not null)
             {
                 AiKeyPw.Password = Vm.AiApiKey;
-                CurseForgeKeyPw.Password = Vm.CurseForgeApiKey;
             }
         };
     }
@@ -60,12 +59,6 @@ public partial class SettingsView : UserControl
     private void AiKeyPw_PasswordChanged(object sender, RoutedEventArgs e)
     {
         if (Vm is not null) Vm.AiApiKey = AiKeyPw.Password;
-    }
-
-    // 下载：CurseForge API Key 密文实时同步到配置
-    private void CurseForgeKey_PasswordChanged(object sender, RoutedEventArgs e)
-    {
-        if (Vm is not null) Vm.CurseForgeApiKey = CurseForgeKeyPw.Password;
     }
 
     private void OpenUrl_Click(object sender, RoutedEventArgs e)

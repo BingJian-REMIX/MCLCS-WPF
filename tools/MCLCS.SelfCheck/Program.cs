@@ -54,7 +54,6 @@ internal static class Program
         RepairEngineTest();
         ModpackIndexParsing();
         ModrinthModelDeserialization();
-        CurseForgeModels();
         LocalizationTest();
         SkinFetcherTest();
         ThemeManagerTest();
@@ -417,29 +416,6 @@ internal static class Program
 
         // LoaderType.NeoForge
         Check("NeoForge loader string", ModrinthClient.LoaderString(LoaderType.NeoForge) == "neoforge");
-    }
-
-    // ---- v0.3 新增测试 ----
-
-    private static void CurseForgeModels()
-    {
-        Console.WriteLine("[CurseForge 模型反序列化]");
-        var manifestJson = @"{
-            ""minecraft"": { ""version"": ""1.20.1"", ""modLoaders"": [{""id"":""fabric-0.15.0"",""primary"":true}] },
-            ""manifestType"": ""minecraftModpack"",
-            ""manifestVersion"": 1,
-            ""name"": ""Test CF Pack"",
-            ""version"": ""1.0"",
-            ""author"": ""Author"",
-            ""files"": [{""projectID"":123,""fileID"":456,""required"":true}],
-            ""overrides"": ""overrides""
-        }";
-        var manifest = JsonSerializer.Deserialize<CurseForgeManifest>(manifestJson);
-        Check("CF manifest name", manifest is not null && manifest.Name == "Test CF Pack");
-        Check("CF mc version", manifest!.Minecraft.Version == "1.20.1");
-        Check("CF fabric loader", manifest.Minecraft.ModLoaders[0].Id == "fabric-0.15.0");
-        Check("CF 1 file", manifest.Files.Count == 1);
-        Check("CF file projectID", manifest.Files[0].ProjectId == 123);
     }
 
     private static void LocalizationTest()

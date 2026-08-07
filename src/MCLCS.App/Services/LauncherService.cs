@@ -23,7 +23,7 @@ public class LauncherService : ILogger
     private readonly HttpClient _client = new();
     private readonly IDownloader _downloader;
 
-    /// <summary>整合包在线源注册表（Modrinth 常驻；CurseForge 仅在设置页填入 Key 后可用）。</summary>
+    /// <summary>整合包在线源注册表（当前仅 Modrinth 常驻可用）。</summary>
     private readonly IModpackSource[] _modpackSources;
 
     public string GameRoot { get; }
@@ -47,12 +47,10 @@ public class LauncherService : ILogger
 
         Pixelmap = new PixelmapClient(_client);
 
-        // 整合包在线源：Modrinth 免 Key 常驻；CurseForge 的 Key 通过延迟读取设置页配置，
-        // 用户未填时其 IsAvailable=false（下载页禁用该来源，避免出现点了没反应的死按钮）。
+        // 整合包在线源：Modrinth 免 Key 常驻可用；CurseForge 等需私有 Key 的源尚未接入。
         _modpackSources = new IModpackSource[]
         {
-            new ModrinthModpackSource(_client),
-            new CurseForgeModpackSource(_client, () => ProfileStore.Load(gameRoot).CurseForgeApiKey)
+            new ModrinthModpackSource(_client)
         };
     }
 
@@ -63,7 +61,7 @@ public class LauncherService : ILogger
     public IModpackSource GetModpackSource(string? id) =>
         _modpackSources.FirstOrDefault(s => s.Id == (id ?? "")) ?? _modpackSources[0];
 
-    /// <summary>搜索整合包（聚合 Modrinth / CurseForge，依 <paramref name="sourceId"/> 选择来源）。</summary>
+    /// <summary>搜索整合包（当前仅 Modrinth，依 <paramref name="sourceId"/> 选择来源）。</summary>
     public async Task<List<ModpackItem>> SearchModpacksAsync(string? keyword, string? gameVersion,
         string? loader, string? sourceId, CancellationToken ct)
     {
@@ -82,7 +80,7 @@ public class LauncherService : ILogger
 
     /// <summary>
     /// 安装指定整合包（按 <paramref name="version"/> 直链下载后落地）。
-    /// Modrinth .mrpack 支持<paramref name="isolated"/> 隔离目录；CurseForge .zip 复用现有安装器（非隔离）。
+    /// Modrinth .mrpack 支持<paramref name="isolated"/> 隔离目录。
     /// </summary>
     public async Task<ModpackInstallResult?> InstallModpackVersionAsync(
         string? sourceId, ModpackVersion version, bool isolated, string? preferredName,
@@ -91,21 +89,10 @@ public class LauncherService : ILogger
         if (string.IsNullOrEmpty(version.FileUrl)) return null;
 
         var tmp = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")
-            + (sourceId == "curseforge" ? ".zip" : ".mrpack"));
+            + ".mrpack");
         try
         {
             await _downloader.DownloadAsync(new DownloadItem(new[] { version.FileUrl }, tmp, version.Sha1), progress, ct);
-
-            if (sourceId == "curseforge")
-            {
-                var cf = new CurseForgeModpackInstaller(GameRoot, _client, _downloader, this);
-                await cf.InstallAsync(tmp, null, ct);
-                return new ModpackInstallResult
-                {
-                    Name = string.IsNullOrWhiteSpace(version.VersionNumber) ? version.FileName : version.VersionNumber,
-                    Isolated = false
-                };
-            }
 
             var installer = new ModpackInstaller(GameRoot, _client, _downloader, this);
             return await installer.InstallAsync(tmp, isolated, preferredName, null, ct);
@@ -656,7 +643,7 @@ public class LauncherService : ILogger
         return ExtraResourceInstaller.Install(item.Destination, GameRoot, detail.Title);
     }
 
-    // ---- 下载页：整合包（Modrinth .mrpack / CurseForge .zip）----
+    // ---- 下载页：整合包（Modrinth .mrpack）----
     // 安装入口见 InstallModpackAsync / InstallModpackVersionAsync（源无关、支持隔离安装）。
 }
 

@@ -313,7 +313,7 @@
             </Border>
         </Grid>
 
-        <!-- 整合包详情弹窗（规格 2.2：在线浏览 Modrinth / CurseForge，一键安装） -->
+        <!-- 整合包详情弹窗（规格 2.2：在线浏览 Modrinth，一键安装） -->
         <Grid Grid.RowSpan="5" Style="{StaticResource ModalOverlayStyle}"
               Visibility="{Binding IsModpackDetailOpen, Converter={StaticResource BoolToVisibility}}">
             <Border Style="{StaticResource ModalCardStyle}" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -364,19 +364,13 @@
                                   MaxDropDownHeight="220"/>
                     </StackPanel>
 
-                    <!-- 安装选项：隔离开关（CurseForge 不支持隔离） -->
-                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,10,0,0"
-                                Visibility="{Binding ModpackDetailIsCurseForge, Converter={StaticResource InvBoolToVisibility}}">
+                    <!-- 安装选项：隔离开关（整合包以独立版本隔离目录安装） -->
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,10,0,0">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding InstallIsolated, Mode=TwoWay}" VerticalAlignment="Center"/>
                         <TextBlock Text="隔离安装（独立 versions/&lt;包名&gt; 目录）" VerticalAlignment="Center"
                                    Margin="8,0,0,0" Foreground="{DynamicResource PrimaryForeground}"/>
                     </StackPanel>
-
-                    <!-- 来源提示（CurseForge 等） -->
-                    <TextBlock Grid.Row="5" Text="{Binding ModpackDetailSourceNote}" TextWrapping="Wrap" Margin="0,6,0,0"
-                               Foreground="{DynamicResource AccentBrush}" FontSize="12"
-                               Visibility="{Binding ModpackDetailSourceNote, Converter={StaticResource NonEmptyToVisibility}}"/>
 
                     <!-- 描述 -->
                     <ScrollViewer Grid.Row="6" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0" MinHeight="40">

@@ -131,16 +131,13 @@ public class ModpackViewModel : ObservableObject
             var root = LauncherService.Instance.GameRoot;
 
             StatusMessage = $"正在导入 {Path.GetFileName(path)} …";
-            if (path.EndsWith(".mrpack", StringComparison.OrdinalIgnoreCase))
+            if (!path.EndsWith(".mrpack", StringComparison.OrdinalIgnoreCase))
             {
-                var installer = new ModpackInstaller(root, client, downloader, LauncherService.Instance);
-                await installer.InstallAsync(path);
+                StatusMessage = "仅支持 Modrinth .mrpack 整合包，CurseForge .zip 尚未接入。";
+                return;
             }
-            else
-            {
-                var installer = new CurseForgeModpackInstaller(root, client, downloader, LauncherService.Instance);
-                await installer.InstallAsync(path);
-            }
+            var installer = new ModpackInstaller(root, client, downloader, LauncherService.Instance);
+            await installer.InstallAsync(path);
             StatusMessage = $"整合包导入完成：{Path.GetFileName(path)}";
         }
         catch (Exception ex)

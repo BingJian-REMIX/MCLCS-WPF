@@ -104,13 +104,6 @@ public class LauncherProfile
     [JsonPropertyName("maxConcurrentDownloads")]
     public int MaxConcurrentDownloads { get; set; } = 8;
 
-    /// <summary>
-    /// CurseForge 整合包源的 API Key（用户自行申请，官方所有接口强制校验，不提供匿名层，
-    /// 且服务条款禁止在开源项目中分发共享密钥）。留空时 CurseForge 源在下载页不可选。
-    /// </summary>
-    [JsonPropertyName("curseforgeApiKey")]
-    public string? CurseForgeApiKey { get; set; }
-
     // ---- 外观（设置 → 外观）----
 
     [JsonPropertyName("themeColor")]
