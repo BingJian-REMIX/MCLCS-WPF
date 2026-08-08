@@ -1,7 +1,0 @@
-# 备份快照与历史归档不含一手源码，排除语言统计，避免仓库被误识别为 HTML
-dist/** linguist-vendored
-history/** linguist-vendored
-
-# 让 .sln / .csproj 等正确归类
-*.cs linguist-language=C#
-
