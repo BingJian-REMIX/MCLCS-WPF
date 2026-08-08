@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCLCS v1.0 · UI 预览</title>
+<style>
+  :root{
+    --win:#0F1115; --ctl:#1A1D24; --ctl-border:#2A2F3A; --ctl-hover:#252830;
+    --fg:#E6E6E6; --fg2:#9AA0A6; --accent:#3B82F6; --accent-hover:#2B6FE0;
+    --danger:#E74C3C; --input:#14161C; --prog-bg:#2A2F3A;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#07080b;font-family:system-ui,"Segoe UI","Microsoft YaHei",sans-serif;color:var(--fg)}
+  .window{max-width:1040px;margin:24px auto;background:var(--win);border:1px solid var(--ctl-border);border-radius:10px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .titlebar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0b0d11;border-bottom:1px solid var(--ctl-border)}
+  .titlebar .logo{width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,var(--accent),#7c3aed)}
+  .titlebar .title{font-weight:600;font-size:14px}
+  .titlebar .sub{color:var(--fg2);font-size:12px}
+  .traffic{margin-left:auto;display:flex;gap:7px}
+  .traffic i{width:11px;height:11px;border-radius:50%;display:block}
+  .traffic .r{background:#ff5f57}.traffic .y{background:#febc2e}.traffic .g{background:#28c840}
+
+  .tabs{display:flex;gap:2px;padding:0 10px;background:var(--win);border-bottom:1px solid var(--ctl-border)}
+  .tab{padding:12px 18px;cursor:pointer;color:var(--fg2);font-size:14px;border-bottom:2px solid transparent}
+  .tab:hover{color:var(--fg)}
+  .tab.active{color:var(--fg);border-bottom-color:var(--accent)}
+
+  .page{display:none;padding:18px}
+  .page.active{display:block}
+
+  .card{background:var(--ctl);border:1px solid var(--ctl-border);border-radius:8px;padding:14px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:14px}
+  .row{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap}
+  label{font-size:13px;color:var(--fg2);min-width:78px}
+  input[type=text],select,input[type=password]{background:var(--input);color:var(--fg);border:1px solid var(--ctl-border);border-radius:6px;padding:7px 9px;font-size:13px;outline:none}
+  input[type=text]:focus,select:focus,input[type=password]:focus{border-color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  .btn:hover{background:var(--accent-hover)}
+  .btn.alt{background:#3a5a8c}
+  .btn.alt:hover{background:#4a6fa8}
+  .btn:disabled{background:#3A3F4A;cursor:default;color:#777}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13px;margin:8px 0;cursor:pointer}
+  .radio{display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0;cursor:pointer}
+  .hint{color:var(--fg2);font-size:12px;line-height:1.6}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:#243; color:#7fd1a0;margin-left:6px}
+  .pill.dep{background:#3a2f12;color:#f0c36d}
+
+  .stats{display:flex;gap:12px}
+  .stat{flex:1;background:var(--ctl);border:1px solid var(--ctl-border);border-radius:8px;padding:14px}
+  .stat .v{font-size:22px;font-weight:700}
+  .stat .k{color:var(--fg2);font-size:12px;margin-top:4px}
+
+  .hscroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
+  .rcard{min-width:200px;background:var(--ctl);border:1px solid var(--ctl-border);border-radius:8px;padding:12px}
+  .rcard .icon{width:40px;height:40px;border-radius:8px;background:#222;margin-bottom:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .rcard .nm{font-weight:600;font-size:14px}
+  .rcard .ds{color:var(--fg2);font-size:12px;margin:6px 0;min-height:32px}
+  .rcard .meta{color:var(--fg2);font-size:11px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .tile{background:var(--ctl);border:1px solid var(--ctl-border);border-radius:8px;padding:14px;text-align:center;cursor:pointer}
+  .tile:hover{background:var(--ctl-hover);border-color:var(--accent)}
+  .tile .ic{font-size:22px}
+  .tile .lb{font-size:13px;margin-top:8px}
+
+  .queue{display:flex;flex-direction:column;gap:8px}
+  .qitem{display:flex;align-items:center;gap:10px}
+  .qitem .nm{font-size:13px;min-width:160px}
+  .bar{flex:1;height:8px;background:var(--prog-bg);border-radius:6px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:var(--accent);width:0}
+
+  .settings{display:flex;gap:0}
+  .cats{width:150px;border-right:1px solid var(--ctl-border);padding-right:8px}
+  .cat{padding:10px 12px;cursor:pointer;color:var(--fg2);font-size:13px;border-radius:6px}
+  .cat:hover{background:var(--ctl-hover);color:var(--fg)}
+  .cat.active{background:var(--ctl);color:var(--fg);font-weight:600}
+  .panel{flex:1;padding:0 18px}
+  .panel .sec{display:none}
+  .panel .sec.active{display:block}
+  .led{width:11px;height:11px;border-radius:50%;display:inline-block;vertical-align:middle}
+  .led.green{background:#32d74b}.led.red{background:var(--danger)}.led.yellow{background:#f0c036}
+  .sub{color:var(--fg2);font-size:12px;margin:4px 0 0}
+  .hidden{display:none!important}
+  .statusbar{display:flex;gap:18px;padding:8px 14px;border-top:1px solid var(--ctl-border);background:#0b0d11;font-size:12px;color:var(--fg2)}
+  .statusbar b{color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="titlebar">
+    <span class="logo"></span>
+    <span class="title">MCLCS</span>
+    <span class="sub">v1.0 · Minecraft 启动器</span>
+    <span class="traffic"><i class="r"></i><i class="y"></i><i class="g"></i></span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-page="home">主页</div>
+    <div class="tab" data-page="download">下载</div>
+    <div class="tab" data-page="toolbox">工具箱</div>
+    <div class="tab" data-page="settings">设置</div>
+  </div>
+
+  <!-- 主页 -->
+  <div class="page active" id="home">
+    <div class="card">
+      <h3>快速启动</h3>
+      <div class="row"><label>版本</label>
+        <select><option>1.20.1（已安装）</option><option>26.1（已安装）</option><option>Fabric 1.20.1</option></select></div>
+      <div class="row"><label>用户名</label><input type="text" value="Steve" style="width:160px"></div>
+      <div class="row"><label>内存</label><input type="text" value="4096" style="width:90px"><span class="hint">MB</span></div>
+      <div class="row"><button class="btn">▶ 启动游戏</button></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="v">26.1</div><div class="k">最近游玩版本</div></div>
+      <div class="stat"><div class="v">12.4h</div><div class="k">本周游戏时长</div></div>
+      <div class="stat"><div class="v">2</div><div class="k">崩溃次数</div></div>
+    </div>
+
+    <div class="card">
+      <h3>智能推荐</h3>
+      <div class="hscroll">
+        <div class="rcard"><div class="icon">🧩</div><div class="nm">Fabric API <span class="pill dep">依赖补全</span></div>
+          <div class="ds">当前版本缺少前置，建议一键补全以兼容多数 Mod。</div>
+          <div class="meta">下载 9.2M · 推荐理由：缺失依赖</div></div>
+        <div class="rcard"><div class="icon">🌿</div><div class="nm">Sodium</div>
+          <div class="ds">主流优化模组，显著提升帧率且兼容 Fabric。</div>
+          <div class="meta">下载 1.1M · 推荐理由：性能优化</div></div>
+        <div class="rcard"><div class="icon">🖼️</div><div class="nm">Faithful 材质包</div>
+          <div class="ds">高清重绘原版风格，社区长期维护。</div>
+          <div class="meta">下载 3.4M · 推荐理由：画质提升</div></div>
+        <div class="rcard"><div class="icon">⚡</div><div class="nm">LaserCraft <span class="pill">生电</span></div>
+          <div class="ds">生电向科技整合，含自动化产线示例。</div>
+          <div class="meta">下载 5.0M · 推荐理由：玩法匹配</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下载 -->
+  <div class="page" id="download">
+    <div class="card">
+      <div class="row"><label>搜索</label><input type="text" placeholder="输入 Mod / 光影 / 材质包…" style="width:280px">
+        <select><option>全部版本</option><option>1.20.1</option><option>26.1</option></select>
+        <select><option>全部加载器</option><option>Fabric</option><option>Forge</option><option>Quilt</option><option>NeoForge</option></select>
+        <button class="btn">搜索</button></div>
+      <div class="row" style="gap:6px">
+        <span class="tab active" style="padding:6px 12px;border-radius:6px">Mod</span>
+        <span class="tab" style="padding:6px 12px;border-radius:6px;color:var(--fg2)">光影</span>
+        <span class="tab" style="padding:6px 12px;border-radius:6px;color:var(--fg2)">材质包</span>
+        <span class="tab" style="padding:6px 12px;border-radius:6px;color:var(--fg2)">整合包</span>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="rcard"><div class="icon">🧩</div><div class="nm">JEI</div><div class="ds">物品管理器，查看合成配方。</div><div class="meta">⭐ 4.9 · 12M</div></div>
+      <div class="rcard"><div class="icon">🌿</div><div class="nm">Sodium</div><div class="ds">性能优化。</div><div class="meta">⭐ 4.8 · 1.1M</div></div>
+      <div class="rcard"><div class="icon">🗺️</div><div class="nm">JourneyMap</div><div class="ds">小地图与全景地图。</div><div class="meta">⭐ 4.7 · 2.3M</div></div>
+      <div class="rcard"><div class="icon">🏠</div><div class="nm">Create</div><div class="ds">机械动力整合。</div><div class="meta">⭐ 4.9 · 8.0M</div></div>
+    </div>
+    <div class="card">
+      <h3>下载队列</h3>
+      <div class="queue">
+        <div class="qitem"><span class="nm">Sodium-1.20.1</span><span class="bar"><i id="b1" style="width:62%"></i></span><button class="btn alt" style="padding:4px 10px">暂停</button><button class="btn" style="padding:4px 10px;background:var(--danger)">取消</button></div>
+        <div class="qitem"><span class="nm">JEI-1.20.1</span><span class="bar"><i id="b2" style="width:24%"></i></span><button class="btn alt" style="padding:4px 10px">暂停</button><button class="btn" style="padding:4px 10px;background:var(--danger)">取消</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具箱 -->
+  <div class="page" id="toolbox">
+    <div class="grid">
+      <div class="tile"><div class="ic">📜</div><div class="lb">日志管理器</div></div>
+      <div class="tile"><div class="ic">💾</div><div class="lb">存档管理器</div></div>
+      <div class="tile"><div class="ic">🌱</div><div class="lb">种子库</div></div>
+      <div class="tile"><div class="ic">📷</div><div class="lb">截图管理器</div></div>
+      <div class="tile"><div class="ic">📈</div><div class="lb">性能监控</div></div>
+      <div class="tile"><div class="ic">🌐</div><div class="lb">网络诊断</div></div>
+      <div class="tile"><div class="ic">🔗</div><div class="lb">快捷方式</div></div>
+      <div class="tile"><div class="ic">🧹</div><div class="lb">冗余清理</div></div>
+      <div class="tile"><div class="ic">📦</div><div class="lb">整合包</div></div>
+      <div class="tile"><div class="ic">🤖</div><div class="lb">AI 助手</div></div>
+    </div>
+  </div>
+
+  <!-- 设置 -->
+  <div class="page" id="settings">
+    <div class="settings">
+      <div class="cats">
+        <div class="cat" data-sec="general">通用</div>
+        <div class="cat" data-sec="launch">启动</div>
+        <div class="cat" data-sec="download">下载</div>
+        <div class="cat" data-sec="recommend">推荐</div>
+        <div class="cat" data-sec="accounts">账号</div>
+        <div class="cat active" data-sec="ai">AI 助手</div>
+        <div class="cat" data-sec="appearance">外观</div>
+        <div class="cat" data-sec="about">关于</div>
+      </div>
+      <div class="panel">
+        <!-- AI 助手（重点） -->
+        <div class="sec active" id="sec-ai">
+          <h3 style="margin-top:0">AI 助手</h3>
+          <div class="chk"><input type="checkbox" id="aiOn"> <span>启用 AI 助手</span></div>
+          <div class="hint">开启后可选本地部署或外部 API，用于崩溃分析、Mod 推荐翻译等场景。</div>
+
+          <div id="aiDetails" class="hidden" style="margin-top:14px">
+            <h3 style="font-size:14px">部署方式</h3>
+            <label class="radio"><input type="radio" name="deploy" value="external" checked> 外部 API（填 Key 即用，零下载、零占用）</label>
+            <label class="radio"><input type="radio" name="deploy" value="local"> 本地部署（自动安装 Ollama + 轻量模型，约 1-3 GB 磁盘）</label>
+
+            <!-- 本地部署 -->
+            <div id="localPanel" class="hidden" style="margin-top:12px">
+              <h3 style="font-size:14px">本地部署（Ollama）</h3>
+              <div class="row"><span class="led red" id="ollamaLed"></span> <span id="ollamaState" class="hint">未检测到 Ollama</span></div>
+              <div id="installRow" class="row"><button class="btn" id="installBtn">一键安装 Ollama</button><span class="hint" id="installTxt"></span></div>
+              <div id="installProg" class="hidden row" style="width:100%"><div class="bar" style="flex:1"><i id="ollamaBar" style="width:0"></i></div><button class="btn" style="padding:4px 10px;background:var(--danger)">取消</button></div>
+
+              <div style="margin-top:12px">
+                <h3 style="font-size:14px">模型</h3>
+                <select id="modelSel">
+                  <option value="qwen">Qwen2.5-Coder-1.5B · 0.9GB · 【默认推荐】</option>
+                  <option value="internlm">InternLM2-1.8B · 1.1GB · 【长日志特化】</option>
+                  <option value="phi">Phi-3.5-mini-3.8B · 2.2GB · 【硬核高配】</option>
+                </select>
+                <div class="hint" id="modelSub">中文最优，体积最小，速度最快。覆盖 90% 的崩溃翻译与 Mod 推荐。</div>
+                <div class="row" style="margin-top:8px"><button class="btn" id="dlBtn">下载模型 (0.9GB)</button><span class="hint" id="dlTxt">已就绪</span></div>
+                <div id="dlProg" class="hidden row" style="width:100%;margin-top:6px"><div class="bar" style="flex:1"><i id="modelBar" style="width:0"></i></div><button class="btn" style="padding:4px 10px;background:var(--danger)">取消</button></div>
+              </div>
+
+              <div class="row" style="margin-top:12px"><span class="hint">服务状态：</span><span class="led red" id="svcLed"></span><span class="hint" id="svcTxt">未启动</span></div>
+            </div>
+
+            <!-- 外部 API -->
+            <div id="externalPanel" class="row" style="margin-top:12px;flex-direction:column;align-items:stretch">
+              <h3 style="font-size:14px">外部 API</h3>
+              <div class="row"><label>API 地址</label><input type="text" value="https://api.openai.com/v1/chat/completions" style="width:320px"></div>
+              <div class="row"><label>API Key</label><input type="password" value="sk-••••••••" style="width:320px"></div>
+              <div class="row"><label>模型</label><input type="text" value="gpt-4o-mini" style="width:160px"></div>
+              <div class="row"><button class="btn alt" style="width:110px">测试连接</button><span class="hint">连接成功后将按地址自动补全模型名</span></div>
+            </div>
+          </div>
+
+          <div id="aiFuncs" class="hidden" style="margin-top:16px">
+            <h3 style="font-size:14px">AI 功能</h3>
+            <label class="chk"><input type="checkbox" checked> 崩溃解读</label>
+            <label class="chk"><input type="checkbox" checked> 推荐理由生成</label>
+            <label class="chk"><input type="checkbox" checked> Mod 描述翻译</label>
+          </div>
+        </div>
+
+        <!-- 其它分类占位 -->
+        <div class="sec" id="sec-general"><h3 style="margin-top:0">通用</h3><div class="hint">语言 / 自启动 / 最小化托盘 / 动画效果</div></div>
+        <div class="sec" id="sec-launch"><h3 style="margin-top:0">启动</h3><div class="hint">默认内存 / 用户名 / 自动修复策略 / 存档兼容性检测</div></div>
+        <div class="sec" id="sec-download"><h3 style="margin-top:0">下载</h3><div class="hint">下载源偏好 / 最大并发 / 自动安装缺失前置 / 下载路径</div></div>
+        <div class="sec" id="sec-recommend"><h3 style="margin-top:0">推荐</h3><div class="hint">智能推荐模式 / 玩法偏好（生电·建筑·冒险·魔法·优化·辅助）</div></div>
+        <div class="sec" id="sec-accounts"><h3 style="margin-top:0">账号</h3><div class="hint">离线 / Microsoft / Authlib-Injector，多账号增删切换</div></div>
+        <div class="sec" id="sec-appearance"><h3 style="margin-top:0">外观</h3><div class="hint">主题色 / 背景图片 / 字体缩放</div></div>
+        <div class="sec" id="sec-about"><h3 style="margin-top:0">关于</h3><div class="hint">版本号 1.0.0 · 检查更新 · 开源许可</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <span>Java：<b>21.0.3</b></span>
+    <span>已装版本：<b>6</b></span>
+    <span>运行实例：<b>1</b></span>
+    <span>下载：<b id="sbDl">62%</b></span>
+    <span>网络：<b style="color:#32d74b">正常</b></span>
+  </div>
+</div>
+
+<script>
+  // 顶部标签页切换
+  document.querySelectorAll('.tab[data-page]').forEach(t=>{
+    t.onclick=()=>{
+      document.querySelectorAll('.tab[data-page]').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById(t.dataset.page).classList.add('active');
+    };
+  });
+
+  // 设置分类切换
+  document.querySelectorAll('.cat').forEach(c=>{
+    c.onclick=()=>{
+      document.querySelectorAll('.cat').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.panel .sec').forEach(s=>s.classList.remove('active'));
+      c.classList.add('active');
+      document.getElementById('sec-'+c.dataset.sec).classList.add('active');
+    };
+  });
+
+  // AI 助手分层交互
+  const aiOn=document.getElementById('aiOn');
+  const aiDetails=document.getElementById('aiDetails');
+  const aiFuncs=document.getElementById('aiFuncs');
+  aiOn.onchange=()=>{
+    const show=aiOn.checked;
+    aiDetails.classList.toggle('hidden',!show);
+    aiFuncs.classList.toggle('hidden',!show);
+  };
+
+  const deployRadios=document.querySelectorAll('input[name=deploy]');
+  const localPanel=document.getElementById('localPanel');
+  const externalPanel=document.getElementById('externalPanel');
+  function syncDeploy(){
+    const v=document.querySelector('input[name=deploy]:checked').value;
+    localPanel.classList.toggle('hidden', v!=='local');
+    externalPanel.classList.toggle('hidden', v!=='external');
+  }
+  deployRadios.forEach(r=>r.onchange=syncDeploy);
+
+  // 模型切换副文案
+  const modelSub=document.getElementById('modelSub');
+  const dlBtn=document.getElementById('dlBtn');
+  const subs={qwen:'中文最优，体积最小，速度最快。覆盖 90% 的崩溃翻译与 Mod 推荐。',
+    internlm:'2000 行以上超长崩溃日志分析更强，精准定位 Mod 冲突。',
+    phi:'复杂 Forge/Fabric 混合堆栈逻辑最强。建议内存 ≥ 16GB。'};
+  const sizes={qwen:'0.9GB',internlm:'1.1GB',phi:'2.2GB'};
+  document.getElementById('modelSel').onchange=function(){
+    modelSub.textContent=subs[this.value];
+    dlBtn.textContent='下载模型 ('+sizes[this.value]+')';
+    // 模拟：非默认模型先提示下载
+    dlTxt.textContent='需下载';
+    dlBtn.disabled=false;
+  };
+  const dlTxt=document.getElementById('dlTxt');
+  const dlProg=document.getElementById('dlProg');
+  const modelBar=document.getElementById('modelBar');
+  dlBtn.onclick=()=>{
+    dlProg.classList.remove('hidden'); dlTxt.textContent='下载中…'; dlBtn.disabled=true;
+    let p=0; const t=setInterval(()=>{p+=8; modelBar.style.width=Math.min(100,p)+'%';
+      if(p>=100){clearInterval(t); dlProg.classList.add('hidden'); dlTxt.textContent='已就绪'; dlBtn.textContent='已就绪';}},120);
+  };
+
+  // 一键安装 Ollama（模拟）
+  document.getElementById('installBtn').onclick=()=>{
+    document.getElementById('installRow').classList.add('hidden');
+    document.getElementById('installProg').classList.remove('hidden');
+    const bar=document.getElementById('ollamaBar'); let p=0;
+    const t=setInterval(()=>{p+=6; bar.style.width=Math.min(100,p)+'%';
+      if(p>=100){clearInterval(t);
+        document.getElementById('ollamaLed').className='led green';
+        document.getElementById('ollamaState').textContent='Ollama 已安装（0.1.2）';
+        document.getElementById('svcLed').className='led green';
+        document.getElementById('svcTxt').textContent='运行中';
+        document.getElementById('installProg').classList.add('hidden');
+      }},140);
+  };
+
+  // 下载队列进度动画
+  let b1=62,b2=24; const t1=setInterval(()=>{b1=Math.min(100,b1+1);document.getElementById('b1').style.width=b1+'%';
+    b2=Math.min(100,b2+2);document.getElementById('b2').style.width=b2+'%';
+    if(b1>=100&&b2>=100)clearInterval(t1);},400);
+  setInterval(()=>{const v=Math.min(100,Math.round((b1+b2)/2));document.getElementById('sbDl').textContent=v+'%';},400);
+</script>
+</body>
+</html>
