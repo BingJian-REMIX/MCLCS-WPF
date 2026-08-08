@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!--
+      刻意不启用 UseWindowsForms：该开关会注入 System.Drawing 与 System.Windows.Forms 两个全局 using，
+      与 WPF 的 UserControl / Application / Brush / Point / Rectangle / MouseEventArgs 等类型大面积撞名（CS0104），
+      而全局 using 无法被文件级 using 遮蔽。选择文件夹改用 .NET 8 WPF 原生 Microsoft.Win32.OpenFolderDialog。
+    -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>2.4.2</Version>
+    <!-- 仅保留简体中文框架资源（zh-Hans），剔除其余语言卫星程序集，缩小发布体积 -->
+    <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
+    <RootNamespace>MCLCS.App</RootNamespace>
+    <AssemblyName>MCLCS.App</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MCLCS.Core\MCLCS.Core.csproj" />
+  </ItemGroup>
+
+  <!-- PNG UI 图标：编译进程序集（Resource），不复制到输出目录，运行时不可被直接篡改/读取。
+       嵌入 1x（light/dark）与 2x 高清（light@2x/dark@2x），后者供“适配高分辨率屏幕”开关启用。 -->
+  <ItemGroup>
+    <Resource Include="Resources\Icons\light\**\*.png" />
+    <Resource Include="Resources\Icons\dark\**\*.png" />
+    <Resource Include="Resources\Icons\light@2x\**\*.png" />
+    <Resource Include="Resources\Icons\dark@2x\**\*.png" />
+  </ItemGroup>
+
+</Project>
