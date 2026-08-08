@@ -11,7 +11,7 @@
     -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>2.1.0</Version>
+    <Version>2.4.1</Version>
     <RootNamespace>MCLCS.App</RootNamespace>
     <AssemblyName>MCLCS.App</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
