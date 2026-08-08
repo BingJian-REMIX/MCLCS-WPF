@@ -31,6 +31,30 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 
 > 更完整的历史快照见 `history/`。
 
+## 下载与安装
+
+发布包（v2.4.2）同时包含 GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`），提供两种形态：
+
+| 包 | 说明 | 依赖 |
+|---|---|---|
+| `MCLCS-v2.4.2-portable.zip` | GUI + CLI，依赖 .NET 8 运行时 | 需先安装 [.NET 8 运行时](https://dotnet.microsoft.com/download/dotnet/8.0/runtime) |
+| `MCLCS-v2.4.2-singlefile.zip.00` / `.01` | 自包含免运行时版（各含完整 .NET 运行时） | 无需任何依赖 |
+
+> **single-file 分卷说明**：自包含包约 128MB，超过多数平台单文件附件上限（100MB），故按 90MB 切分为 `.00` / `.01` 两个分卷。该切分为**字节级精确**，合并后即还原为原始 ZIP，任意解压工具均可使用。
+
+**合并分卷**：
+
+- Windows（CMD / PowerShell）：
+  ```powershell
+  copy /b MCLCS-v2.4.2-singlefile.zip.00 + MCLCS-v2.4.2-singlefile.zip.01 MCLCS-v2.4.2-singlefile.zip
+  ```
+- Linux / macOS：
+  ```bash
+  cat MCLCS-v2.4.2-singlefile.zip.* > MCLCS-v2.4.2-singlefile.zip
+  ```
+
+合并得到 `MCLCS-v2.4.2-singlefile.zip`，解压后即可使用。发布包归档于 `history` 分支的 `dist/`，作为对应 Release 的附件。
+
 ## 编译与发布
 
 - **环境**：Windows + .NET 8 SDK（WPF 仅 Windows 运行）。

@@ -80,8 +80,19 @@ cp -r gui-singlefile/* "MCLCS-v2.4.2-singlefile/"
 cp -r cli-singlefile/* "MCLCS-v2.4.2-singlefile/"
 zip -r "MCLCS-v2.4.2-singlefile.zip" "MCLCS-v2.4.2-singlefile/" > /dev/null
 
+# single-file 自包含包约 128MB，超过多数平台附件上限（100MB），
+# 按 90MB 做字节级精确切分（split，无 marker，合并即还原原 zip）。
+echo "=== Splitting single-file into volumes (90MB each) ==="
+SPLIT_SIZE=90m
+rm -f "MCLCS-v2.4.2-singlefile.zip."*
+split -b "$SPLIT_SIZE" -d -a 2 "MCLCS-v2.4.2-singlefile.zip" "MCLCS-v2.4.2-singlefile.zip."
+rm -f "MCLCS-v2.4.2-singlefile.zip"   # 删除中间大包，仅保留分卷
+
 echo "=== Done ==="
-ls -la "$OUT"/*.zip
+ls -la "$OUT"/*.zip*
 echo ""
-echo "Portable ZIP:  $(du -h "$OUT/MCLCS-v2.4.2-portable.zip" | cut -f1)"
-echo "SingleZIP:     $(du -h "$OUT/MCLCS-v2.4.2-singlefile.zip" | cut -f1)"
+echo "Portable ZIP:     $(du -h "$OUT/MCLCS-v2.4.2-portable.zip" | cut -f1)"
+echo "Single-file 分卷: $(du -h "$OUT"/MCLCS-v2.4.2-singlefile.zip.* | cut -f1 | tr '\n' ' ')"
+echo ""
+echo "合并命令 (Linux/macOS): cat MCLCS-v2.4.2-singlefile.zip.* > MCLCS-v2.4.2-singlefile.zip"
+echo "合并命令 (Windows):     copy /b MCLCS-v2.4.2-singlefile.zip.00+MCLCS-v2.4.2-singlefile.zip.01 MCLCS-v2.4.2-singlefile.zip"
