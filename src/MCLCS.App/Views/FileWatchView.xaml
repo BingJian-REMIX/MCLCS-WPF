@@ -1,0 +1,112 @@
+<UserControl x:Class="MCLCS.App.Views.FileWatchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MCLCS.App.ViewModels"
+             xmlns:core="clr-namespace:MCLCS.Core.Toolbox;assembly=MCLCS.Core">
+    <UserControl.DataContext>
+        <vm:FileWatchViewModel/>
+    </UserControl.DataContext>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- 工具栏 -->
+            <RowDefinition Height="*"/>      <!-- 变更列表 -->
+            <RowDefinition Height="Auto"/>   <!-- 状态 -->
+        </Grid.RowDefinitions>
+
+        <!-- ===== 工具栏 ===== -->
+        <WrapPanel Grid.Row="0" Margin="0,0,0,10" Orientation="Horizontal">
+            <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
+                          IsChecked="{Binding FileWatchEnabled, Mode=TwoWay}"/>
+            <TextBlock Text="文件变更检测" VerticalAlignment="Center" Margin="8,0,24,0"
+                       Foreground="{DynamicResource PrimaryForeground}"/>
+
+            <Button Content="重新扫描" Command="{Binding RefreshCommand}"
+                    Style="{StaticResource PrimaryButtonStyle}" Padding="14,4" Margin="0,0,8,0"/>
+            <Button Content="标记为已知" Command="{Binding ResetBaselineCommand}"
+                    Width="92" Padding="0,4"/>
+        </WrapPanel>
+
+        <!-- ===== 变更列表 ===== -->
+        <Border Grid.Row="1" BorderBrush="{DynamicResource ListViewBorder}" BorderThickness="1" CornerRadius="6">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="{DynamicResource ListViewHeaderBackground}" Padding="10,5">
+                    <TextBlock Text="{Binding Summary}" FontSize="11"
+                               Foreground="{DynamicResource SecondaryForeground}"/>
+                </Border>
+
+                <ListBox Grid.Row="1" ItemsSource="{Binding Changes}"
+                         Background="{DynamicResource ListViewBackground}" BorderThickness="0"
+                         HorizontalContentAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 变更类型徽标 -->
+                                <Border Grid.Column="0" CornerRadius="3" Padding="7,1" VerticalAlignment="Top"
+                                        Margin="0,1,8,0">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static core:FileChangeKind.Added}">
+                                                    <Setter Property="Background" Value="#4CAF50"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static core:FileChangeKind.Removed}">
+                                                    <Setter Property="Background" Value="#E74C3C"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static core:FileChangeKind.Modified}">
+                                                    <Setter Property="Background" Value="#FF9800"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding KindText}" FontSize="10" Foreground="White"/>
+                                </Border>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding Path}" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Detail}" FontSize="11"
+                                               Foreground="{DynamicResource SecondaryForeground}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Visibility="{Binding Detail, Converter={StaticResource NonEmptyToVis}}"/>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- 空状态 -->
+                <TextBlock Grid.Row="1" Text="没有未确认的变更。把 Mod / 资源包 / 光影丢进对应目录，再点「重新扫描」即可看到。"
+                           Foreground="{DynamicResource SecondaryForeground}" FontSize="12"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                           MaxWidth="420" TextAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Changes.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Margin="0,6,0,0"
+                   Foreground="{DynamicResource StatusForeground}" TextWrapping="Wrap"/>
+    </Grid>
+</UserControl>
