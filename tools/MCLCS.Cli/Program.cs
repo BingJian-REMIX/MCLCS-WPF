@@ -25,9 +25,21 @@ internal static class Program
             "modpack" => await Modpack(remaining),
             "skin" => await Skin(remaining),
             "version" => Version(),
-            "help" or "--help" or "-h" => { PrintHelp(); return 0; },
-            _ => { Console.Error.WriteLine($"未知命令: {cmd}。运行 mclcs help 查看帮助。"); return 1; }
+            "help" or "--help" or "-h" => PrintHelpReturn(),
+            _ => UnknownCommand(cmd)
         };
+    }
+
+    private static int PrintHelpReturn()
+    {
+        PrintHelp();
+        return 0;
+    }
+
+    private static int UnknownCommand(string cmd)
+    {
+        Console.Error.WriteLine($"未知命令: {cmd}。运行 mclcs help 查看帮助。");
+        return 1;
     }
 
     private static async Task<int> Launch(string[] args)
@@ -305,7 +317,7 @@ internal static class Program
         Console.WriteLine($"默认游戏目录: {GameConstants.DefaultGameRoot}");
     }
 
-    private class CliLogger : MCLCS.Core.Installers.ILogger
+    private class CliLogger : MCLCS.Core.Download.ILogger
     {
         public void Log(string msg) => Console.WriteLine($"[MCLCS] {msg}");
     }

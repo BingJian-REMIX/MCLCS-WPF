@@ -139,57 +139,57 @@ public static class Sidebar
     /// <summary>下载页副标签（规格 2.2 + Minecraft 版本下载）。</summary>
     public static IReadOnlyList<SidebarItem> Download { get; } = new List<SidebarItem>
     {
-        new("minecraft",    "Minecraft", "download", 0),
-        new("mod",          "Mod",    "mod",  1),
-        new("shader",       "光影",   "shader", 2),
-        new("resourcepack", "材质包", "tex",    3),
-        new("modpack",      "整合包", "pack",  4),
-        new("map",          "地图",   "map",      5)
+        new("minecraft",    "tab.minecraft",    "download", 0),
+        new("mod",          "tab.mods",         "mod",      1),
+        new("shader",       "tab.shader",       "shader",   2),
+        new("resourcepack", "tab.resourcepack", "tex",      3),
+        new("modpack",      "lbl.modpack",      "pack",     4),
+        new("map",          "tab.map",          "map",      5)
     };
 
     /// <summary>工具箱页副标签（规格 2.3，种子库已移除并并入存档管理器）。</summary>
     public static IReadOnlyList<SidebarItem> Toolbox { get; } = new List<SidebarItem>
     {
         // 诊断与排障
-        new("log",        "日志管理器",     "log", 0,  "诊断与排障"),
-        new("crash",      "崩溃分析",       "bug",       1,  "诊断与排障"),
-        new("perf",       "性能监控",       "perf",     2,  "诊断与排障"),
-        new("network",    "网络诊断",       "net",   3,  "诊断与排障"),
-        new("filewatch",  "文件变更检测",   "fcd",    4,  "诊断与排障"),
-        new("datapack",   "数据包冲突检测", "dp",    5,  "诊断与排障"),
+        new("log",        "tool.log",        "log",       0, "tool.group.diag"),
+        new("crash",      "tool.crash",      "bug",       1, "tool.group.diag"),
+        new("perf",       "tool.perf",       "perf",      2, "tool.group.diag"),
+        new("network",    "tool.network",    "net",       3, "tool.group.diag"),
+        new("filewatch",  "tool.filewatch",  "fcd",       4, "tool.group.diag"),
+        new("datapack",   "tool.datapack",   "dp",        5, "tool.group.diag"),
 
         // 资源与内容
-        new("saves",      "存档管理器",     "save", 6,  "资源与内容"),
-        new("backup",     "备份管理器",     "backup",   7,  "资源与内容"),
-        new("screenshot", "截图管理器",     "shot", 8,  "资源与内容"),
-        new("clean",      "清理冗余文件",   "clean", 9,  "资源与内容"),
-        new("modpackio",  "整合包导入导出", "modpack",   10, "资源与内容"),
-        new("music",      "音乐播放器",     "music", 11, "资源与内容"),
+        new("saves",      "tool.saves",      "save",      6, "tool.group.resource"),
+        new("backup",     "tool.backup",     "backup",    7, "tool.group.resource"),
+        new("screenshot", "tool.screenshot", "shot",      8, "tool.group.resource"),
+        new("clean",      "tool.clean",      "clean",     9, "tool.group.resource"),
+        new("modpackio",  "tool.modpackio",  "modpack",  10, "tool.group.resource"),
+        new("music",      "tool.music",      "music",    11, "tool.group.resource"),
 
-        // 开发工具（四个子项 moddev/packmaker/nbt/command 统一用 dev 图标，全局侧边栏点击均归入「开发工具」面板）
-        new("moddev",     "Mod 开发环境",   "dev",   12, "开发工具"),
-        new("packmaker",  "资源包创建器",   "dev",   13, "开发工具"),
-        new("nbt",        "NBT 编辑器",     "dev",   14, "开发工具"),
-        new("command",    "命令语法表",     "dev",   15, "开发工具"),
-        new("skin",       "皮肤编辑器",     "skin",     16, "开发工具"),
-        new("shortcut",   "快捷方式生成器", "shortcut",  17, "开发工具"),
+        // 开发工具
+        new("moddev",     "tool.moddev",     "dev",      12, "tool.group.dev"),
+        new("packmaker",  "tool.packmaker",  "dev",      13, "tool.group.dev"),
+        new("nbt",        "tool.nbt",        "dev",      14, "tool.group.dev"),
+        new("command",    "tool.command",    "dev",      15, "tool.group.dev"),
+        new("skin",       "tool.skin",       "skin",     16, "tool.group.dev"),
+        new("shortcut",   "tool.shortcut",   "shortcut", 17, "tool.group.dev"),
 
         // 其他
-        new("afk",        "挂机工作流",     "flowchart", 18, "其他"),
-        new("aichat",     "AI 助手",        "ai",   19, "其他")
+        new("afk",        "tool.afk",        "flowchart",18, "tool.group.other"),
+        new("aichat",     "tool.aichat",     "ai",       19, "tool.group.other")
     };
 
     /// <summary>设置页副标签（规格 2.4）。</summary>
     public static IReadOnlyList<SidebarItem> Settings { get; } = new List<SidebarItem>
     {
-        new("general",    "通用", "general",  0),
-        new("launch",     "启动", "launch",    1),
-        new("download",   "下载", "download", 2),
-        new("recommend",  "推荐", "recommend",  3),
-        new("account",    "账号", "account", 4),
-        new("ai",         "AI",   "ai",   5),
-        new("appearance", "外观", "appearance", 6),
-        new("about",      "关于", "about",    7, bottom: true)
+        new("general",    "settings.general",    "general",    0),
+        new("launch",     "settings.launch",     "launch",     1),
+        new("download",   "settings.download",   "download",   2),
+        new("recommend",  "settings.recommend",  "recommend",  3),
+        new("account",    "settings.account",    "account",    4),
+        new("ai",         "settings.ai",         "ai",         5),
+        new("appearance", "settings.appearance", "appearance", 6),
+        new("about",      "settings.about",      "about",      7, bottom: true)
     };
 
     /// <summary>游戏页无侧边栏（规格 2.1）。</summary>

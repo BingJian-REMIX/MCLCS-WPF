@@ -38,7 +38,7 @@
                      Margin="12,0" Padding="8,4" FontSize="12"
                      Background="#30FFFFFF" Foreground="White" CaretBrush="White"
                      BorderBrush="#40FFFFFF" BorderThickness="1"
-                     ToolTip="搜索 Mod / 地图 / 设置项…  回车搜索"
+                     ToolTip="{theme:Loc dl.search_hint}"
                      KeyDown="GlobalSearch_KeyDown"/>
 
             <!-- 四色索引贴主标签 -->
@@ -140,11 +140,11 @@
             </StatusBarItem>
             <StatusBarItem DockPanel.Dock="Left">
                 <TextBlock Margin="12,0,0,0"
-                           Text="{Binding InstalledCount, Source={x:Static vm:StatusBarViewModel.Current}, StringFormat=已安装 {0} 个版本}"/>
+                           Text="{Binding InstalledCountText, Source={x:Static vm:StatusBarViewModel.Current}}"/>
             </StatusBarItem>
             <StatusBarItem DockPanel.Dock="Left">
                 <TextBlock Margin="12,0,0,0"
-                           Text="{Binding RunningInstances, Source={x:Static vm:StatusBarViewModel.Current}, StringFormat=运行 {0} 个实例}"/>
+                           Text="{Binding RunningInstancesText, Source={x:Static vm:StatusBarViewModel.Current}}"/>
             </StatusBarItem>
             <StatusBarItem DockPanel.Dock="Left">
                 <StackPanel Orientation="Horizontal" Margin="12,0,0,0">

@@ -81,7 +81,7 @@ public class LauncherProfile
     // ---- 通用（设置 → 通用）----
 
     [JsonPropertyName("language")]
-    public string Language { get; set; } = "zh-CN";
+    public string Language { get; set; } = "zh_CN";
 
     [JsonPropertyName("autoStartLauncher")]
     public bool AutoStartLauncher { get; set; }

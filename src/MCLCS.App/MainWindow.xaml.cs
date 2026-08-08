@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using MCLCS.Core.Localization;
 using MCLCS.Core.Profiles;
 using MCLCS.Core.UI;
 using MCLCS.Core.Utils;
@@ -47,6 +48,17 @@ public partial class MainWindow : Window
 
         _sidebarState.SwitchOwner(MainTabKind.Game);
         BuildSidebar(MainTabKind.Game);
+
+        // 语言切换时刷新主标签与侧边栏标题
+        LocaleManager.LocaleChanged += _ => Dispatcher.Invoke(() =>
+        {
+            BuildTabs();
+            ApplyTabLayout(_currentKind);
+            SetTabTheme(_currentKind);
+            BuildSidebar(_sidebarState.Owner);
+            if (!string.IsNullOrEmpty(_sidebarState.SelectedId))
+                UpdateSidebarSelection();
+        });
 
         PageHost.Content = _pages[MainTabKind.Game];
         _currentKind = MainTabKind.Game;
@@ -121,7 +133,7 @@ public partial class MainWindow : Window
             };
             var title = new TextBlock
             {
-                Text = def.Title,
+                Text = LocaleManager.T(def.Title),
                 Foreground = Brushes.White,
                 FontSize = 13,
                 Margin = new Thickness(0, 0, 0, 0),
@@ -238,7 +250,7 @@ public partial class MainWindow : Window
             var icon = new PngIcon { Token = it.Icon, Size = 18 };
             var title = new TextBlock
             {
-                Text = it.Title,
+                Text = LocaleManager.T(it.Title),
                 Foreground = (Brush)FindResource("SecondaryForeground"),
                 FontSize = 13,
                 Margin = new Thickness(10, 0, 0, 0),

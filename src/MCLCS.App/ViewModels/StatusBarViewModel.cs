@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Net.Http;
+using System.Windows;
 using System.Windows.Input;
 using MCLCS.Core.Launcher;
+using MCLCS.Core.Localization;
 using MCLCS.Core.MultiInstance;
 using MCLCS.Core.Mvvm;
 using MCLCS.Core.Toolbox;
@@ -80,13 +82,24 @@ public class StatusBarViewModel : ObservableObject
 
     public ICommand RefreshCommand { get; }
 
+    // ---- 本地化属性（用于 StringFormat 替换） ----
+    public string InstalledCountText => LocaleManager.Tf("status.installed", InstalledCount);
+    public string RunningInstancesText => LocaleManager.Tf("status.running", RunningInstances);
+
     public StatusBarViewModel()
     {
         RefreshCommand = new AsyncRelayCommand(_ => RefreshAsync());
+        LocaleManager.LocaleChanged += _ =>
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                OnPropertyChanged(nameof(InstalledCountText));
+                OnPropertyChanged(nameof(RunningInstancesText));
+            });
+        };
         _ = RefreshAsync();
     }
 
-    /// <summary>重新探测 Java、已装版本数、运行实例数，并异步探测网络。</summary>
     public async Task RefreshAsync()
     {
         try
@@ -97,7 +110,7 @@ public class StatusBarViewModel : ObservableObject
             var java = await JavaDetector.FindBestAsync(GameConstants.MinimumJavaMajorVersion);
             JavaVersionText = java is not null
                 ? $"Java {java.MajorVersion}"
-                : $"未检测到 (需 Java {GameConstants.MinimumJavaMajorVersion}+)";
+                : LocaleManager.Tf("status.no_java", GameConstants.MinimumJavaMajorVersion);
         }
         catch
         {

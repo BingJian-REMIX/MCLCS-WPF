@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:MCLCS.App.ViewModels"
-             xmlns:conv="clr-namespace:MCLCS.App.Converters">
+             xmlns:conv="clr-namespace:MCLCS.App.Converters"
+             xmlns:theme="clr-namespace:MCLCS.App.Themes">
     <UserControl.DataContext>
         <vm:SettingsViewModel/>
     </UserControl.DataContext>
@@ -15,14 +16,14 @@
         <!-- 左侧分类导航 -->
         <ListBox x:Name="CategoryList" Grid.Column="0" SelectionChanged="CategoryList_SelectionChanged"
                  Background="{DynamicResource ControlBackground}" BorderBrush="{DynamicResource ControlBorder}">
-            <ListBoxItem Tag="General" Content="通用"/>
-            <ListBoxItem Tag="Launch" Content="启动"/>
-            <ListBoxItem Tag="Download" Content="下载"/>
-            <ListBoxItem Tag="Recommend" Content="推荐"/>
-            <ListBoxItem Tag="Accounts" Content="账号"/>
-            <ListBoxItem Tag="Ai" Content="AI 助手"/>
-            <ListBoxItem Tag="Appearance" Content="外观"/>
-            <ListBoxItem Tag="About" Content="关于"/>
+            <ListBoxItem Tag="General" Content="{theme:Loc settings.general}"/>
+            <ListBoxItem Tag="Launch" Content="{theme:Loc game.btn_start}"/>
+            <ListBoxItem Tag="Download" Content="{theme:Loc settings.download}"/>
+            <ListBoxItem Tag="Recommend" Content="{theme:Loc settings.recommend}"/>
+            <ListBoxItem Tag="Accounts" Content="{theme:Loc settings.account}"/>
+            <ListBoxItem Tag="Ai" Content="{theme:Loc tool.aichat}"/>
+            <ListBoxItem Tag="Appearance" Content="{theme:Loc settings.appearance}"/>
+            <ListBoxItem Tag="About" Content="{theme:Loc settings.about}"/>
         </ListBox>
 
         <ScrollViewer Grid.Column="1" Margin="12,0,0,0" VerticalScrollBarVisibility="Auto">
@@ -34,30 +35,30 @@
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="通用" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="0" Text="{theme:Loc settings.general}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
-                        <TextBlock Text="语言：" VerticalAlignment="Center" Width="90"/>
+                        <TextBlock Text="{theme:Loc settings.lang}" VerticalAlignment="Center" Width="90"/>
                         <ComboBox Width="140" SelectedValue="{Binding SelectedLanguage}" SelectedValuePath="Tag">
-                            <ComboBoxItem Content="简体中文" Tag="zh_CN"/>
-                            <ComboBoxItem Content="English" Tag="en_US"/>
+                            <ComboBoxItem Content="{theme:Loc lbl.chinese}" Tag="zh_CN"/>
+                            <ComboBoxItem Content="{theme:Loc lbl.english}" Tag="en_US"/>
                         </ComboBox>
                     </StackPanel>
                     <WrapPanel Grid.Row="2" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding AutoStartLauncher, Mode=TwoWay}"/>
-                        <TextBlock Text="随系统启动" VerticalAlignment="Center" Margin="8,0,0,0"
+                        <TextBlock Text="{theme:Loc settings.autostart}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
                     <WrapPanel Grid.Row="3" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding MinimizeToTray, Mode=TwoWay}"/>
-                        <TextBlock Text="最小化到托盘" VerticalAlignment="Center" Margin="8,0,0,0"
+                        <TextBlock Text="{theme:Loc settings.minimize_tray}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
                     <WrapPanel Grid.Row="4" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding AnimationsEnabled, Mode=TwoWay}"/>
-                        <TextBlock Text="启用界面动画" VerticalAlignment="Center" Margin="8,0,0,0"
+                        <TextBlock Text="{theme:Loc settings.animations}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
                     <WrapPanel Grid.Row="5" Margin="0,4">
@@ -69,7 +70,7 @@
                     <WrapPanel Grid.Row="6" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding FileWatchEnabled, Mode=TwoWay}"/>
-                        <TextBlock Text="文件变更检测" VerticalAlignment="Center" Margin="8,0,0,0"
+                        <TextBlock Text="{theme:Loc tool.filewatch}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
                 </Grid>
@@ -82,9 +83,9 @@
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="启动" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="0" Text="{theme:Loc game.btn_start}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
-                        <TextBlock Text="Java 路径：" VerticalAlignment="Center" Width="90"/>
+                        <TextBlock Text="{theme:Loc settings.java_path}" VerticalAlignment="Center" Width="90"/>
                         <TextBox Text="{Binding JavaPath, UpdateSourceTrigger=PropertyChanged}" Width="300"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}"/>
                         <Button Content="自动检测" Command="{Binding AutoDetectJavaCommand}" Width="80" Margin="8,0,0,0" Padding="0,2"/>
@@ -108,28 +109,28 @@
                         <TextBlock Text="崩溃自动修复：" VerticalAlignment="Center" Width="90"/>
                         <ComboBox Width="150" SelectedValue="{Binding SelectedRepairPolicy}" SelectedValuePath="Tag">
                             <ComboBoxItem Content="始终开启" Tag="Always"/>
-                            <ComboBoxItem Content="每次询问" Tag="Ask"/>
+                            <ComboBoxItem Content="{theme:Loc settings.repair_ask}" Tag="Ask"/>
                             <ComboBoxItem Content="始终拒绝" Tag="Never"/>
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="Java 源：" VerticalAlignment="Center" Width="90"/>
                         <ComboBox Width="150" SelectedValue="{Binding SelectedJavaVendor}" SelectedValuePath="Tag">
-                            <ComboBoxItem Content="自动" Tag="Auto"/>
+                            <ComboBoxItem Content="{theme:Loc settings.dl_mirror_auto}" Tag="Auto"/>
                             <ComboBoxItem Content="Temurin" Tag="Temurin"/>
                             <ComboBoxItem Content="Oracle" Tag="Oracle"/>
                         </ComboBox>
                         <TextBlock Text="缺失前置：" VerticalAlignment="Center" Width="70" Margin="12,0,0,0"/>
                         <ComboBox Width="120" SelectedValue="{Binding SelectedAutoInstallMods}" SelectedValuePath="Tag">
                             <ComboBoxItem Content="开启" Tag="Always"/>
-                            <ComboBoxItem Content="询问" Tag="Ask"/>
-                            <ComboBoxItem Content="关闭" Tag="Never"/>
+                            <ComboBoxItem Content="{theme:Loc settings.auto_deps_ask}" Tag="Ask"/>
+                            <ComboBoxItem Content="{theme:Loc settings.auto_deps_off}" Tag="Never"/>
                         </ComboBox>
                     </StackPanel>
                     <WrapPanel Grid.Row="7" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding PrewarmEnabled, Mode=TwoWay}"/>
-                        <TextBlock Text="启动预热" VerticalAlignment="Center" Margin="8,0,0,0"
+                        <TextBlock Text="{theme:Loc settings.prewarm}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
                     <WrapPanel Grid.Row="8" Margin="0,4">
@@ -153,7 +154,7 @@
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="下载" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="0" Text="{theme:Loc settings.download}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="下载源优先：" VerticalAlignment="Center" Width="90"/>
                         <ComboBox Width="150" SelectedValue="{Binding SelectedDownloadSource}" SelectedValuePath="Tag">
@@ -175,7 +176,7 @@
                     <WrapPanel Grid.Row="5" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding ServerPackCacheEnabled, Mode=TwoWay}"/>
-                        <TextBlock Text="服务器资源包缓存" VerticalAlignment="Center" Margin="8,0,0,0"
+                        <TextBlock Text="{theme:Loc settings.server_pack_cache}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
                 </Grid>
@@ -185,13 +186,13 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="智能推荐" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="0" Text="{theme:Loc game.recommend}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="推荐总开关：" VerticalAlignment="Center" Width="90"/>
                         <ComboBox Width="150" SelectedValue="{Binding SelectedIntelliRecommend}" SelectedValuePath="Tag">
                             <ComboBoxItem Content="启用推荐" Tag="Enabled"/>
                             <ComboBoxItem Content="仅本地" Tag="LocalOnly"/>
-                            <ComboBoxItem Content="禁用" Tag="Disabled"/>
+                            <ComboBoxItem Content="{theme:Loc settings.recommend_off}" Tag="Disabled"/>
                         </ComboBox>
                     </StackPanel>
                     <ItemsControl Grid.Row="2" ItemsSource="{Binding CategoryPreferences}" Margin="0,8">
@@ -231,13 +232,13 @@
                     </ListBox>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8">
                         <Button Content="设为当前" Command="{Binding SetActiveAccountCommand}" Width="90" Padding="0,2"/>
-                        <Button Content="删除" Command="{Binding RemoveAccountCommand}" CommandParameter="{Binding SelectedAccount}" Width="80" Margin="8,0,0,0" Padding="0,2"/>
+                        <Button Content="{theme:Loc btn.delete}" Command="{Binding RemoveAccountCommand}" CommandParameter="{Binding SelectedAccount}" Width="80" Margin="8,0,0,0" Padding="0,2"/>
                         <Button Content="登录微软" Command="{Binding LoginMicrosoftCommand}" Width="90" Margin="8,0,0,0" Padding="0,2"/>
                     </StackPanel>
                     <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,6">
                         <TextBox Text="{Binding NewOfflineName, UpdateSourceTrigger=PropertyChanged}" Width="160"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}" VerticalContentAlignment="Center"/>
-                        <Button Content="添加离线账号" Command="{Binding AddOfflineAccountCommand}" Width="110" Margin="8,0,0,0" Padding="0,2"/>
+                        <Button Content="{theme:Loc settings.add_offline}" Command="{Binding AddOfflineAccountCommand}" Width="110" Margin="8,0,0,0" Padding="0,2"/>
                     </StackPanel>
                     <StackPanel Grid.Row="4" Margin="0,6">
                         <TextBlock Text="Authlib-Injector 账号" FontWeight="Bold" Margin="0,0,0,4"/>
@@ -247,7 +248,7 @@
                             <TextBox Text="{Binding AuthlibEmail, UpdateSourceTrigger=PropertyChanged}" Width="140" Margin="8,0,0,0"
                                      Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}" VerticalContentAlignment="Center"/>
                             <PasswordBox x:Name="AuthlibPw" Width="120" Margin="8,0,0,0"/>
-                            <Button Content="添加" Click="AddAuthlib_Click" Width="70" Margin="8,0,0,0" Padding="0,2"/>
+                            <Button Content="{theme:Loc btn.add}" Click="AddAuthlib_Click" Width="70" Margin="8,0,0,0" Padding="0,2"/>
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -264,14 +265,14 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="AI 助手" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="0" Text="{theme:Loc tool.aichat}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
 
                     <!-- 第一层：总开关 -->
                     <StackPanel Grid.Row="1" Margin="0,4">
                         <WrapPanel>
                             <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                           IsChecked="{Binding AiEnabled, Mode=TwoWay}"/>
-                            <TextBlock Text="启用 AI 助手" VerticalAlignment="Center" Margin="8,0,0,0"
+                            <TextBlock Text="{theme:Loc settings.ai_enable}" VerticalAlignment="Center" Margin="8,0,0,0"
                                        Foreground="{DynamicResource PrimaryForeground}"/>
                         </WrapPanel>
                         <TextBlock Text="开启后可选本地部署或外部 API，用于崩溃分析、Mod 推荐翻译等场景。"
@@ -309,7 +310,7 @@
                         <StackPanel Margin="0,4" Visibility="{Binding OllamaInstalling, Converter={x:Static vm:VisibilityHelper.BoolToVis}}">
                             <ProgressBar Value="{Binding OllamaInstallProgress, Mode=OneWay}" Height="16" Minimum="0" Maximum="1"
                                          Background="{DynamicResource ProgressBackground}" Foreground="{DynamicResource ProgressForeground}"/>
-                            <Button Content="取消" Command="{Binding CancelOllamaInstallCommand}" Width="80" Margin="0,4,0,0" HorizontalAlignment="Left"/>
+                            <Button Content="{theme:Loc btn.cancel}" Command="{Binding CancelOllamaInstallCommand}" Width="80" Margin="0,4,0,0" HorizontalAlignment="Left"/>
                         </StackPanel>
 
                         <!-- 模型选择 -->
@@ -345,7 +346,7 @@
                             <ProgressBar Value="{Binding ModelDownloadProgress, Mode=OneWay}" Height="16" Minimum="0" Maximum="1" Margin="0,4,0,0"
                                          Background="{DynamicResource ProgressBackground}" Foreground="{DynamicResource ProgressForeground}"
                                          Visibility="{Binding ModelDownloading, Converter={x:Static vm:VisibilityHelper.BoolToVis}}"/>
-                            <Button Content="取消" Command="{Binding CancelModelDownloadCommand}" Width="80" Margin="4,4,0,0" HorizontalAlignment="Left"
+                            <Button Content="{theme:Loc btn.cancel}" Command="{Binding CancelModelDownloadCommand}" Width="80" Margin="4,4,0,0" HorizontalAlignment="Left"
                                     Visibility="{Binding ModelDownloading, Converter={x:Static vm:VisibilityHelper.BoolToVis}}"/>
 
                             <!-- Ollama 服务状态 -->
@@ -376,7 +377,7 @@
 
                     <!-- 外部 API 面板 -->
                     <StackPanel Grid.Row="4" Visibility="{Binding ExternalDeployVisibility}" Margin="0,8">
-                        <TextBlock Text="外部 API" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <TextBlock Text="{theme:Loc settings.ai_external}" FontWeight="Bold" Margin="0,0,0,4"/>
                         <StackPanel Orientation="Horizontal" Margin="0,4">
                             <TextBlock Text="API 地址：" VerticalAlignment="Center" Width="90"/>
                             <TextBox Text="{Binding AiEndpoint, UpdateSourceTrigger=PropertyChanged}" Width="320"
@@ -392,7 +393,7 @@
                             <TextBox Text="{Binding AiModel, UpdateSourceTrigger=PropertyChanged}" Width="160"
                                      Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}"/>
                         </StackPanel>
-                        <Button Content="测试连接" Command="{Binding TestConnectionCommand}" Width="100" Margin="90,6,0,0" HorizontalAlignment="Left" Padding="6,3"/>
+                        <Button Content="{theme:Loc settings.ai_test}" Command="{Binding TestConnectionCommand}" Width="100" Margin="90,6,0,0" HorizontalAlignment="Left" Padding="6,3"/>
                     </StackPanel>
 
                     <!-- 第三层：功能子开关 -->
@@ -401,7 +402,7 @@
                         <WrapPanel Margin="0,2">
                             <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                           IsChecked="{Binding AiCrashInterpret, Mode=TwoWay}"/>
-                            <TextBlock Text="崩溃解读" VerticalAlignment="Center" Margin="8,0,0,0"
+                            <TextBlock Text="{theme:Loc settings.ai_crash}" VerticalAlignment="Center" Margin="8,0,0,0"
                                        Foreground="{DynamicResource PrimaryForeground}"/>
                         </WrapPanel>
                         <WrapPanel Margin="0,2">
@@ -425,7 +426,7 @@
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="外观" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="0" Text="{theme:Loc settings.appearance}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="主题：" VerticalAlignment="Center" Width="90"/>
                         <ComboBox Width="120" SelectedValue="{Binding SelectedTheme}" SelectedValuePath="Tag">
@@ -434,7 +435,7 @@
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4">
-                        <TextBlock Text="主题色：" VerticalAlignment="Center" Width="90"/>
+                        <TextBlock Text="{theme:Loc settings.theme_color}" VerticalAlignment="Center" Width="90"/>
                         <TextBox Text="{Binding ThemeColor, UpdateSourceTrigger=PropertyChanged}" Width="100"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}"/>
                         <Rectangle Width="24" Height="24" Margin="8,0,0,0" RadiusX="4" RadiusY="4"
@@ -454,7 +455,7 @@
                     <WrapPanel Grid.Row="5" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding HighDpiEnabled, Mode=TwoWay}"/>
-                        <TextBlock Text="适配高分辨率屏幕（启用 2x 图标）" VerticalAlignment="Center" Margin="8,0,0,0"
+                        <TextBlock Text="{theme:Loc settings.high_dpi}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
                 </Grid>
@@ -465,9 +466,9 @@
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="关于" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="0" Text="{theme:Loc settings.about}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <TextBlock Grid.Row="1" Margin="0,4">
-                        <Run Text="版本："/>
+                        <Run Text="{theme:Loc about.version}"/>
                         <Run Text="{Binding LauncherVersion}" FontWeight="Bold"/>
                     </TextBlock>
                     <WrapPanel Grid.Row="2" Margin="0,4">
@@ -476,7 +477,7 @@
                         <TextBlock Text="启动时自动检查更新" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
-                    <Button Grid.Row="3" Content="检查更新" Command="{Binding CheckUpdateCommand}" Width="100" HorizontalAlignment="Left" Padding="0,4" Margin="0,4"/>
+                    <Button Grid.Row="3" Content="{theme:Loc about.check_update}" Command="{Binding CheckUpdateCommand}" Width="100" HorizontalAlignment="Left" Padding="0,4" Margin="0,4"/>
                     <TextBlock Grid.Row="4" Text="{Binding UpdateMessage}" Foreground="{DynamicResource StatusForeground}" Margin="0,2,0,0"/>
                     <TextBlock Grid.Row="5" Margin="0,8,0,0" Foreground="{DynamicResource SecondaryForeground}" FontSize="11">
                         <Hyperlink NavigateUri="https://github.com/bingjianremix/MCLCS" RequestNavigate="OpenUrl_Click">

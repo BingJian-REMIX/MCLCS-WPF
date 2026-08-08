@@ -5,6 +5,9 @@ obj/
 *.suo
 *.vs/
 
+# 发布产物 (ZIP 包作为 release 附件，不提交源码库)
+dist/
+
 # 构建产物
 *.dll
 *.exe
