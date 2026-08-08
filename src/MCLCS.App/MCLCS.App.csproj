@@ -12,6 +12,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Version>2.4.1</Version>
+    <!-- 仅保留简体中文框架资源（zh-Hans），剔除其余语言卫星程序集，缩小发布体积 -->
+    <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
     <RootNamespace>MCLCS.App</RootNamespace>
     <AssemblyName>MCLCS.App</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
