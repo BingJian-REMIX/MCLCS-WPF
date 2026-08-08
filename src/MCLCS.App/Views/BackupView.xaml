@@ -1,12 +1,7 @@
 <UserControl x:Class="MCLCS.App.Views.BackupView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:vm="clr-namespace:MCLCS.App.ViewModels"
-             mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="900"
-             d:DataContext="{d:DesignInstance vm:BackupViewModel}">
+             xmlns:vm="clr-namespace:MCLCS.App.ViewModels">
     <UserControl.DataContext>
         <vm:BackupViewModel/>
     </UserControl.DataContext>

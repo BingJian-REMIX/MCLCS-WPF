@@ -1,15 +1,10 @@
 <UserControl x:Class="MCLCS.App.Views.SkinView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="clr-namespace:MCLCS.App.ViewModels"
              xmlns:ctrl="clr-namespace:MCLCS.App.Controls"
              xmlns:conv="clr-namespace:MCLCS.App.Converters"
-             xmlns:fw="clr-namespace:System.Windows.Controls;assembly=PresentationFramework"
-             mc:Ignorable="d"
-             d:DesignHeight="520" d:DesignWidth="920"
-             d:DataContext="{d:DesignInstance vm:SkinViewModel}">
+             xmlns:fw="clr-namespace:System.Windows.Controls;assembly=PresentationFramework">
     <UserControl.Resources>
         <fw:BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVisibility"/>

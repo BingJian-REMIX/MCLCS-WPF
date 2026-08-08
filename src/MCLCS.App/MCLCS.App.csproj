@@ -30,11 +30,4 @@
     <Resource Include="Resources\Icons\dark@2x\**\*.png" />
   </ItemGroup>
 
-  <!-- 解决 UseWPF 隐式 using 与代码同名类型冲突（CS0104）：
-       System.IO.Path vs System.Windows.Shapes.Path；MCLCS.Core.Toolbox.Track vs System.Windows.Controls.Primitives.Track -->
-  <ItemGroup>
-    <Using Include="Path" Alias="System.IO.Path" />
-    <Using Include="Track" Alias="MCLCS.Core.Toolbox.Track" />
-  </ItemGroup>
-
 </Project>
