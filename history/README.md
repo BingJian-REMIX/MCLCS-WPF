@@ -10,7 +10,7 @@
        └─ v0.1 – v1.1（WPF 起步 + 下载中心 + 崩溃修复）
             └─ v2.0 – v2.4（重写期：四色索引贴、工具箱、AI、皮肤编辑器）
                  └─ T0–T4 里程碑（见 dist/）
-                      └─ v2.2-final（当前主线，见仓库根 src/）
+                      └─ v2.4.1（当前主线，见仓库根 src/）
 ```
 
 ## 目录说明
@@ -20,8 +20,7 @@
 | `0.1-1.1/` | v0.2 / v0.3 / v0.5 / v1.0 / v1.1 的 HTML 运行快照、源码 zip、已完成功能清单。涵盖下载中心、Modrinth 接入、崩溃分析与智能修复、存档降级、多语言、暗亮主题的诞生。 |
 | `2.0-2.4/` | v2.0 / v2.1.0 / v2.2.3 / v2.4-final 的源码与运行快照，含 `v2.2.3-changelog.md`（Roslyn 在 Linux 沙箱交叉编译 WPF 的方法论原点）、`v2.3占位.md`。 |
 | `UI迭代/` | 早期纯 HTML 界面原型：`launcher.html` / `launcher2~4.html` / `launcher19.html` / `MCLCS-ui-preview.html`，用于验证索引贴、卡片流、侧边栏交互。 |
-| `像素茶艺地图站开放平台...html` | 地图下载 API 平台文档（整合进下载页地图子页的依据）。 |
-| `新会话交接提示词.md` | 跨会话交接模板，内含 **Roslyn 在 Linux 沙箱编译 net8.0-windows WPF** 的完整方法（参考程序集来源、全局 using 规则、XAML partial 桩），是后续在 Linux 验证 App 层 0 错误的关键。 |
+| `像素茶艺地图站开放平台...html` | 地图下载 API 平台文档 |
 | `123.md` | 早期零散笔记。 |
 | `批处理原型/` | MCLCS 最早的形态——纯 `.bat` / `.ps1` 手搓启动器：`mclb.bat`（主菜单/版本管理/启动）、`install_java.bat`（Java 自动安装）、`crash_analyzer.bat`（崩溃分析）、`mclb_downloader.ps1` / `mclb_launcher.ps1`（下载与启动）。C#/WPF 之前的真实雏形。 |
 
