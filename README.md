@@ -81,3 +81,11 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 | `dist/`（仅 `history` 分支） | 各版本发布包（ZIP），不随源码主线入库 |
 
 > 发布包（dist/）归档于 `history` 分支；源码主线（main）只包含当代源码与文档，不含构建产物。
+
+## 法律声明
+
+本软件以 **MIT 许可证** 开源发布，详见 `LICENSE`。
+
+- 本软件的分发物**不包含 Minecraft 核心游戏文件**（如版本 jar、assets、libraries）；这些资源由用户在运行游戏时从 **Mojang 官方源及其授权镜像**（如 BMCLAPI）按需下载，用户须持有合法的正版账号。
+- 外置登录（Authlib-Injector）仅用于 **littleskin 等皮肤站**及**用户自有 / 授权的私服**，不用于绕过正版验证。
+- 本项目与 Mojang / Microsoft 无关，非官方产品。
