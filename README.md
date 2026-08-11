@@ -1,6 +1,6 @@
 # MCLCS — Minecraft 启动器 (WPF)
 
-> **当前版本：v2.4.2** · 语言：C# / WPF / .NET 8 · 平台：Windows
+> **当前版本：v2.5.0** · 语言：C# / WPF / .NET 8 · 平台：Windows
 
 MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft 启动器，覆盖版本安装、启动、崩溃修复、下载、Mod 管理与工具箱等。
 
@@ -18,11 +18,12 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 - **AI 助手**：外部 API 或本地 Ollama 部署，崩溃解读 / 推荐理由 / Mod 翻译 / 语音助手。
 - **挂机工作流**：离线 Token 配置帧率 / 渲染距离 / 音量 / 视角 / 模拟按键 / 鼠标连点 / 循环。
 - **多语言**：中 / 英双语（zh_CN / en_US），运行时即时切换，无需重启。
-- **其他**：年度报告、CLI 命令行、文件变更检测、资源包格式修复。
+- **其他**：年度报告、CLI 命令行、文件变更检测、资源包格式修复、最小化到托盘。
 
 ## 更新日志
 
-- **v2.4.2**（当前）：新增中英双语（zh_CN / en_US）运行时即时切换（核心页面）；CLI 从 .NET 6 升级至 .NET 8，与 GUI 同框架；发布包同时包含 GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`），提供 portable（依赖运行时）与 single-file（自包含）两种 ZIP。
+- **v2.5.0**（当前）：升级 Mojang 版本清单至 Piston v2；修复安装器版本选择缺陷（Fabric / Quilt / NeoForge）；修复外置登录 UI 线程卡死、下载队列置灰与全局样式；新增最小化到托盘；HUD 叠加层覆盖全部启动路径并修复内存与前台显示。
+- **v2.4.2**：新增中英双语（zh_CN / en_US）运行时即时切换（核心页面）；CLI 从 .NET 6 升级至 .NET 8，与 GUI 同框架；发布包同时包含 GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`），提供 portable（依赖运行时）与 single-file（自包含）两种 ZIP。
 - **v2.4.1**：UI 图标迁移为外部 PNG（亮/暗双主题）；新增“适配高分辨率屏幕”开关（启用 2x 图标）；移除 CurseForge 预留；修复 WPF 隐式 using 同名冲突与皮肤编辑器闭合标签笔误。
 - **v2.4**：重写收官——四色索引贴主标签、工具箱全局侧边栏、21 个面板、AI 助手、皮肤编辑器（3D 预览）、HUD 叠加、年度报告、挂机工作流。
 - **v2.2.3**：编译修复与 UV 校准；确立 Linux 下 Roslyn 跨平台编译 WPF 的方法。
@@ -33,12 +34,12 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 
 ## 下载与安装
 
-发布包（v2.4.2）同时包含 GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`），提供两种形态：
+发布包（v2.5.0）同时包含 GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`），提供两种形态：
 
 | 包 | 说明 | 依赖 |
 |---|---|---|
-| `MCLCS-v2.4.2-portable.zip` | GUI + CLI，依赖 .NET 8 运行时 | 需先安装 [.NET 8 运行时](https://dotnet.microsoft.com/download/dotnet/8.0/runtime) |
-| `MCLCS-v2.4.2-singlefile.zip.00` / `.01` | 自包含免运行时版（各含完整 .NET 运行时） | 无需任何依赖 |
+| `MCLCS-v2.5.0-portable.zip` | GUI + CLI，依赖 .NET 8 运行时 | 需先安装 [.NET 8 运行时](https://dotnet.microsoft.com/download/dotnet/8.0/runtime) |
+| `MCLCS-v2.5.0-singlefile.zip.00` / `.01` | 自包含免运行时版（各含完整 .NET 运行时） | 无需任何依赖 |
 
 > **single-file 分卷说明**：自包含包约 128MB，超过多数平台单文件附件上限（100MB），故按 90MB 切分为 `.00` / `.01` 两个分卷。该切分为**字节级精确**，合并后即还原为原始 ZIP，任意解压工具均可使用。
 
@@ -46,14 +47,14 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 
 - Windows（CMD / PowerShell）：
   ```powershell
-  copy /b MCLCS-v2.4.2-singlefile.zip.00 + MCLCS-v2.4.2-singlefile.zip.01 MCLCS-v2.4.2-singlefile.zip
+  copy /b MCLCS-v2.5.0-singlefile.zip.00 + MCLCS-v2.5.0-singlefile.zip.01 MCLCS-v2.5.0-singlefile.zip
   ```
 - Linux / macOS：
   ```bash
-  cat MCLCS-v2.4.2-singlefile.zip.* > MCLCS-v2.4.2-singlefile.zip
+  cat MCLCS-v2.5.0-singlefile.zip.* > MCLCS-v2.5.0-singlefile.zip
   ```
 
-合并得到 `MCLCS-v2.4.2-singlefile.zip`，解压后即可使用。发布包归档于 `history` 分支的 `dist/`，作为对应 Release 的附件。
+合并得到 `MCLCS-v2.5.0-singlefile.zip`，解压后即可使用。发布包归档于 `history` 分支的 `dist/`，作为对应 Release 的附件。
 
 ## 编译与发布
 
