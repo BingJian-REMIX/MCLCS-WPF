@@ -40,13 +40,13 @@ public sealed class ToolboxPanel
 }
 
 /// <summary>
-/// 工具箱面板注册表（v2.0：16 个面板）。
+/// 工具箱面板注册表（v2.0：15 个面板）。
 /// 界面层遍历此表生成入口卡片，避免面板增减时改动多处。
 /// </summary>
 public static class ToolboxCatalog
 {
     /// <summary>规格要求的面板总数。</summary>
-    public const int RequiredPanelCount = 16;
+    public const int RequiredPanelCount = 15;
 
     public static IReadOnlyList<ToolboxPanel> Panels { get; } = new List<ToolboxPanel>
     {

@@ -8,14 +8,11 @@ obj/
 # 发布产物 (ZIP 包作为 release 附件，不提交源码库)
 dist/
 
-# 构建产物
+# 构建产物（仅源码入库，编译输出一律忽略）
 *.dll
 *.exe
 *.pdb
 *.nupkg
-!tools/MCLCS.SelfCheck/bin/**
-!tests/**/bin/**
-!src/**/bin/**
 
 # NuGet
 packages/
