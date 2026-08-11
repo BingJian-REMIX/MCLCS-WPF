@@ -9,12 +9,16 @@
     </UserControl.DataContext>
     <Grid Margin="12">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="150"/>
+            <!-- bug #2：副侧边栏与全局侧边栏（Sidebar.Settings 同为 8 项）功能完全重复，列宽收为 0 -->
+            <ColumnDefinition Width="0"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- 左侧分类导航 -->
-        <ListBox x:Name="CategoryList" Grid.Column="0" SelectionChanged="CategoryList_SelectionChanged"
+        <!-- bug #2：设置页内置分类导航已隐藏，分类切换统一由全局侧边栏路由
+             （MainWindow.RouteSidebar → SettingsView.ShowSidebarItem）。
+             控件本身保留，ShowCategory 仍借它同步选中态。 -->
+        <ListBox x:Name="CategoryList" Grid.Column="0" Visibility="Collapsed"
+                 SelectionChanged="CategoryList_SelectionChanged"
                  Background="{DynamicResource ControlBackground}" BorderBrush="{DynamicResource ControlBorder}">
             <ListBoxItem Tag="General" Content="{theme:Loc settings.general}"/>
             <ListBoxItem Tag="Launch" Content="{theme:Loc game.btn_start}"/>
@@ -26,7 +30,7 @@
             <ListBoxItem Tag="About" Content="{theme:Loc settings.about}"/>
         </ListBox>
 
-        <ScrollViewer Grid.Column="1" Margin="12,0,0,0" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Column="1" Margin="0" VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <!-- 通用 -->
                 <Grid x:Name="GridGeneral">
@@ -84,28 +88,43 @@
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" Text="{theme:Loc game.btn_start}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
+                    <!-- 游戏目录（bug #26）：可自定义 .minecraft 位置，留空即使用系统默认 -->
+                    <StackPanel Grid.Row="1" Margin="0,4">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="游戏目录：" VerticalAlignment="Center" Width="90"/>
+                            <TextBox Text="{Binding GamePath, UpdateSourceTrigger=PropertyChanged}" Width="300"
+                                     ToolTip="Minecraft 游戏目录（.minecraft）。留空表示使用系统默认目录。"
+                                     Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}"/>
+                            <Button Content="浏览…" Command="{Binding BrowseGameRootCommand}" Width="70" Margin="8,0,0,0" Padding="0,2"/>
+                            <Button Content="打开" Command="{Binding OpenGameRootCommand}" Width="56" Margin="6,0,0,0" Padding="0,2"/>
+                            <Button Content="恢复默认" Command="{Binding ResetGameRootCommand}" Width="80" Margin="6,0,0,0" Padding="0,2"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding DefaultGamePathHint, StringFormat='默认：{0}'}"
+                                   Margin="90,4,0,0" FontSize="11"
+                                   Foreground="{DynamicResource SecondaryForeground}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="{theme:Loc settings.java_path}" VerticalAlignment="Center" Width="90"/>
                         <TextBox Text="{Binding JavaPath, UpdateSourceTrigger=PropertyChanged}" Width="300"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}"/>
                         <Button Content="自动检测" Command="{Binding AutoDetectJavaCommand}" Width="80" Margin="8,0,0,0" Padding="0,2"/>
                     </StackPanel>
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4">
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="内存(MB)：" VerticalAlignment="Center" Width="90"/>
                         <TextBox Text="{Binding MaxMemoryMb, UpdateSourceTrigger=PropertyChanged}" Width="120"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}"/>
                     </StackPanel>
-                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,4">
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="离线用户名：" VerticalAlignment="Center" Width="90"/>
                         <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Width="200"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}"/>
                     </StackPanel>
-                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,4">
+                    <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="JVM 参数：" VerticalAlignment="Center" Width="90"/>
                         <TextBox Text="{Binding ExtraJvmArgs, UpdateSourceTrigger=PropertyChanged}" Width="300"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}"/>
                     </StackPanel>
-                    <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,4">
+                    <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="崩溃自动修复：" VerticalAlignment="Center" Width="90"/>
                         <ComboBox Width="150" SelectedValue="{Binding SelectedRepairPolicy}" SelectedValuePath="Tag">
                             <ComboBoxItem Content="始终开启" Tag="Always"/>
@@ -113,7 +132,7 @@
                             <ComboBoxItem Content="始终拒绝" Tag="Never"/>
                         </ComboBox>
                     </StackPanel>
-                    <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="0,4">
+                    <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="0,4">
                         <TextBlock Text="Java 源：" VerticalAlignment="Center" Width="90"/>
                         <ComboBox Width="150" SelectedValue="{Binding SelectedJavaVendor}" SelectedValuePath="Tag">
                             <ComboBoxItem Content="{theme:Loc settings.dl_mirror_auto}" Tag="Auto"/>
@@ -127,19 +146,19 @@
                             <ComboBoxItem Content="{theme:Loc settings.auto_deps_off}" Tag="Never"/>
                         </ComboBox>
                     </StackPanel>
-                    <WrapPanel Grid.Row="7" Margin="0,4">
+                    <WrapPanel Grid.Row="8" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding PrewarmEnabled, Mode=TwoWay}"/>
                         <TextBlock Text="{theme:Loc settings.prewarm}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
-                    <WrapPanel Grid.Row="8" Margin="0,4">
+                    <WrapPanel Grid.Row="9" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding HudEnabled, Mode=TwoWay}"/>
                         <TextBlock Text="HUD 叠加显示" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
-                    <WrapPanel Grid.Row="9" Margin="0,4">
+                    <WrapPanel Grid.Row="10" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding LaunchCompatCheckEnabled, Mode=TwoWay}"/>
                         <TextBlock Text="启动前存档兼容性检测" VerticalAlignment="Center" Margin="8,0,0,0"
@@ -469,7 +488,7 @@
                     <TextBlock Grid.Row="0" Text="{theme:Loc settings.about}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <TextBlock Grid.Row="1" Margin="0,4">
                         <Run Text="{theme:Loc about.version}"/>
-                        <Run Text="{Binding LauncherVersion}" FontWeight="Bold"/>
+                        <Run Text="{Binding LauncherVersion, Mode=OneWay}" FontWeight="Bold"/>
                     </TextBlock>
                     <WrapPanel Grid.Row="2" Margin="0,4">
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"

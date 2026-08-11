@@ -32,17 +32,17 @@
         <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Foreground="{DynamicResource StatusForeground}" Margin="0,0,0,8"/>
 
         <!-- 3D 预览区 -->
-        <Border Grid.Row="3" BorderBrush="#3A3F4A" BorderThickness="1" CornerRadius="8" Background="#1A1D24"
+        <Border Grid.Row="3" BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1" CornerRadius="8" Background="{DynamicResource ControlBackground}"
                 Visibility="{Binding HasSkin, Converter={StaticResource BoolToVisibility}}">
             <Grid>
                 <ctrl:SkinPreview3D SkinImage="{Binding SkinImage}" Slim="{Binding Slim}" AutoRotate="True"
                                     Margin="8" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-                <TextBlock Text="拖动旋转 · 滚轮缩放" Foreground="#9AA0A6" FontSize="11"
+                <TextBlock Text="拖动旋转 · 滚轮缩放" Foreground="{DynamicResource SecondaryForeground}" FontSize="11"
                            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8" Opacity="0.7"/>
             </Grid>
         </Border>
 
-        <TextBlock Grid.Row="3" Text="输入 Minecraft 正版用户名以获取皮肤" Foreground="#555A60"
+        <TextBlock Grid.Row="3" Text="输入 Minecraft 正版用户名以获取皮肤" Foreground="{DynamicResource SecondaryForeground}"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    Visibility="{Binding HasSkin, Converter={StaticResource InvBoolToVisibility}}"/>
     </Grid>

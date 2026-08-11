@@ -4,6 +4,7 @@
         xmlns:vm="clr-namespace:MCLCS.App.ViewModels"
         xmlns:svc="clr-namespace:MCLCS.App.Services"
         xmlns:theme="clr-namespace:MCLCS.App.Themes"
+        xmlns:conv="clr-namespace:MCLCS.App.Converters"
         Title="MCLCS"
         Width="1100" Height="720"
         MinWidth="900" MinHeight="600"
@@ -12,6 +13,7 @@
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVisibility"/>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -25,7 +27,7 @@
               MouseLeftButtonDown="TitleBar_MouseDown">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="272"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
@@ -33,20 +35,140 @@
             <TextBlock Grid.Column="0" Text="MCLCS" FontSize="17" FontWeight="Bold"
                        Foreground="White" VerticalAlignment="Center" Margin="16,0,0,0"/>
 
-            <!-- 全局搜索栏 -->
-            <TextBox x:Name="GlobalSearchBox" Grid.Column="1" VerticalAlignment="Center"
-                     Margin="12,0" Padding="8,4" FontSize="12"
-                     Background="#30FFFFFF" Foreground="White" CaretBrush="White"
-                     BorderBrush="#40FFFFFF" BorderThickness="1"
-                     ToolTip="{theme:Loc dl.search_hint}"
-                     KeyDown="GlobalSearch_KeyDown"/>
+            <!-- 全局搜索栏 + 下载进度入口（bug #14：下载队列合并至搜索栏右侧弹窗） -->
+            <Grid Grid.Column="1" Margin="12,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="GlobalSearchBox" Grid.Column="0" VerticalAlignment="Center"
+                         Padding="8,4" FontSize="12"
+                         Background="#30FFFFFF" Foreground="White" CaretBrush="White"
+                         BorderBrush="#40FFFFFF" BorderThickness="1"
+                         ToolTip="{theme:Loc dl.search_hint}"
+                         KeyDown="GlobalSearch_KeyDown"/>
+
+                <!-- 下载进度按钮：显示当前队列进度，点击展开完整下载队列 -->
+                <Button x:Name="DownloadPopupBtn" Grid.Column="1" Width="40" Height="30"
+                        Margin="6,0,0,0" Cursor="Hand"
+                        ToolTip="下载队列 / 进度" Click="DownloadPopupBtn_Click">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#30FFFFFF"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#50FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                    <Grid>
+                        <theme:PngIcon Token="download" Size="14"/>
+                        <!-- 队列项数角标 -->
+                        <Border Background="#E53935" CornerRadius="7" MinWidth="14" Height="14"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,-6,-8,0" Padding="3,0"
+                                Visibility="{Binding HasQueue, Converter={StaticResource BoolToVisibility}, FallbackValue=Collapsed}">
+                            <TextBlock Text="{Binding QueueCount}"
+                                       Foreground="White" FontSize="9" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                </Button>
+            </Grid>
+
+            <!-- 下载队列弹窗（全局，随时可查看 / 开始 / 暂停 / 取消） -->
+            <Popup x:Name="DownloadQueuePopup" PlacementTarget="{Binding ElementName=DownloadPopupBtn}"
+                   Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
+                   HorizontalOffset="-260" VerticalOffset="6">
+                <Border Background="{DynamicResource CardBackground}"
+                        BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1"
+                        CornerRadius="8" Width="420" Padding="12">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.28" Color="Black"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="下载队列" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource PrimaryForeground}"
+                                       VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding QueueCount, StringFormat='共 {0} 项', FallbackValue='共 0 项'}"
+                                           VerticalAlignment="Center" Opacity="0.75" Margin="0,0,10,0"
+                                           Foreground="{DynamicResource SecondaryForeground}"/>
+                                <Button Content="开始下载队列" Padding="10,3"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Command="{Binding StartQueueCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- 空状态 -->
+                        <TextBlock Text="队列为空，去下载页把资源加入队列吧"
+                                   Margin="0,10,0,10" HorizontalAlignment="Center" Opacity="0.6"
+                                   Foreground="{DynamicResource SecondaryForeground}"
+                                   Visibility="{Binding HasQueue, Converter={StaticResource InvBoolToVisibility}, FallbackValue=Visible}"/>
+
+                        <ItemsControl ItemsSource="{Binding Queue}"
+                                      MaxHeight="260">
+                            <ItemsControl.Template>
+                                <ControlTemplate TargetType="ItemsControl">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </ControlTemplate>
+                            </ItemsControl.Template>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <TextBlock Text="{Binding Title}" FontSize="12"
+                                                       Foreground="{DynamicResource PrimaryForeground}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="8"
+                                                         Margin="0,3,0,0"
+                                                         Foreground="{DynamicResource AccentBrush}"
+                                                         Background="{DynamicResource ProgressBackground}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding Status}" FontSize="11"
+                                                   VerticalAlignment="Center" Width="52"
+                                                   Foreground="{DynamicResource SecondaryForeground}"/>
+                                        <Button Grid.Column="2" Content="{theme:Loc dl.pause}" Padding="6,2" Margin="0,0,4,0"
+                                                Command="{Binding PauseItemCommand}"
+                                                CommandParameter="{Binding}"/>
+                                        <Button Grid.Column="3" Content="{theme:Loc btn.cancel}" Padding="6,2"
+                                                Command="{Binding CancelItemCommand}"
+                                                CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Popup>
 
             <!-- 四色索引贴主标签 -->
             <StackPanel x:Name="TabPanel" Grid.Column="2" Orientation="Horizontal"
                         HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"/>
 
             <!-- 窗口控制 -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
                 <Button x:Name="BtnMin" Width="36" Height="30" Click="BtnMin_Click">
                     <theme:PngIcon Token="minimize" Size="12"/>
                     <Button.Style>
@@ -116,11 +238,18 @@
             </Border>
 
             <!-- 内容宿主（分页切换动画作用于此） -->
-            <Border x:Name="PageBorder" Grid.Column="1" Background="{DynamicResource WindowBackground}">
+            <Border x:Name="PageBorder" Grid.Column="1" Background="{DynamicResource WindowBackground}"
+                    TextElement.Foreground="{DynamicResource PrimaryForeground}">
                 <Border.RenderTransform>
                     <TranslateTransform x:Name="PageTransform" Y="0"/>
                 </Border.RenderTransform>
-                <ContentControl x:Name="PageHost"/>
+                <!-- Border 仅允许单个子元素，用 Grid 叠放「背景图片层 + 页面宿主」 -->
+                <Grid>
+                    <!-- 背景图片层（bug #20）：置于内容之下，未设置时隐藏 -->
+                    <Image x:Name="BackgroundImage" Stretch="UniformToFill" Visibility="Collapsed"
+                           IsHitTestVisible="False" Panel.ZIndex="0"/>
+                    <ContentControl x:Name="PageHost" Panel.ZIndex="1"/>
+                </Grid>
             </Border>
         </Grid>
 

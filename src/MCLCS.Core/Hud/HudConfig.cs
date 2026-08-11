@@ -83,9 +83,9 @@ public class HudConfig
     }
     private int _refreshMs = 1000;
 
-    /// <summary>只在游戏进程处于前台时显示。</summary>
+    /// <summary>只在游戏进程处于前台时显示（默认关闭：HUD 常显游戏指标；开启后游戏非前台显示占位提示）。</summary>
     [JsonPropertyName("onlyWhenGameForeground")]
-    public bool OnlyWhenGameForeground { get; set; } = true;
+    public bool OnlyWhenGameForeground { get; set; }
 
     /// <summary>鼠标穿透（不拦截点击）。</summary>
     [JsonPropertyName("clickThrough")]

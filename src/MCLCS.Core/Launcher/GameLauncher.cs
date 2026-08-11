@@ -27,6 +27,39 @@ public class LaunchResult
 /// </summary>
 public static class GameLauncher
 {
+    /// <summary>
+    /// 游戏进程已启动事件。所有启动路径（首页/版本列表/游戏详情/崩溃恢复）共用同一条
+    /// GameLauncher.LaunchAsync，由 MCLCS.App 订阅以触发 HUD 叠加层
+    /// （bug #28：此前仅在 LaunchCoordinator 一条路径触发，且用固定 1.5s 延时存在竞态）。
+    /// 参数为已注册到 InstanceTracker 的游戏进程。
+    /// </summary>
+    public static event Action<System.Diagnostics.Process, long>? GameProcessStarted;
+
+    /// <summary>从 JVM 参数解析 -Xmx（最大堆内存，MB），用于 HUD 内存百分比显示。解析失败返回 0。</summary>
+    private static long ParseMaxMemoryMb(System.Collections.Generic.IEnumerable<string> jvmArgs)
+    {
+        foreach (var a in jvmArgs)
+        {
+            var s = (a ?? string.Empty).Trim();
+            if (!s.StartsWith("-Xmx", System.StringComparison.OrdinalIgnoreCase)) continue;
+            var v = s.Substring(4).Trim();
+            if (v.Length == 0) continue;
+            var last = char.ToLowerInvariant(v[^1]);
+            var numStr = char.IsDigit(last) ? v : v[..^1];
+            if (!double.TryParse(numStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n))
+                continue;
+            double mb = last switch
+            {
+                'k' => n / 1024.0,
+                'm' => n,
+                'g' => n * 1024.0,
+                _ => n / (1024.0 * 1024.0) // 无单位按字节处理
+            };
+            return (long)System.Math.Round(mb);
+        }
+        return 0;
+    }
+
     /// <summary>构造 ${...} 变量字典（含 classpath、natives_directory 等）。</summary>
     public static Dictionary<string, string> BuildVariables(VersionJson merged,
         string gameRoot, string leafId, string nativesDir, LaunchOptions options)
@@ -129,6 +162,11 @@ public static class GameLauncher
             ?? throw new InvalidOperationException("无法启动游戏进程");
 
         InstanceTracker.Register(proc.Id, versionId);
+
+        // bug #28：进程已就绪，通知上层触发 HUD 叠加层（覆盖全部启动路径，无 1.5s 竞态）。
+        // 同时把 -Xmx 解析出的最大堆内存（MB）传给 HUD，用于内存占用百分比显示。
+        var maxMemoryMb = ParseMaxMemoryMb(resolved.JvmArgs);
+        GameProcessStarted?.Invoke(proc, maxMemoryMb);
 
         await proc.WaitForExitAsync(ct);
         var exitCode = proc.ExitCode;

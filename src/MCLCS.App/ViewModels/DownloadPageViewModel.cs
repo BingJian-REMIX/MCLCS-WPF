@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,6 +33,20 @@ public class ModpackSourceEntry
 /// </summary>
 public class DownloadPageViewModel : ObservableObject
 {
+    /// <summary>Minecraft 版本分组（按大版本折叠，bug #21：避免一次性渲染全部版本导致卡顿/无响应）。</summary>
+    public class VersionGroup
+    {
+        public string Header { get; init; } = "";
+        public ObservableCollection<DownloadCardItem> Items { get; } = new();
+        public int Count => Items.Count;
+    }
+
+    /// <summary>
+    /// 当前下载页 VM 实例。供标题栏全局下载进度弹窗访问同一份队列
+    /// （bug #14：下载队列合并至全局搜索栏右侧的下载进度弹窗）。
+    /// </summary>
+    public static DownloadPageViewModel? Current { get; private set; }
+
     private string _currentSubTab = "mod";
     private bool _isMap;
     private string _query = "";
@@ -80,6 +95,9 @@ public class DownloadPageViewModel : ObservableObject
     public ObservableCollection<DownloadCardItem> Cards { get; } = new();
     public ObservableCollection<DownloadQueueItem> Queue { get; } = new();
 
+    /// <summary>Minecraft 版本分组（折叠卡片用，bug #21）。</summary>
+    public ObservableCollection<VersionGroup> VersionGroups { get; } = new();
+
     public ObservableCollection<string> Loaders { get; } =
         new() { "Any", "Fabric", "Forge", "Quilt", "NeoForge" };
 
@@ -100,7 +118,7 @@ public class DownloadPageViewModel : ObservableObject
         private set
         {
             if (SetField(ref _isMap, value))
-                OnPropertyChanged(nameof(ShowModFilters));
+                RaiseFilterVisibilityChanged();
         }
     }
 
@@ -111,7 +129,7 @@ public class DownloadPageViewModel : ObservableObject
         private set
         {
             if (SetField(ref _isMinecraft, value))
-                OnPropertyChanged(nameof(ShowModFilters));
+                RaiseFilterVisibilityChanged();
         }
     }
 
@@ -122,8 +140,20 @@ public class DownloadPageViewModel : ObservableObject
         private set
         {
             if (SetField(ref _isModpack, value))
-                OnPropertyChanged(nameof(ModpackSourceVisible));
+                RaiseFilterVisibilityChanged();
         }
+    }
+
+    /// <summary>
+    /// 统一通知全部派生的筛选行可见性属性。
+    /// 修复 bug #9：此前 IsMap / IsMinecraft / IsModpack 变化时未通知 <see cref="ModrinthFilterVisible"/>，
+    /// 导致切换副标签后旧筛选行不隐藏，与新筛选行同处 Grid.Row=1 相互重叠（加载器下拉框错位）。
+    /// </summary>
+    private void RaiseFilterVisibilityChanged()
+    {
+        OnPropertyChanged(nameof(ShowModFilters));
+        OnPropertyChanged(nameof(ModpackSourceVisible));
+        OnPropertyChanged(nameof(ModrinthFilterVisible));
     }
 
     /// <summary>整合包来源选择行是否可见（仅整合包子标签）。</summary>
@@ -150,7 +180,13 @@ public class DownloadPageViewModel : ObservableObject
     public DownloadCardItem? CurrentInstallVersion
     {
         get => _currentInstallVersion;
-        set => SetField(ref _currentInstallVersion, value);
+        set
+        {
+            // 必须显式通知命令重算 CanExecute：标准 RelayCommand 不会随属性变更自动刷新，
+            // 否则选完版本后「加入队列」按钮持续置灰（bug：minecraft 下载队列置灰）。
+            if (SetField(ref _currentInstallVersion, value))
+                ((RelayCommand)EnqueueInstallCommand).RaiseCanExecuteChanged();
+        }
     }
 
     /// <summary>安装弹窗是否打开。</summary>
@@ -431,8 +467,21 @@ public class DownloadPageViewModel : ObservableObject
         EnqueueInstallCommand = new RelayCommand(_ => EnqueueVersionInstall(), _ => CurrentInstallVersion is not null);
         CloseInstallCommand = new RelayCommand(_ => IsInstallOpen = false);
 
+        Current = this;
+        Queue.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(QueueCount));
+            OnPropertyChanged(nameof(HasQueue));
+        };
+
         _ = LoadGameVersionsAsync();
     }
+
+    /// <summary>队列项数（标题栏下载弹窗角标用）。</summary>
+    public int QueueCount => Queue.Count;
+
+    /// <summary>队列是否非空（控制标题栏下载按钮角标显隐）。</summary>
+    public bool HasQueue => Queue.Count > 0;
 
     /// <summary>切换副标签（由 MainWindow 侧边栏路由调用）。</summary>
     public void SetSubTab(string? id)
@@ -488,10 +537,19 @@ public class DownloadPageViewModel : ObservableObject
 
     private async Task LoadGameVersionsAsync()
     {
-        var versions = await LauncherService.Instance.GetVanillaVersionsAsync();
-        GameVersions.Clear();
-        GameVersions.Add("");
-        foreach (var v in versions) GameVersions.Add(v);
+        // 构造函数以 fire-and-forget 方式调用，必须自行吞掉异常，
+        // 否则离线 / 镜像不可达时会产生未观测任务异常（bug #6：进入下载页崩溃）。
+        try
+        {
+            var versions = await LauncherService.Instance.GetVanillaVersionsAsync();
+            GameVersions.Clear();
+            GameVersions.Add("");
+            foreach (var v in versions) GameVersions.Add(v);
+        }
+        catch
+        {
+            if (GameVersions.Count == 0) GameVersions.Add("");
+        }
     }
 
     private async Task LoadMapFacetsAsync()
@@ -557,14 +615,19 @@ public class DownloadPageViewModel : ObservableObject
         ApplyVersionFilter();
     }
 
-    /// <summary>按搜索词与版本类型本地筛选（无网络），填充卡片网格。</summary>
+    /// <summary>
+    /// 按搜索词与版本类型本地筛选（无网络），按大版本分组填充折叠卡片（bug #21：
+    /// 此前一次性渲染全部版本导致卡顿/无响应，现改为分组 Expander，按需展开）。
+    /// </summary>
     private void ApplyVersionFilter()
     {
+        VersionGroups.Clear();
         if (_versionEntries is null) return;
         var q = (Query ?? "").Trim().ToLowerInvariant();
         var type = SelectedVersionType;
 
-        Cards.Clear();
+        // 先按大版本（如 1.20 / 1.19）分组
+        var groups = new Dictionary<string, List<MCLCS.Core.Models.VersionEntry>>();
         foreach (var v in _versionEntries)
         {
             var bucket = v.Type switch
@@ -576,19 +639,58 @@ public class DownloadPageViewModel : ObservableObject
             if (type != "all" && bucket != type) continue;
             if (q.Length > 0 && !v.Id.ToLowerInvariant().Contains(q)) continue;
 
-            Cards.Add(new DownloadCardItem
+            var key = GroupKey(v.Id, bucket);
+            if (!groups.TryGetValue(key, out var list))
             {
-                Id = v.Id,
-                Title = v.Id,
-                Author = "Mojang",
-                Summary = bucket == "release" ? "正式版" : bucket == "snapshot" ? "快照" : "旧版",
-                IconUrl = null,
-                FallbackToken = "download",
-                Source = "Minecraft",
-                SubTab = "minecraft",
-                VersionType = v.Type
-            });
+                list = new List<MCLCS.Core.Models.VersionEntry>();
+                groups[key] = list;
+            }
+            list.Add(v);
         }
+
+        // 排序：快照最前，其次按大版本号降序，旧版/其他在后
+        foreach (var key in groups.Keys.OrderBy(GroupOrder).ThenByDescending(MajorMinor))
+        {
+            var g = new VersionGroup { Header = $"{key}（{groups[key].Count}）" };
+            foreach (var v in groups[key].OrderByDescending(x => x.Id, StringComparer.OrdinalIgnoreCase))
+            {
+                g.Items.Add(new DownloadCardItem
+                {
+                    Id = v.Id,
+                    Title = v.Id,
+                    Author = "Mojang",
+                    Summary = key == "快照 & 预览" ? "快照" : (key is "旧版本" or "其他") ? "旧版" : "正式版",
+                    IconUrl = null,
+                    FallbackToken = "download",
+                    Source = "Minecraft",
+                    SubTab = "minecraft",
+                    VersionType = v.Type
+                });
+            }
+            VersionGroups.Add(g);
+        }
+    }
+
+    /// <summary>计算版本分组键：快照单独成组，其余取前两段主版本号（1.20.1 → 1.20），无法解析的归入旧版/其他。</summary>
+    private static string GroupKey(string id, string bucket)
+    {
+        if (bucket == "snapshot") return "快照 & 预览";
+        var m = Regex.Match(id, @"^(\d+)\.(\d+)");
+        if (m.Success) return $"{m.Groups[1].Value}.{m.Groups[2].Value}";
+        return bucket == "old" ? "旧版本" : "其他";
+    }
+
+    /// <summary>分组排序权重：0 快照 → 1 数字大版本 → 2 旧版本 → 3 其他。</summary>
+    private static int GroupOrder(string header) =>
+        header == "快照 & 预览" ? 0 : header is "旧版本" or "其他" ? (header == "旧版本" ? 2 : 3) : 1;
+
+    /// <summary>从分组键（如 "1.20"）解析主/次版本号，供降序排序使用。</summary>
+    private static int MajorMinor(string header)
+    {
+        var m = Regex.Match(header, @"^(\d+)\.(\d+)$");
+        if (m.Success && int.TryParse(m.Groups[1].Value, out var a) && int.TryParse(m.Groups[2].Value, out var b))
+            return a * 1000 + b;
+        return 0;
     }
 
     private async Task SearchModrinthAsync()
@@ -601,7 +703,7 @@ public class DownloadPageViewModel : ObservableObject
             _ => (ModrinthProjectType.Mod, "mod")
         };
 
-        var loader = SelectedLoader == "Any" ? LoaderType.Any : Enum.Parse<LoaderType>(SelectedLoader);
+        var loader = ParseLoader(SelectedLoader);
         var hits = await LauncherService.Instance.SearchModsAsync(
             Query,
             string.IsNullOrEmpty(SelectedGameVersion) ? null : SelectedGameVersion,
@@ -700,7 +802,25 @@ public class DownloadPageViewModel : ObservableObject
         _ = SearchAsync(resetPage: false);
     }
 
+    /// <summary>宽松解析加载器名称：无法识别时回退 Any，避免 Enum.Parse 抛异常中断加入队列（bug #7）。</summary>
+    private static LoaderType ParseLoader(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name == "Any") return LoaderType.Any;
+        return Enum.TryParse<LoaderType>(name, ignoreCase: true, out var v) ? v : LoaderType.Any;
+    }
+
     private void EnqueueSelected(DownloadCardItem? card)
+    {
+        try { EnqueueSelectedCore(card); }
+        catch (Exception ex)
+        {
+            // bug #7：此前任何异常（目录解析 / 加载器解析失败）都会静默冒泡，
+            // 按钮表现为"点了没反应"，任务永远挂不进队列。
+            StatusMessage = $"加入队列失败：{ex.Message}";
+        }
+    }
+
+    private void EnqueueSelectedCore(DownloadCardItem? card)
     {
         if (card is null) { StatusMessage = "请先选择一项"; return; }
 
@@ -730,7 +850,7 @@ public class DownloadPageViewModel : ObservableObject
                 break;
         }
 
-        var loader = SelectedLoader == "Any" ? LoaderType.Any : Enum.Parse<LoaderType>(SelectedLoader);
+        var loader = ParseLoader(SelectedLoader);
         Queue.Add(new DownloadQueueItem
         {
             ProjectId = card.Id,

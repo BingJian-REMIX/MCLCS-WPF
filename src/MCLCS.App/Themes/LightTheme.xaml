@@ -9,6 +9,12 @@
     <SolidColorBrush x:Key="ControlBorder" Color="#D1D5DB"/>
     <SolidColorBrush x:Key="ControlHoverBackground" Color="#F0F0F0"/>
 
+    <!-- 卡片（规格 1.4：圆角阴影；半透明玻璃质感，随亮/暗主题切换） -->
+    <SolidColorBrush x:Key="CardBackground" Color="#E6FFFFFF"/>
+    <SolidColorBrush x:Key="CardBorderHover" Color="#2563EB"/>
+    <!-- 开关轨道（关闭态） -->
+    <SolidColorBrush x:Key="ToggleOffBrush" Color="#D1D5DB"/>
+
     <!-- Foreground -->
     <SolidColorBrush x:Key="PrimaryForeground" Color="#1A1A1A"/>
     <SolidColorBrush x:Key="SecondaryForeground" Color="#6B7280"/>

@@ -37,6 +37,7 @@ public class CategoryPref : ObservableObject
 public class SettingsViewModel : ObservableObject
 {
     // ---- 启动 ----
+    private string _gamePath = "";
     private string _javaPath = "";
     private ObservableCollection<string> _detectedJavas = new();
     private int _maxMemoryMb = 2048;
@@ -118,6 +119,17 @@ public class SettingsViewModel : ObservableObject
     private string _statusMessage = "";
 
     // ===== 启动 =====
+
+    /// <summary>Minecraft 游戏目录（.minecraft），可自定义（bug #26）。留空表示使用系统默认。</summary>
+    public string GamePath
+    {
+        get => _gamePath;
+        set => SetField(ref _gamePath, value);
+    }
+
+    /// <summary>游戏目录输入框的水印提示，显示系统默认路径。</summary>
+    public string DefaultGamePathHint => GameConstants.SystemGameRoot;
+
     public string JavaPath { get => _javaPath; set => SetField(ref _javaPath, value); }
     public ObservableCollection<string> DetectedJavas { get => _detectedJavas; set => SetField(ref _detectedJavas, value); }
     public int MaxMemoryMb { get => _maxMemoryMb; set => SetField(ref _maxMemoryMb, value); }
@@ -152,7 +164,15 @@ public class SettingsViewModel : ObservableObject
     public string SelectedLanguage { get => _selectedLanguage; set => SetField(ref _selectedLanguage, value); }
     public bool AutoStartLauncher { get => _autoStartLauncher; set => SetField(ref _autoStartLauncher, value); }
     public bool MinimizeToTray { get => _minimizeToTray; set => SetField(ref _minimizeToTray, value); }
-    public bool AnimationsEnabled { get => _animationsEnabled; set => SetField(ref _animationsEnabled, value); }
+    public bool AnimationsEnabled
+    {
+        get => _animationsEnabled;
+        set
+        {
+            if (SetField(ref _animationsEnabled, value))
+                MCLCS.App.MainWindow.AnimationsEnabled = value;   // 即时生效，无需重启（bug #4）
+        }
+    }
 
     /// <summary>文件变更检测开关（规格 2.4 — 通用）。</summary>
     public bool FileWatchEnabled
@@ -268,9 +288,25 @@ public class SettingsViewModel : ObservableObject
 
     // ===== 外观 =====
     public string SelectedTheme { get => _selectedTheme; set => SetField(ref _selectedTheme, value); }
-    public string ThemeColor { get => _themeColor; set => SetField(ref _themeColor, value); }
-    public string BackgroundImagePath { get => _backgroundImagePath; set => SetField(ref _backgroundImagePath, value); }
-    public double FontScale { get => _fontScale; set => SetField(ref _fontScale, value); }
+    public string ThemeColor
+    {
+        get => _themeColor;
+        set { if (SetField(ref _themeColor, value)) MCLCS.App.App.ApplyAccentColor(value); }
+    }
+    public string BackgroundImagePath
+    {
+        get => _backgroundImagePath;
+        set
+        {
+            if (SetField(ref _backgroundImagePath, value))
+                MCLCS.App.App.ApplyBackgroundImage(value); // 即时预览（bug #20）
+        }
+    }
+    public double FontScale
+    {
+        get => _fontScale;
+        set { if (SetField(ref _fontScale, value)) MCLCS.App.App.ApplyFontScale(value); }
+    }
 
     /// <summary>适配高分辨率屏幕：开启后图标加载 2x 高清资源（规格 2.4 — 外观）。实时驱动 IconManager。</summary>
     public bool HighDpiEnabled
@@ -306,6 +342,9 @@ public class SettingsViewModel : ObservableObject
     public ICommand AddOfflineAccountCommand { get; }
     public ICommand RemoveAccountCommand { get; }
     public ICommand BrowseBackgroundCommand { get; }
+    public ICommand BrowseGameRootCommand { get; }
+    public ICommand OpenGameRootCommand { get; }
+    public ICommand ResetGameRootCommand { get; }
     public ICommand CheckUpdateCommand { get; }
     public ICommand LoginMicrosoftCommand { get; }
 
@@ -326,6 +365,9 @@ public class SettingsViewModel : ObservableObject
         AddOfflineAccountCommand = new RelayCommand(_ => AddOfflineAccount());
         RemoveAccountCommand = new RelayCommand(p => RemoveAccount(p as AccountEntry));
         BrowseBackgroundCommand = new RelayCommand(_ => BrowseBackground());
+        BrowseGameRootCommand = new RelayCommand(_ => BrowseGameRoot());
+        OpenGameRootCommand = new RelayCommand(_ => OpenGameRoot());
+        ResetGameRootCommand = new RelayCommand(_ => ResetGameRoot());
         CheckUpdateCommand = new AsyncRelayCommand(_ => CheckUpdateAsync());
         LoginMicrosoftCommand = new AsyncRelayCommand(_ => LoginMicrosoftAsync());
 
@@ -355,6 +397,8 @@ public class SettingsViewModel : ObservableObject
 
     private void LoadFromProfile(LauncherProfile profile)
     {
+        // 游戏目录以启动器级配置为准（bug #26）：未自定义时留空，输入框显示水印默认路径
+        GamePath = GameConstants.IsGameRootCustomized ? GameConstants.DefaultGameRoot : "";
         JavaPath = profile.JavaPath ?? "";
         MaxMemoryMb = profile.MaxMemoryMb;
         Username = profile.DefaultUsername;
@@ -439,6 +483,12 @@ public class SettingsViewModel : ObservableObject
 
     private void Save()
     {
+        // 游戏目录可能是用户手输的，先应用再写 profile，保证 profile 落到正确的目录里（bug #26）
+        var typed = string.IsNullOrWhiteSpace(GamePath) ? null : GamePath.Trim();
+        if (!string.Equals(typed ?? GameConstants.SystemGameRoot,
+                           GameConstants.DefaultGameRoot, StringComparison.OrdinalIgnoreCase))
+            ApplyGameRoot(typed);
+
         var profile = new LauncherProfile
         {
             JavaPath = string.IsNullOrWhiteSpace(JavaPath) ? null : JavaPath,
@@ -502,6 +552,7 @@ public class SettingsViewModel : ObservableObject
 
         // 即时生效
         ApplyTheme();
+        App.ApplyBackgroundImage(profile.BackgroundImagePath); // 保存后确保背景图片生效（bug #20）
         ApplyLanguage();
         Assistant.Config = profile.Ai;
 
@@ -561,7 +612,7 @@ public class SettingsViewModel : ObservableObject
     }
 
     /// <summary>添加 Authlib-Injector 账号（由视图读取密码后调用）。</summary>
-    public void AddAuthlibAccount(string serverUrl, string email, string password)
+    public async Task AddAuthlibAccount(string serverUrl, string email, string password)
     {
         if (string.IsNullOrWhiteSpace(serverUrl) || string.IsNullOrWhiteSpace(email))
         {
@@ -570,8 +621,11 @@ public class SettingsViewModel : ObservableObject
         }
         try
         {
+            // 必须异步等待：Authlib 认证含网络往返，使用 .GetAwaiter().GetResult() 会在 UI 线程上
+            // 同步阻塞导致界面卡死（bug：配置外置登录时异常卡死）。
+            StatusMessage = "Authlib 登录中…";
             var auth = new AuthlibInjectorAuthenticator(new HttpClient(), serverUrl, email, password);
-            var session = auth.AuthenticateAsync(email).GetAwaiter().GetResult();
+            var session = await auth.AuthenticateAsync(email);
             AccountStore.Upsert(GameConstants.DefaultGameRoot, new AccountEntry
             {
                 DisplayName = session.Username,
@@ -632,6 +686,57 @@ public class SettingsViewModel : ObservableObject
     {
         var path = UIService.PickFile("图片|*.png;*.jpg;*.jpeg;*.bmp", "选择背景图片");
         if (!string.IsNullOrEmpty(path)) BackgroundImagePath = path;
+    }
+
+    // ===== 游戏目录（bug #26）=====
+
+    /// <summary>选择 Minecraft 游戏目录；选中后立即生效并持久化。</summary>
+    private void BrowseGameRoot()
+    {
+        var path = UIService.PickFolder("选择 Minecraft 游戏目录（.minecraft）");
+        if (string.IsNullOrWhiteSpace(path)) return;
+        ApplyGameRoot(path);
+    }
+
+    /// <summary>恢复为系统默认目录 %APPDATA%\.minecraft。</summary>
+    private void ResetGameRoot() => ApplyGameRoot(null);
+
+    /// <summary>在资源管理器中打开当前游戏目录。</summary>
+    private void OpenGameRoot()
+    {
+        var dir = string.IsNullOrWhiteSpace(GamePath) ? GameConstants.SystemGameRoot : GamePath;
+        try
+        {
+            System.IO.Directory.CreateDirectory(dir);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = dir,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"打开目录失败：{ex.Message}";
+        }
+    }
+
+    /// <summary>应用游戏目录：持久化 → 重建 LauncherService → 回填界面。传 null 恢复默认。</summary>
+    private void ApplyGameRoot(string? path)
+    {
+        try
+        {
+            GameConstants.SetGameRoot(path);
+            var effective = GameConstants.DefaultGameRoot;
+            GamePath = GameConstants.IsGameRootCustomized ? effective : "";
+            LauncherService.Reinitialize(effective);
+            StatusMessage = GameConstants.IsGameRootCustomized
+                ? $"游戏目录已切换到：{effective}"
+                : $"已恢复默认游戏目录：{effective}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"设置游戏目录失败：{ex.Message}";
+        }
     }
 
     private async Task CheckUpdateAsync()

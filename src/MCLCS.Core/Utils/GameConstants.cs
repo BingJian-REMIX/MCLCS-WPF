@@ -6,9 +6,79 @@ namespace MCLCS.Core.Utils;
 /// </summary>
 public static class GameConstants
 {
-    /// <summary>.minecraft 默认根目录（%APPDATA%/.minecraft）。</summary>
-    public static string DefaultGameRoot =>
+    /// <summary>系统默认的 .minecraft 根目录（%APPDATA%/.minecraft），用户未自定义时使用。</summary>
+    public static string SystemGameRoot =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft");
+
+    /// <summary>用户在「设置 → 启动」自定义的游戏目录；null 表示沿用系统默认。</summary>
+    private static string? _gameRootOverride;
+
+    /// <summary>
+    /// 当前生效的 .minecraft 根目录。
+    /// 优先取用户自定义值（bug #26），否则回落到 <see cref="SystemGameRoot"/>。
+    /// </summary>
+    public static string DefaultGameRoot => _gameRootOverride ?? SystemGameRoot;
+
+    /// <summary>是否已自定义游戏目录。</summary>
+    public static bool IsGameRootCustomized => _gameRootOverride is not null;
+
+    /// <summary>
+    /// 记录自定义游戏目录的启动器级配置文件。
+    /// 不能存进 profile：profile 本身就位于游戏目录内，会形成"要先知道目录才能读目录"的循环依赖。
+    /// </summary>
+    private static string GameRootConfigPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        LauncherName, "gameroot.txt");
+
+    /// <summary>设置并持久化自定义游戏目录；传 null/空则恢复系统默认。</summary>
+    public static void SetGameRoot(string? root)
+    {
+        root = string.IsNullOrWhiteSpace(root) ? null : Path.GetFullPath(root.Trim());
+
+        // 与系统默认一致时视为"未自定义"，避免写入多余配置
+        if (root is not null && string.Equals(root, SystemGameRoot, StringComparison.OrdinalIgnoreCase))
+            root = null;
+
+        _gameRootOverride = root;
+
+        try
+        {
+            var cfg = GameRootConfigPath;
+            var dir = Path.GetDirectoryName(cfg);
+            if (root is null)
+            {
+                if (File.Exists(cfg)) File.Delete(cfg);
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                Directory.CreateDirectory(root);
+                File.WriteAllText(cfg, root);
+            }
+        }
+        catch
+        {
+            // 落盘失败不影响本次会话内生效
+        }
+    }
+
+    /// <summary>启动时读取已持久化的自定义游戏目录（目录不存在则忽略）。</summary>
+    public static void LoadGameRootOverride()
+    {
+        try
+        {
+            var cfg = GameRootConfigPath;
+            if (!File.Exists(cfg)) return;
+            var root = File.ReadAllText(cfg).Trim();
+            if (string.IsNullOrWhiteSpace(root)) return;
+            if (!Directory.Exists(root)) return;   // 目录被删除/移动 → 回落系统默认
+            _gameRootOverride = Path.GetFullPath(root);
+        }
+        catch
+        {
+            _gameRootOverride = null;
+        }
+    }
 
     /// <summary>启动器名称（写入 ${launcher_name}）。</summary>
     public const string LauncherName = "MCLCS";
@@ -37,11 +107,13 @@ public static class GameConstants
     // ---- 镜像源：BMCLAPI 优先，官方回退 ----
 
     public const string BmclapiBase = "https://bmclapi2.bangbang93.com";
-    public const string OfficialMetaBase = "https://launchermeta.mojang.com";
+    // Piston 是 Mojang 当前的官方元数据服务（launchermeta.mojang.com 已废弃）；核心文件清单与版本 JSON 均托管于此。
+    // 版本清单使用 v2（version_manifest_v2.json），在 v1 基础上为每条版本增加了 sha1 / complianceLevel 字段。
+    public const string OfficialMetaBase = "https://piston-meta.mojang.com";
     public const string OfficialLibrariesBase = "https://libraries.minecraft.net";
     public const string OfficialAssetsBase = "https://resources.download.minecraft.net";
-    public const string BmclapiVersionManifest = BmclapiBase + "/mc/game/version_manifest.json";
-    public const string OfficialVersionManifest = OfficialMetaBase + "/mc/game/version_manifest.json";
+    public const string BmclapiVersionManifest = BmclapiBase + "/mc/game/version_manifest_v2.json";
+    public const string OfficialVersionManifest = OfficialMetaBase + "/mc/game/version_manifest_v2.json";
 
     public const string FabricMetaBase = "https://meta.fabricmc.net/v2";
     public const string FabricMavenBase = "https://maven.fabricmc.net";

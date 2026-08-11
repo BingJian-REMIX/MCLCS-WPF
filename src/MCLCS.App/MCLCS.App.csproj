@@ -32,4 +32,10 @@
     <Resource Include="Resources\Icons\dark@2x\**\*.png" />
   </ItemGroup>
 
+  <!-- 系统托盘图标：用户绘制 tray.ico 后放到 src/MCLCS.App/Resources/ 即可随构建复制到输出目录。
+       文件不存在时 Condition 跳过，不影响构建（bug #26）。 -->
+  <ItemGroup>
+    <None Include="Resources\tray.ico" CopyToOutputDirectory="PreserveNewest" Condition="Exists('Resources\tray.ico')" />
+  </ItemGroup>
+
 </Project>

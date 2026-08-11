@@ -20,6 +20,25 @@ public class LauncherService : ILogger
 {
     public static LauncherService Instance { get; private set; } = new(GameConstants.DefaultGameRoot);
 
+    /// <summary>游戏目录切换后触发，供各页面刷新版本列表 / 存档列表等（bug #26）。</summary>
+    public static event Action? GameRootChanged;
+
+    /// <summary>
+    /// 以新的游戏目录重建单例（bug #26：设置 → 启动 中切换 Minecraft 游戏路径）。
+    /// 目录未变化时不做任何事，避免无谓地丢弃已建立的 HttpClient 连接池。
+    /// </summary>
+    public static void Reinitialize(string gameRoot)
+    {
+        if (string.IsNullOrWhiteSpace(gameRoot)) return;
+        var full = Path.GetFullPath(gameRoot);
+        if (string.Equals(full, Instance.GameRoot, StringComparison.OrdinalIgnoreCase)) return;
+
+        try { Directory.CreateDirectory(full); } catch { /* 目录不可创建时交由后续操作报错 */ }
+
+        Instance = new LauncherService(full);
+        GameRootChanged?.Invoke();
+    }
+
     private readonly HttpClient _client = new();
     private readonly IDownloader _downloader;
 

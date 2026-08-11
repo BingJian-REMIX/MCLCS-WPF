@@ -89,15 +89,15 @@ public class NeoForgeInstaller : InstallerBase
         if (versions.Count == 0)
             throw new InvalidOperationException("无法解析 NeoForge 版本元数据");
 
-        // 优先匹配 <mcVersion>- 前缀的构建（如 1.20.4-49.0.0）
+        // 优先匹配 <mcVersion>- 前缀的构建（如 1.20.4-49.0.0），按语义化版本号排序
         var matched = versions
             .Where(v => v.StartsWith(mcVersion + "-", StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(v => v, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(v => v, VersionComparer.Instance)
             .ToList();
         if (matched.Count > 0) return matched[0];
 
-        // 新格式（无 MC 前缀）回退到全部最新
+        // 新格式（无 MC 前缀）回退到全部最新（按语义化版本号排序）
         Logger?.Log($"未找到 {mcVersion} 前缀的 NeoForge 构建，回退到最新版本。");
-        return versions.OrderByDescending(v => v, StringComparer.OrdinalIgnoreCase).First();
+        return versions.OrderByDescending(v => v, VersionComparer.Instance).First();
     }
 }

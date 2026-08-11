@@ -3,7 +3,8 @@ using System.Text.Json.Serialization;
 namespace MCLCS.Core.Models;
 
 /// <summary>
-/// launchermeta 的版本清单（version_manifest.json）。
+/// 官方版本清单（version_manifest_v2.json，托管于 piston-meta.mojang.com）。
+/// v2 在 v1 基础上为每条版本增加了 sha1 / complianceLevel 字段，url 仍指向 piston-meta 的包地址。
 /// </summary>
 public class VersionManifest
 {

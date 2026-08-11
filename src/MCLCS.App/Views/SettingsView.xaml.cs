@@ -57,10 +57,10 @@ public partial class SettingsView : UserControl
         _ => "General"
     });
 
-    private void AddAuthlib_Click(object sender, RoutedEventArgs e)
+    private async void AddAuthlib_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is SettingsViewModel vm)
-            vm.AddAuthlibAccount(vm.AuthlibServerUrl, vm.AuthlibEmail, AuthlibPw.Password);
+            await vm.AddAuthlibAccount(vm.AuthlibServerUrl, vm.AuthlibEmail, AuthlibPw.Password);
     }
 
     // AI 助手：本地模型切换（未下载时按规格弹确认窗，取消则回退）

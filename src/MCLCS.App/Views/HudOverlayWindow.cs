@@ -22,6 +22,7 @@ public class HudOverlayWindow : Window
     private readonly HudMetricsProvider _provider = new();
     private readonly TextBlock _text;
     private Process? _gameProcess;
+    private long _maxMemoryMb;
     private HudConfig _config = new();
     private bool _isDragging;
     private Point _dragStart;
@@ -84,9 +85,10 @@ public class HudOverlayWindow : Window
         _timer.Start();
     }
 
-    public void AttachGame(Process process)
+    public void AttachGame(Process process, long maxMemoryMb)
     {
         _gameProcess = process;
+        _maxMemoryMb = maxMemoryMb;
         _provider.SessionStart = DateTime.Now;
         _timer.Start();
         Show();
@@ -94,7 +96,7 @@ public class HudOverlayWindow : Window
     }
 
     /// <summary>检查设置并激活 HUD（仅在 Hud.Enabled 且 Instance 已创建时调用）。</summary>
-    public static void TryShow(Process gameProcess)
+    public static void TryShow(Process gameProcess, long maxMemoryMb = 0)
     {
         var profile = ProfileStore.Load(GameConstants.DefaultGameRoot);
         if (!profile.Hud.Enabled) return;
@@ -107,19 +109,41 @@ public class HudOverlayWindow : Window
                 Instance.Show();
             });
         }
-        Instance.Dispatcher.Invoke(() => Instance.AttachGame(gameProcess));
+        Instance.Dispatcher.Invoke(() => Instance.AttachGame(gameProcess, maxMemoryMb));
     }
 
     private void OnTick(object? sender, EventArgs e)
     {
         try
         {
-            var metrics = _provider.Sample(_gameProcess, _config.OnlyWhenGameForeground ? 0 : _config.FontSize);
+            // 仅当游戏前台时显示：开启该选项且游戏不在前台则给出占位提示，避免 HUD 看起来"空"。
+            if (_gameProcess is { HasExited: false } && _config.OnlyWhenGameForeground && !IsGameForeground(_gameProcess))
+            {
+                Dispatcher.Invoke(() => _text.Text = "（游戏未在前台）");
+                return;
+            }
+            var metrics = _provider.Sample(_gameProcess, _maxMemoryMb);
             Dispatcher.Invoke(() => _text.Text = HudMetricsProvider.Render(metrics, _config));
         }
         catch
         {
             // 静默处理
+        }
+    }
+
+    /// <summary>判断游戏进程是否拥有当前前台窗口。</summary>
+    private static bool IsGameForeground(Process game)
+    {
+        try
+        {
+            var fg = NativeMethods.GetForegroundWindow();
+            if (fg == IntPtr.Zero) return false;
+            NativeMethods.GetWindowThreadProcessId(fg, out uint pid);
+            return pid == game.Id;
+        }
+        catch
+        {
+            return false;
         }
     }
 
@@ -171,5 +195,11 @@ public class HudOverlayWindow : Window
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
     }
 }

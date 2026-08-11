@@ -9,12 +9,15 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
+            <!-- bug #2：副侧边栏与全局侧边栏（Sidebar.Toolbox）功能完全重复，列宽收为 0 -->
+            <ColumnDefinition Width="0"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ===== 左侧工具箱侧边栏 ===== -->
-        <ListBox Grid.Column="0"
+        <!-- bug #2：工具箱内置图标侧边栏已隐藏，面板切换统一由全局侧边栏路由
+             （MainWindow.RouteSidebar → ToolboxView.ShowPanel）。
+             控件本身保留，SelectedPanel 绑定仍用于同步选中态。 -->
+        <ListBox Grid.Column="0" Visibility="Collapsed"
                  ItemsSource="{Binding PanelItems}"
                  SelectedItem="{Binding SelectedPanel}"
                  Background="{DynamicResource ControlBackground}"

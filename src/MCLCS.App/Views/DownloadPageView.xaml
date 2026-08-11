@@ -33,6 +33,84 @@
             <Setter Property="Margin" Value="0,0,14,0"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
+
+        <!-- 卡片模板（mod / 资源包 / 地图 / 整合包 / Minecraft 版本 通用，bug #21：Minecraft 子页折叠分组复用此模板） -->
+        <DataTemplate x:Key="CardDataTemplate">
+            <Border Background="{DynamicResource CardBackground}"
+                    BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1"
+                    CornerRadius="10" Margin="6" Width="196">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="110"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource ControlBackground}" CornerRadius="10">
+                        <theme:ExternalIcon Url="{Binding IconUrl}" FallbackToken="{Binding FallbackToken}" CornerRadius="10"/>
+                    </Border>
+
+                    <!-- 封面右上角：含附加资源标记（仅地图） -->
+                    <Border Grid.Row="0" Style="{StaticResource CardBadgeStyle}"
+                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
+                            Visibility="{Binding HasExtra, Converter={StaticResource BoolToVisibility}}"
+                            ToolTip="该地图附带资源包 / 光影，可在详情窗一并安装">
+                        <TextBlock Text="含附加资源" Style="{StaticResource CardBadgeTextStyle}"/>
+                    </Border>
+
+                    <TextBlock Grid.Row="1" Text="{Binding Title}" FontWeight="Bold"
+                               Margin="10,8,10,2" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
+                    <TextBlock Grid.Row="2" Text="{Binding Author}" FontSize="11" Opacity="0.7" Margin="10,0,10,2"/>
+
+                    <!-- 浏览量（规格 2.2：地图卡片展示封面 / 标题 / 作者 / 浏览量） -->
+                    <TextBlock Grid.Row="3" Text="{Binding ViewsText}" FontSize="11" Margin="10,0,10,2"
+                               Foreground="{DynamicResource AccentBrush}"
+                               Visibility="{Binding ViewsText, Converter={StaticResource NonEmptyToVisibility}}"/>
+
+                    <!-- 整合包元信息行（加载器 · 版本 · 下载量） -->
+                    <TextBlock Grid.Row="3" Text="{Binding MetaText}" FontSize="11" Margin="10,0,10,2"
+                               Foreground="{DynamicResource AccentBrush}" Opacity="0.9"
+                               Visibility="{Binding MetaText, Converter={StaticResource NonEmptyToVisibility}}"/>
+
+                    <TextBlock Grid.Row="4" Text="{Binding Summary}" FontSize="11" Opacity="0.7"
+                               Margin="10,0,10,2" TextWrapping="Wrap" Height="32" TextTrimming="CharacterEllipsis"/>
+                    <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10,6,10,8">
+                        <Button
+                                Command="{Binding DataContext.EnqueueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" Padding="6,2">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                                    <Setter Property="Content" Value="加入队列"/>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Source}" Value="Minecraft">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button
+                                Command="{Binding DataContext.OpenDetailCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" Margin="6,0,0,0" Padding="6,2">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Content" Value="详情"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Source}" Value="Minecraft">
+                                            <Setter Property="Content" Value="安装"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid>
@@ -40,8 +118,10 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="160"/>
+            <!-- bug #14：原 Row3（开始队列按钮）/ Row4（队列列表 160px）已合并到
+                 标题栏全局搜索栏右侧的下载进度弹窗，此处收为 0 以让出卡片区空间。 -->
+            <RowDefinition Height="0"/>
+            <RowDefinition Height="0"/>
         </Grid.RowDefinitions>
 
         <!-- 顶部搜索（始终） -->
@@ -90,11 +170,8 @@
         <!-- 筛选行：地图（分类 + 版本 + 排序 + 分页） -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="12,0,12,8"
                     Visibility="{Binding IsMap, Converter={StaticResource BoolToVisibility}}">
-            <TextBox Width="180" Text="{Binding MapSearchKeyword, UpdateSourceTrigger=PropertyChanged}"
-                     Margin="0,0,8,0" Padding="6,3" ToolTip="搜索地图关键词"
-                     Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
-                     BorderBrush="{DynamicResource InputBorder}"/>
-            <Button Content="搜索" Command="{Binding SearchCommand}" Width="60" Padding="0,2" Margin="0,0,8,0"/>
+            <!-- bug #13：此处原有一个绑定到不存在属性 MapSearchKeyword 的搜索框（与顶部搜索栏重复且始终失效），
+                 已移除；地图关键词搜索统一走顶部全局搜索框（Query）。 -->
             <ComboBox Width="150" ItemsSource="{Binding MapCategories}" DisplayMemberPath="Name"
                       SelectedValuePath="Id" SelectedValue="{Binding SelectedCategory}" ToolTip="分类"/>
             <ComboBox Width="120" Margin="8,0,0,0" ItemsSource="{Binding MapVersions}"
@@ -112,100 +189,46 @@
 
         <!-- 卡片网格 -->
         <ScrollViewer Grid.Row="2" Margin="12,0,12,8" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding Cards}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Background="{DynamicResource CardBackground}"
-                                BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1"
-                                CornerRadius="10" Margin="6" Width="196">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="110"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+            <StackPanel>
+                <!-- 非 Minecraft 副标签：扁平卡片网格 -->
+                <ItemsControl ItemsSource="{Binding Cards}"
+                              Visibility="{Binding IsMinecraft, Converter={StaticResource InvBoolToVisibility}}"
+                              ItemTemplate="{StaticResource CardDataTemplate}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
 
-                                <Border Grid.Row="0" Background="{DynamicResource ControlBackground}" CornerRadius="10">
-                                    <theme:ExternalIcon Url="{Binding IconUrl}" FallbackToken="{Binding FallbackToken}" CornerRadius="10"/>
-                                </Border>
-
-                                <!-- 封面右上角：含附加资源标记（仅地图） -->
-                                <Border Grid.Row="0" Style="{StaticResource CardBadgeStyle}"
-                                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
-                                        Visibility="{Binding HasExtra, Converter={StaticResource BoolToVisibility}}"
-                                        ToolTip="该地图附带资源包 / 光影，可在详情窗一并安装">
-                                    <TextBlock Text="含附加资源" Style="{StaticResource CardBadgeTextStyle}"/>
-                                </Border>
-
-                                <TextBlock Grid.Row="1" Text="{Binding Title}" FontWeight="Bold"
-                                           Margin="10,8,10,2" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
-                                <TextBlock Grid.Row="2" Text="{Binding Author}" FontSize="11" Opacity="0.7" Margin="10,0,10,2"/>
-
-                                <!-- 浏览量（规格 2.2：地图卡片展示封面 / 标题 / 作者 / 浏览量） -->
-                                <TextBlock Grid.Row="3" Text="{Binding ViewsText}" FontSize="11" Margin="10,0,10,2"
-                                           Foreground="{DynamicResource AccentBrush}"
-                                           Visibility="{Binding ViewsText, Converter={StaticResource NonEmptyToVisibility}}"/>
-
-                                <!-- 整合包元信息行（加载器 · 版本 · 下载量） -->
-                                <TextBlock Grid.Row="3" Text="{Binding MetaText}" FontSize="11" Margin="10,0,10,2"
-                                           Foreground="{DynamicResource AccentBrush}" Opacity="0.9"
-                                           Visibility="{Binding MetaText, Converter={StaticResource NonEmptyToVisibility}}"/>
-
-                                <TextBlock Grid.Row="4" Text="{Binding Summary}" FontSize="11" Opacity="0.7"
-                                           Margin="10,0,10,2" TextWrapping="Wrap" Height="32" TextTrimming="CharacterEllipsis"/>
-                                <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10,6,10,8">
-                                    <Button
-                                            Command="{Binding DataContext.EnqueueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}" Padding="6,2">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
-                                                <Setter Property="Content" Value="加入队列"/>
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Source}" Value="Minecraft">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                    <Button
-                                            Command="{Binding DataContext.OpenDetailCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}" Margin="6,0,0,0" Padding="6,2">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Content" Value="详情"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Source}" Value="Minecraft">
-                                                        <Setter Property="Content" Value="安装"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                <!-- Minecraft 副标签：按大版本折叠分组（bug #21：避免一次性渲染全部版本导致无响应） -->
+                <ItemsControl ItemsSource="{Binding VersionGroups}"
+                              Visibility="{Binding IsMinecraft, Converter={StaticResource BoolToVisibility}}"
+                              Margin="0,4,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Expander Header="{Binding Header}" Margin="0,4,8,4">
+                                <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource CardDataTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
         </ScrollViewer>
 
-        <!-- 下载队列 -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="12,0,12,4">
+        <!-- 下载队列（bug #14：已合并至标题栏下载进度弹窗，此处保留但不可见） -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="12,0,12,4" Visibility="Collapsed">
             <Button Content="开始下载队列" Command="{Binding StartQueueCommand}" Width="130" Padding="0,4"
                     Style="{StaticResource PrimaryButtonStyle}"/>
             <TextBlock Text="{Binding Queue.Count, StringFormat='共 {0} 项'}" VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.8"/>
         </StackPanel>
-        <ListBox Grid.Row="4" ItemsSource="{Binding Queue}" Margin="12,0,12,12"
+        <ListBox Grid.Row="4" Visibility="Collapsed" ItemsSource="{Binding Queue}" Margin="12,0,12,12"
                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
                  BorderBrush="{DynamicResource InputBorder}">
             <ListBox.ItemTemplate>

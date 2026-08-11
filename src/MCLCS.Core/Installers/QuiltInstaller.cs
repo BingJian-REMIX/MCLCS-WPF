@@ -87,7 +87,7 @@ public class QuiltInstaller : InstallerBase
         var versions = doc.Descendants("version").Select(e => e.Value).ToList();
         if (versions.Count == 0)
             throw new InvalidOperationException("无法解析 Quilt installer 版本元数据");
-        // 取最新（版本形如 0.9.x，按字典序近似；Quilt installer 用 semver）
-        return versions.OrderByDescending(v => v, StringComparer.OrdinalIgnoreCase).First();
+        // 取最新（按语义化版本号比较，避免 "0.9.1" 被误判为比 "0.10.0" 新）
+        return versions.OrderByDescending(v => v, VersionComparer.Instance).First();
     }
 }

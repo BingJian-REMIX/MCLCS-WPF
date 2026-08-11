@@ -13,7 +13,7 @@ public enum ThemeType
 /// </summary>
 public static class ThemeManager
 {
-    private static ThemeType _current = ThemeType.Dark;
+    private static ThemeType _current = ThemeType.Light;
 
     /// <summary>当前主题。</summary>
     public static ThemeType Current
@@ -57,6 +57,6 @@ public static class ThemeManager
 
     private class ThemePreference
     {
-        public string Theme { get; set; } = "Dark";
+        public string Theme { get; set; } = "Light";
     }
 }

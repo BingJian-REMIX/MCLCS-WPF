@@ -36,7 +36,9 @@ public class FabricInstaller : InstallerBase
         var json = await Client.GetStringAsync(url, ct);
         var entries = System.Text.Json.JsonSerializer.Deserialize<List<FabricLoaderEntry>>(json)
                       ?? throw new InvalidOperationException("无法解析 Fabric Loader 元数据");
-        var entry = entries.First();
+        var entry = entries.FirstOrDefault();
+        if (entry is null)
+            throw new InvalidOperationException($"Fabric 不支持的 Minecraft 版本或元数据为空：{mcVersion}");
 
         // 3. 合并生成版本 JSON
         var mainClass = entry.LauncherMeta.MainClass.TryGetValue("client", out var mc) && !string.IsNullOrEmpty(mc)

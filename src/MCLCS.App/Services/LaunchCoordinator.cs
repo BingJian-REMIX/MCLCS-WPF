@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Windows;
 using MCLCS.Core.Launcher;
 using MCLCS.Core.Mods;
-using MCLCS.Core.MultiInstance;
 using MCLCS.Core.Profiles;
 using MCLCS.Core.Save;
 using MCLCS.Core.Toolbox;
@@ -64,21 +63,8 @@ public static class LaunchCoordinator
             // §2.3 音乐播放器联动：游戏启动时自动降音量 / 暂停
             MusicPlayerViewModel.Instance.OnGameLaunch();
 
-            // HUD 叠加：游戏启动后 1.5s 激活
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(1500);
-                var instances = InstanceTracker.ListActive();
-                if (instances.Count > 0)
-                {
-                    try
-                    {
-                        var proc = System.Diagnostics.Process.GetProcessById(instances[0].Pid);
-                        Application.Current.Dispatcher.Invoke(() => HudOverlayWindow.TryShow(proc));
-                    }
-                    catch { /* process not ready */ }
-                }
-            });
+            // HUD 叠加层已由 GameLauncher.GameProcessStarted 统一触发（见 App.xaml.cs 订阅），
+            // 覆盖全部启动路径且无固定 1.5s 竞态，此处不再重复激活。
 
             var policy = ProfileStore.Load(gameRoot).RepairPolicy;
             var result = await LauncherService.Instance.LaunchAsync(versionId);
