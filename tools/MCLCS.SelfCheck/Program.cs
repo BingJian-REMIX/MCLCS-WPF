@@ -1326,40 +1326,40 @@ side=""BOTH""
     {
         Console.WriteLine("[UI 框架 - 四色主标签]");
 
-        var home = MainTabs.Get(MainTabKind.Home);
         var game = MainTabs.Get(MainTabKind.Game);
         var download = MainTabs.Get(MainTabKind.Download);
         var toolbox = MainTabs.Get(MainTabKind.Toolbox);
+        var settings = MainTabs.Get(MainTabKind.Settings);
 
-        Check("Home 标签 Kind=Home", home.Kind == MainTabKind.Home);
-        Check("Home 标签默认颜色=#4CAF50", home.DefaultColor == "#4CAF50");
         Check("Game 标签 Kind=Game", game.Kind == MainTabKind.Game);
-        Check("Game 标签默认颜色=#2196F3", game.DefaultColor == "#2196F3");
+        Check("Game 标签默认颜色=#4CAF50", game.DefaultColor == "#4CAF50");
         Check("Download 标签 Kind=Download", download.Kind == MainTabKind.Download);
-        Check("Download 标签默认颜色=#FF9800", download.DefaultColor == "#FF9800");
+        Check("Download 标签默认颜色=#2196F3", download.DefaultColor == "#2196F3");
         Check("Toolbox 标签 Kind=Toolbox", toolbox.Kind == MainTabKind.Toolbox);
-        Check("Toolbox 标签默认颜色=#9E9E9E", toolbox.DefaultColor == "#9E9E9E");
+        Check("Toolbox 标签默认颜色=#FF9800", toolbox.DefaultColor == "#FF9800");
+        Check("Settings 标签 Kind=Settings", settings.Kind == MainTabKind.Settings);
+        Check("Settings 标签默认颜色=#607D8B", settings.DefaultColor == "#607D8B");
         Check("All 共4项", MainTabs.All.Count == 4);
 
         // TabThemeConfig
         var theme = new TabThemeConfig();
-        Check("默认主题 HomeColor=#4CAF50", theme.ColorOf(MainTabKind.Home) == "#4CAF50");
-        Check("默认主题 GameColor=#2196F3", theme.ColorOf(MainTabKind.Game) == "#2196F3");
+        Check("默认主题 GameColor=#4CAF50", theme.ColorOf(MainTabKind.Game) == "#4CAF50");
+        Check("默认主题 DownloadColor=#2196F3", theme.ColorOf(MainTabKind.Download) == "#2196F3");
 
         // 自定义颜色
-        Check("SetColor Home=#FF0000 返回true", theme.SetColor(MainTabKind.Home, "#FF0000"));
-        Check("自定义 HomeColor=#FF0000", theme.ColorOf(MainTabKind.Home) == "#FF0000");
+        Check("SetColor Game=#FF0000 返回true", theme.SetColor(MainTabKind.Game, "#FF0000"));
+        Check("自定义 GameColor=#FF0000", theme.ColorOf(MainTabKind.Game) == "#FF0000");
         Check("IsCustomized=true", theme.IsCustomized());
-        Check("Game 未改", theme.ColorOf(MainTabKind.Game) == "#2196F3");
+        Check("Download 未改", theme.ColorOf(MainTabKind.Download) == "#2196F3");
 
         // 非法颜色
-        Check("SetColor 非法返回false", !theme.SetColor(MainTabKind.Home, "not-a-color"));
-        Check("非法颜色后仍为#FF0000", theme.ColorOf(MainTabKind.Home) == "#FF0000");
+        Check("SetColor 非法返回false", !theme.SetColor(MainTabKind.Game, "not-a-color"));
+        Check("非法颜色后仍为#FF0000", theme.ColorOf(MainTabKind.Game) == "#FF0000");
 
         // Reset
-        theme.SetColor(MainTabKind.Home, "#FF0000");
+        theme.SetColor(MainTabKind.Game, "#FF0000");
         theme.Reset();
-        Check("Reset 后 Home=#4CAF50", theme.ColorOf(MainTabKind.Home) == "#4CAF50");
+        Check("Reset 后 Game=#4CAF50", theme.ColorOf(MainTabKind.Game) == "#4CAF50");
         Check("Reset 后 IsCustomized=false", !theme.IsCustomized());
 
         // IsValidColor
@@ -1369,52 +1369,55 @@ side=""BOTH""
         Check("IsValidColor #GGGGGG=false", !TabThemeConfig.IsValidColor("#GGGGGG"));
         Check("IsValidColor empty=false", !TabThemeConfig.IsValidColor(""));
 
-        // Sidebar
-        Console.WriteLine("[UI 框架 - 全局侧边栏]");
-        Check("Sidebar.Items 共7项", Sidebar.Items.Count == 7);
-        Check("Sidebar home 存在", Sidebar.ById("home") != null);
-        Check("Sidebar game 存在", Sidebar.ById("game") != null);
-        Check("Sidebar download 存在", Sidebar.ById("download") != null);
-        Check("Sidebar toolbox 存在", Sidebar.ById("toolbox") != null);
-        Check("Sidebar account 存在", Sidebar.ById("account") != null);
-        Check("Sidebar settings 存在", Sidebar.ById("settings") != null);
-        Check("Sidebar about 存在", Sidebar.ById("about") != null);
+        // 主标签解析
+        Check("MainTabs.ById game→Game", MainTabs.ById("game")?.Kind == MainTabKind.Game);
+        Check("MainTabs.ById 非法→null", MainTabs.ById("nope") == null);
 
+        // Sidebar（按主标签分组）
+        Console.WriteLine("[UI 框架 - 分组侧边栏]");
+        Check("下载页副标签 6 项", Sidebar.Download.Count == 6);
+        Check("工具箱页副标签 20 项", Sidebar.Toolbox.Count == 20);
+        Check("设置页副标签 8 项", Sidebar.Settings.Count == 8);
+        Check("游戏页无侧边栏", Sidebar.Game.Count == 0);
+        Check("Has: 游戏页无侧边栏", !Sidebar.Has(MainTabKind.Game));
+        Check("Has: 下载页有侧边栏", Sidebar.Has(MainTabKind.Download));
+
+        // ById 需指定主标签
+        Check("下载页 ById minecraft 存在", Sidebar.ById(MainTabKind.Download, "minecraft") != null);
+        Check("工具箱页 ById log 存在", Sidebar.ById(MainTabKind.Toolbox, "log") != null);
+        Check("设置页 ById about 存在", Sidebar.ById(MainTabKind.Settings, "about") != null);
+        Check("跨标签误查返回 null", Sidebar.ById(MainTabKind.Download, "log") == null);
+
+        // SidebarState（悬停展开，无 Pin 概念）
+        Console.WriteLine("[UI 框架 - 侧边栏状态机]");
         var state = new SidebarState();
         Check("初始 Expanded=false", !state.Expanded);
-        Check("初始 Pinned=false", !state.Pinned);
-        Check("初始 Width=48", state.Width == 48);
+        Check("初始 Width=折叠宽", state.Width == SidebarState.CollapsedWidth);
 
         state.HoverEnter();
         Check("Hover 后 Expanded=true", state.Expanded);
-        Check("Hover 后 Width=200", state.Width == 200);
+        Check("Hover 后 Width=展开宽", state.Width == SidebarState.ExpandedWidth);
 
         state.HoverLeave();
         Check("Hover 离开后 Expanded=false", !state.Expanded);
-        Check("Hover 离开后 Width=48", state.Width == 48);
+        Check("Hover 离开后 Width=折叠宽", state.Width == SidebarState.CollapsedWidth);
 
-        state.TogglePin();
-        Check("Pin 后 Pinned=true", state.Pinned);
-        Check("Pin 后 Expanded=true", state.Expanded);
-
-        state.TogglePin();
-        Check("Unpin 后 Pinned=false", !state.Pinned);
+        // 选中 / 切换主标签
+        state.SwitchOwner(MainTabKind.Toolbox);
+        Check("SwitchOwner 后 Owner=Toolbox", state.Owner == MainTabKind.Toolbox);
+        Check("SwitchOwner 后选中首项 log", state.SelectedId == "log");
+        state.Select("nbt");
+        Check("Select 后 SelectedId=nbt", state.SelectedId == "nbt");
 
         // Restore / Capture
-        var config = new SidebarConfig { Pinned = true, LastSelectedId = "download" };
+        var config = new SidebarConfig { LastSelectedId = "mod" };
         var state2 = new SidebarState();
+        state2.SwitchOwner(MainTabKind.Download);
         state2.Restore(config);
-        Check("Restore Pinned=true", state2.Pinned);
-        Check("Restore Expanded=true", state2.Expanded);
-
+        Check("Restore 选中 mod", state2.SelectedId == "mod");
         var captured = state2.Capture();
-        Check("Capture Pinned=true", captured.Pinned);
-        Check("Capture LastSelectedId=download", captured.LastSelectedId == "download");
-
-        // ToMainTab
-        Check("ToMainTab home→Home", Sidebar.ToMainTab("home") == MainTabKind.Home);
-        Check("ToMainTab game→Game", Sidebar.ToMainTab("game") == MainTabKind.Game);
-        Check("ToMainTab account→null", Sidebar.ToMainTab("account") == null);
+        Check("Capture LastSelectedId=mod", captured.LastSelectedId == "mod");
+        Check("SidebarConfig HoverExpand 默认 true", new SidebarConfig().HoverExpand);
     }
 
     private static void AfkTokenTests()
@@ -1680,7 +1683,7 @@ side=""BOTH""
     {
         Console.WriteLine("[工具箱目录]");
 
-        Check("共16个面板", ToolboxCatalog.Panels.Count == 16);
+        Check("共15个面板", ToolboxCatalog.Panels.Count == 15);
         Check("分组数>0", ToolboxCatalog.Grouped().Count > 0);
 
         var newPanels = ToolboxCatalog.NewInV2;
@@ -2216,7 +2219,7 @@ side=""BOTH""
             DefaultUsername = "TestPlayer",
             LastVersionId = "1.20.1",
             TabTheme = new TabThemeConfig(),
-            Sidebar = new SidebarConfig { Pinned = false },
+            Sidebar = new SidebarConfig(),
             Hud = new HudConfig { Enabled = false },
             Prewarm = new PrewarmConfig { Mode = PrewarmMode.Off },
             Backup = new BackupPolicy { MaxAgeDays = 30, KeepPerSource = 5 },
@@ -2230,7 +2233,7 @@ side=""BOTH""
         Check("LastVersionId=1.20.1", profile.LastVersionId == "1.20.1");
         Check("TabTheme 非空", profile.TabTheme != null);
         Check("Sidebar 非空", profile.Sidebar != null);
-        Check("Sidebar Pinned=false", !profile.Sidebar!.Pinned);
+        Check("Sidebar HoverExpand 默认 true", profile.Sidebar!.HoverExpand);
         Check("Hud 非空", profile.Hud != null);
         Check("Hud Enabled=false", !profile.Hud!.Enabled);
         Check("Prewarm Mode=Off", profile.Prewarm!.Mode == PrewarmMode.Off);
@@ -2240,6 +2243,6 @@ side=""BOTH""
         Check("AfkWorkflows Count=1", profile.AfkWorkflows!.Count == 1);
         Check("ShaderTokens Count=1", profile.ShaderTokens!.Count == 1);
 
-        Check("LauncherVersion=2.4.1", GameConstants.LauncherVersion == "2.4.1");
+        Check("LauncherVersion=2.4.2", GameConstants.LauncherVersion == "2.4.2");
     }
 }

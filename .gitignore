@@ -35,3 +35,6 @@ Thumbs.db
 
 # Rider
 _ReSharper.Caches/
+
+# 本地临时工具（个人 QA 探针，不入库）
+tools/CrashProbe/
