@@ -180,13 +180,7 @@ public class DownloadPageViewModel : ObservableObject
     public DownloadCardItem? CurrentInstallVersion
     {
         get => _currentInstallVersion;
-        set
-        {
-            // 必须显式通知命令重算 CanExecute：标准 RelayCommand 不会随属性变更自动刷新，
-            // 否则选完版本后「加入队列」按钮持续置灰（bug：minecraft 下载队列置灰）。
-            if (SetField(ref _currentInstallVersion, value))
-                ((RelayCommand)EnqueueInstallCommand).RaiseCanExecuteChanged();
-        }
+        set => SetField(ref _currentInstallVersion, value);
     }
 
     /// <summary>安装弹窗是否打开。</summary>
@@ -464,7 +458,8 @@ public class DownloadPageViewModel : ObservableObject
         DownloadExtraCommand = new AsyncRelayCommand(_ => DownloadExtraAsync(), _ => DetailHasExtra && !IsBusy);
         OpenMapPageCommand = new RelayCommand(_ => OpenMapPage());
         CloseDetailCommand = new RelayCommand(_ => IsDetailOpen = false);
-        EnqueueInstallCommand = new RelayCommand(_ => EnqueueVersionInstall(), _ => CurrentInstallVersion is not null);
+        // 「加入队列」按钮在版本已选中的安装弹窗内，直接始终可用，不再门控置灰（修复：下载队列按钮持续置灰）。
+        EnqueueInstallCommand = new RelayCommand(_ => EnqueueVersionInstall());
         CloseInstallCommand = new RelayCommand(_ => IsInstallOpen = false);
 
         Current = this;

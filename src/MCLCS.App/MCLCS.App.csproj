@@ -11,12 +11,15 @@
     -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>2.4.2</Version>
+    <Version>2.5.1</Version>
     <!-- 仅保留简体中文框架资源（zh-Hans），剔除其余语言卫星程序集，缩小发布体积 -->
     <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
     <RootNamespace>MCLCS.App</RootNamespace>
     <AssemblyName>MCLCS.App</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- 应用图标（Windows 多分辨率 ico）：在资源管理器/任务栏显示，并随打包进 exe。
+         托盘图标同样取自该文件（见 Services/TrayIconService.cs）。 -->
+    <ApplicationIcon>Resources\MCLCS.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,10 +35,9 @@
     <Resource Include="Resources\Icons\dark@2x\**\*.png" />
   </ItemGroup>
 
-  <!-- 系统托盘图标：用户绘制 tray.ico 后放到 src/MCLCS.App/Resources/ 即可随构建复制到输出目录。
-       文件不存在时 Condition 跳过，不影响构建（bug #26）。 -->
+  <!-- 系统托盘图标：与 ApplicationIcon 共用 Resources\MCLCS.ico，随构建复制到输出目录（bug #26）。 -->
   <ItemGroup>
-    <None Include="Resources\tray.ico" CopyToOutputDirectory="PreserveNewest" Condition="Exists('Resources\tray.ico')" />
+    <None Include="Resources\MCLCS.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

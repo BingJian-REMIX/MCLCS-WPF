@@ -12,7 +12,7 @@ namespace MCLCS.App.Services;
 /// 系统托盘图标服务（bug #26：最小化到托盘）。
 /// 项目刻意不启用 UseWindowsForms（避免与 WPF 类型撞名 CS0104），故直接用 Win32
 /// Shell_NotifyIcon + 一个不可见 HwndSource 消息窗口接收回调，零额外依赖。
-/// 托盘图标优先从程序目录加载用户绘制的 tray.ico（LoadImage + LR_LOADFROMFILE）。
+/// 托盘图标优先从程序目录加载应用图标 MCLCS.ico（LoadImage + LR_LOADFROMFILE，多分辨率自适应）。
 /// </summary>
 public sealed class TrayIconService : IDisposable
 {
@@ -106,8 +106,8 @@ public sealed class TrayIconService : IDisposable
     {
         foreach (var candidate in new[]
         {
-            Path.Combine(AppContext.BaseDirectory, "tray.ico"),
-            Path.Combine(AppContext.BaseDirectory, "Resources", "tray.ico")
+            Path.Combine(AppContext.BaseDirectory, "MCLCS.ico"),
+            Path.Combine(AppContext.BaseDirectory, "Resources", "MCLCS.ico")
         })
         {
             try

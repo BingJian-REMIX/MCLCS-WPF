@@ -201,7 +201,7 @@
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
 
-                <!-- Minecraft 副标签：按大版本折叠分组（bug #21：避免一次性渲染全部版本导致无响应） -->
+                <!-- Minecraft 副标签：按大版本折叠分组（bug #16：折叠卡片式，新建控件样式替换原生外观；折叠同时避免一次性渲染全部版本导致无响应） -->
                 <ItemsControl ItemsSource="{Binding VersionGroups}"
                               Visibility="{Binding IsMinecraft, Converter={StaticResource BoolToVisibility}}"
                               Margin="0,4,0,0">
