@@ -1035,8 +1035,6 @@ side=""BOTH""
     {
         Console.WriteLine("[LogManager 日志管理]");
         await LogManagerTest();
-        Console.WriteLine("[SeedLibrary 种子库]");
-        await SeedLibraryTest();
         Console.WriteLine("[ScreenshotManager 截图管理]");
         await ScreenshotManagerTest();
         Console.WriteLine("[NetworkDiagnostics 网络诊断]");
@@ -1086,25 +1084,6 @@ side=""BOTH""
 
             var dest = Path.Combine(root, "export.log");
             Check("Export 复制成功", LogManager.Export(logPath, dest) && File.Exists(dest));
-        }
-        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
-    }
-
-    private static async Task SeedLibraryTest()
-    {
-        var root = TempDir("seeds");
-        try
-        {
-            var saves = Path.Combine(root, "saves");
-            var path = SeedLibrary.CreateWorld(saves, "World1", 123456789, 3700);
-            Check("CreateWorld 写出 level.dat", File.Exists(path));
-
-            var seed = SeedLibrary.ExtractSeed(Path.Combine(saves, "World1"));
-            Check("ExtractSeed 读回种子", seed == 123456789);
-
-            // 网络不可用时安全返回空列表
-            var empty = await SeedLibrary.SearchSeedsAsync(null, null, null, "http://127.0.0.1:1/nope");
-            Check("SearchSeedsAsync 不可达返回空", empty.Count == 0);
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }

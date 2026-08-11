@@ -5,6 +5,7 @@
         xmlns:svc="clr-namespace:MCLCS.App.Services"
         xmlns:theme="clr-namespace:MCLCS.App.Themes"
         xmlns:conv="clr-namespace:MCLCS.App.Converters"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="MCLCS"
         Width="1100" Height="720"
         MinWidth="900" MinHeight="600"
@@ -15,6 +16,12 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVisibility"/>
     </Window.Resources>
+    <!-- 让 WindowStyle=None 窗口真正无边框：消除 Windows 在窗口最外缘残留的 DWM 白边；
+         CaptionHeight=0 保留标题栏手动 DragMove（TitleBar_MouseDown），ResizeBorderThickness 恢复边缘拖拽缩放。 -->
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome GlassFrameThickness="0" CornerRadius="0"
+                            ResizeBorderThickness="6" CaptionHeight="0"/>
+    </shell:WindowChrome.WindowChrome>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="52"/>     <!-- 标题栏（跟随主标签变色） -->

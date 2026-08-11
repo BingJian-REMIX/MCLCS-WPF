@@ -163,8 +163,10 @@ public partial class MainWindow : Window
         TabPanel.Children.Clear();
         _tabs.Clear();
 
-        foreach (var def in MainTabs.All)
+        var last = MainTabs.All.Count - 1;
+        for (var i = 0; i < MainTabs.All.Count; i++)
         {
+            var def = MainTabs.All[i];
             var grid = new Grid
             {
                 Height = MainTabs.TabHeight,
@@ -174,9 +176,11 @@ public partial class MainWindow : Window
                 Tag = def
             };
 
+            // 圆角贴纸：外侧（最左/最右）圆角、重叠接缝侧切直，
+            // 避免圆角透明区透出下层邻贴造成漏白，同时保留贴纸外观。
             var bg = new Border
             {
-                CornerRadius = new CornerRadius(8),
+                CornerRadius = TabCornerRadius(i, last),
                 Background = Brushes.Transparent
             };
 
@@ -214,6 +218,10 @@ public partial class MainWindow : Window
             grid.MouseLeftButtonDown += (_, e) => e.Handled = true;
             grid.MouseLeftButtonUp += (_, _) => SelectTab(def.Kind);
 
+            // 鼠标悬浮动画（bug：顶栏漏白修复 + 索引贴悬浮反馈）
+            grid.MouseEnter += (_, _) => OnTabHover(def.Kind, true);
+            grid.MouseLeave += (_, _) => OnTabHover(def.Kind, false);
+
             TabPanel.Children.Add(grid);
             Panel.SetZIndex(grid, def.ZIndex);
 
@@ -235,9 +243,13 @@ public partial class MainWindow : Window
 
             AnimateWidth(p.Root, w);
 
-            p.Bg.Background = isSel
-                ? Brush($"Tab{def.Kind}ActiveBrush")
-                : Brush($"Tab{def.Kind}Brush");
+            // 每贴独立克隆画刷（p.Brush），避免悬浮动画连累合并字典里的共享/冻结画刷。
+            // 圆角透明区已由 TabCornerRadius 的「重叠侧切直」消除，Root 保持透明，保留贴纸外观。
+            var solid = TabColor($"Tab{def.Kind}Brush");
+            p.Brush.Color = isSel ? TabColor($"Tab{def.Kind}ActiveBrush") : solid;
+            p.BaseColor = p.Brush.Color;
+            p.HoverColor = BrightenColor(solid, 1.2);
+            p.Bg.Background = p.Brush;
 
             p.Title.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
 
@@ -263,6 +275,66 @@ public partial class MainWindow : Window
         // 覆写 App 级资源，所有 DynamicResource 引用即时刷新
         Application.Current.Resources["TitleBarBrush"] = solid;
         Application.Current.Resources["SidebarIndicatorBrush"] = solid;
+        // 索引贴与对应页面「一体」：页面顶部以同色渲染，消除顶栏后方的白色漏出，
+        // 让选中标签的颜色向下延续到内容区（一条渐隐的同色带）。
+        ApplyPageTint(kind);
+    }
+
+    // ===== 索引贴悬浮 / 配色辅助 =====
+
+    /// <summary>取四色画刷的实色（克隆自合并字典，可安全动画）。</summary>
+    private static Color TabColor(string key) =>
+        ((SolidColorBrush)Application.Current.FindResource(key)).Color;
+
+    /// <summary>按系数缩放 RGB 亮度（factor&gt;1 提亮，&lt;1 变暗，通道钳制 0-255）。</summary>
+    private static Color BrightenColor(Color c, double f)
+    {
+        static byte S(int v, double ff) => (byte)Math.Clamp((int)Math.Round(v * ff), 0, 255);
+        return Color.FromArgb(c.A, S(c.R, f), S(c.G, f), S(c.B, f));
+    }
+
+    /// <summary>索引贴悬浮反馈：进入提亮、移出还原；关闭动画开关时直接置色。</summary>
+    private void OnTabHover(MainTabKind kind, bool enter)
+    {
+        if (!_tabs.TryGetValue(kind, out var p) || p.Brush is null) return;
+        var target = enter ? p.HoverColor : p.BaseColor;
+        if (AnimationsEnabled)
+        {
+            p.Brush.BeginAnimation(SolidColorBrush.ColorProperty,
+                new ColorAnimation(target, TimeSpan.FromMilliseconds(MainTabs.HoverMs)));
+        }
+        else
+        {
+            p.Brush.Color = target;
+        }
+    }
+
+    /// <summary>索引贴圆角：最左贴左侧圆角、最右贴右侧圆角（外侧贴纸角），
+    /// 其余（相邻接缝）全部切直，避免圆角透明区透出下层邻贴造成漏白。</summary>
+    private static CornerRadius TabCornerRadius(int index, int last)
+    {
+        if (index == 0) return new CornerRadius(8, 0, 0, 8);       // 最左：左圆角外侧，右切直（压在下一张上）
+        if (index == last) return new CornerRadius(0, 8, 8, 0);   // 最右：右圆角外侧，左切直（被上一张压）
+        return new CornerRadius(0, 0, 0, 0);                      // 中间：两侧皆接缝，全切直
+    }
+
+    /// <summary>页面背景随当前主标签着色：顶部一段实色带与标题栏同色，向下渐隐到窗口底色，
+    /// 使「索引贴与对应页面一体」，并消除顶栏后方的白色漏出。</summary>
+    private void ApplyPageTint(MainTabKind kind)
+    {
+        if (PageBorder is null) return;
+        var tab = TabColor($"Tab{kind}Brush");
+        var winBg = (FindResource("WindowBackground") as SolidColorBrush)?.Color ?? Colors.White;
+        var grad = new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(0, 1)
+        };
+        grad.GradientStops.Add(new GradientStop(tab, 0.0));
+        grad.GradientStops.Add(new GradientStop(tab, 0.10));
+        grad.GradientStops.Add(new GradientStop(winBg, 0.55));
+        grad.GradientStops.Add(new GradientStop(winBg, 1.0));
+        PageBorder.Background = grad;
     }
 
     // ===== 侧边栏 =====
@@ -598,7 +670,21 @@ public partial class MainWindow : Window
         return null;
     }
 
-    private sealed record TabParts(Grid Root, Border Bg, TextBlock Title, Rectangle Underline);
+    private sealed class TabParts
+    {
+        public Grid Root;
+        public Border Bg;
+        public TextBlock Title;
+        public Rectangle Underline;
+        // 每贴独立克隆画刷：避免悬浮动画连累合并字典里的共享/冻结画刷
+        public SolidColorBrush Brush = new SolidColorBrush(Colors.Transparent);
+        public Color BaseColor;   // 静止色（选中=提亮色，未选中=实色）
+        public Color HoverColor;  // 悬浮提亮色
+        public TabParts(Grid root, Border bg, TextBlock title, Rectangle underline)
+        {
+            Root = root; Bg = bg; Title = title; Underline = underline;
+        }
+    }
 
     private sealed record SidebarParts(Grid Row, Rectangle Indicator, TextBlock Title, FrameworkElement Icon);
 }

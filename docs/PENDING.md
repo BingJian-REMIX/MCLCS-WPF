@@ -57,7 +57,7 @@
 |---|---|---|---|
 | 21 | 日志管理器 | 可用 | 缺**实时跟踪**（无 FileSystemWatcher/tail）、关键字命中高亮（现只按级别整行着色）、级别多选 |
 | 22 | 存档管理器 | 只做兼容性扫描/降级/回滚 | 缺**备份/恢复/删除/复制**四大操作、存档大小与游玩时长展示、成就展示 |
-| 23 | 种子库 | 搜索可用 | `SeedViewModel.cs:136` 调用时 version/feature **硬传 null**，界面无筛选控件；无一键复制；搜索结果无法一键建世界。API base `api.mcseed.net` 疑似未验证域名 |
+| 23 | 种子库 | **已移出（2026-08-12）** | 经商议决定移除：在线种子库为死代码（App 层零调用方），`src/MCLCS.Core/Toolbox/SeedLibrary.cs` 已删除、`MCLCS.SelfCheck` 的 `SeedLibraryTest` 已移除。本地存档种子提取（`SavesViewModel.ExtractSeedCommand`）保留，与种子库无关 |
 | 24 | 截图管理器 | 纯文字 ListBox | 缺缩略图网格、查看大图 |
 | 25 | 性能监控 | 只显示实例数 + 核心数 + 累计分钟 | `PerfViewModel.cs:47` **完全没用** `HudMetricsProvider`。缺实时 FPS/内存/CPU **曲线图** |
 | 26 | 快捷方式生成器 | 可生成 | `ShortcutGenerator.cs:34` 支持 iconPath，但 UI 无图标选择控件、调用未传参 → **自定义图标不可用** |
