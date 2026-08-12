@@ -1,6 +1,6 @@
 # MCLCS — Minecraft 启动器 (WPF)
 
-> **当前版本：v2.5.1** · 语言：C# / WPF / .NET 8 · 平台：Windows
+> **当前版本：v2.5.2** · 语言：C# / WPF / .NET 8 · 平台：Windows
 
 MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft 启动器，覆盖版本安装、启动、崩溃修复、下载、Mod 管理与工具箱等。
 
@@ -22,7 +22,8 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 
 ## 更新日志
 
-- **v2.5.1**（当前）：接入多分辨率应用图标与托盘图标（MCLCS.ico）；修正下载队列按钮置灰的反馈问题（按钮恢复常显）；折叠分组 / 下拉框样式明确归入换肤任务（非缺陷）。
+- **v2.5.2** （当前）：修复开发工具，离线自检SelfCheck程序，52项断言全部PASS，修复了多项编译时错误，现启动器功能已基本完整。
+- **v2.5.1**：接入多分辨率应用图标与托盘图标（MCLCS.ico）；修正下载队列按钮置灰的反馈问题（按钮恢复常显）；折叠分组 / 下拉框样式明确归入换肤任务（非缺陷）。
 - **v2.5.0**：升级 Mojang 版本清单至 Piston v2；修复安装器版本选择缺陷（Fabric / Quilt / NeoForge）；修复外置登录 UI 线程卡死与全局样式；新增最小化到托盘；HUD 叠加层覆盖全部启动路径并修复内存与前台显示。
 - **v2.4.2**：新增中英双语（zh_CN / en_US）运行时即时切换（核心页面）；CLI 从 .NET 6 升级至 .NET 8，与 GUI 同框架；发布包同时包含 GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`），提供 portable（依赖运行时）与 single-file（自包含）两种 ZIP。
 - **v2.4.1**：UI 图标迁移为外部 PNG（亮/暗双主题）；新增“适配高分辨率屏幕”开关（启用 2x 图标）；移除 CurseForge 预留；修复 WPF 隐式 using 同名冲突与皮肤编辑器闭合标签笔误。
@@ -35,12 +36,11 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 
 ## 下载与安装
 
-发布包（v2.5.1）同时包含 GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`），提供两种形态：
+发布包（v2.5.1）同时包含 GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`）：
 
 | 包 | 说明 | 依赖 |
 |---|---|---|
-| `MCLCS-v2.5.1-portable.zip` | GUI + CLI，依赖 .NET 8 运行时 | 需先安装 [.NET 8 运行时](https://dotnet.microsoft.com/download/dotnet/8.0/runtime) |
-| `MCLCS-v2.5.1-singlefile.zip.00` / `.01` | 自包含免运行时版（各含完整 .NET 运行时） | 无需任何依赖 |
+| `MCLCS-v2.5.2-singlefile.zip.0n` | 自包含免运行时版（各含完整 .NET 运行时） | 无需任何依赖 |
 
 > **single-file 分卷说明**：自包含包约 128MB，超过多数平台单文件附件上限（100MB），故按 90MB 切分为 `.00` / `.01` 两个分卷。该切分为**字节级精确**，合并后即还原为原始 ZIP，任意解压工具均可使用。
 
@@ -48,14 +48,14 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 
 - Windows（CMD / PowerShell）：
   ```powershell
-  copy /b MCLCS-v2.5.1-singlefile.zip.00 + MCLCS-v2.5.1-singlefile.zip.01 MCLCS-v2.5.1-singlefile.zip
+  copy /b MCLCS-v2.5.1-singlefile.zip.00 + MCLCS-v2.5.2-singlefile.zip.01 MCLCS-v2.5.1-singlefile.zip
   ```
 - Linux / macOS：
   ```bash
-  cat MCLCS-v2.5.1-singlefile.zip.* > MCLCS-v2.5.1-singlefile.zip
+  cat MCLCS-v2.5.2-singlefile.zip.* > MCLCS-v2.5.2-singlefile.zip
   ```
 
-合并得到 `MCLCS-v2.5.1-singlefile.zip`，解压后即可使用。发布包归档于 `history` 分支的 `dist/`，作为对应 Release 的附件。
+合并得到 `MCLCS-v2.5.2-singlefile.zip`，解压后即可使用。发布包归档于 `history` 分支的 `dist/`，作为对应 Release 的附件。
 
 ## 编译与发布
 
