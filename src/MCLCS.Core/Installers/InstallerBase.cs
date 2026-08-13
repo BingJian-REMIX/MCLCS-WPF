@@ -112,8 +112,7 @@ public abstract class InstallerBase
         if (version.AssetIndex is null) return;
 
         var indexJson = await MirrorPolicy.GetStringWithFallback(
-            new[] { version.AssetIndex.Url, $"{GameConstants.BmclapiBase}/assets/indexes/{version.AssetIndex.Id}.json" },
-            Client, ct);
+            MirrorPolicy.AssetIndexUrls(version.AssetIndex.Url), Client, ct);
         var index = System.Text.Json.JsonSerializer.Deserialize<AssetIndex>(indexJson)
                     ?? throw new InvalidOperationException("无法解析资源索引");
 

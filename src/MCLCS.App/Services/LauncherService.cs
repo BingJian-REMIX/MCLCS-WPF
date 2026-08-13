@@ -62,7 +62,7 @@ public class LauncherService : ILogger
 
         // 规格 2.2：地图站要求 User-Agent 为 MCLCS/版本号 (Windows; +仓库地址)
         _client.DefaultRequestHeaders.UserAgent.TryParseAdd(
-            $"MCLCS/{GameConstants.LauncherVersion} (Windows; +https://github.com/bingjianremix/MCLCS)");
+            $"MCLCS/{GameConstants.LauncherVersion} (Windows; +{GameConstants.CnbRepoUrl})");
 
         Pixelmap = new PixelmapClient(_client);
 

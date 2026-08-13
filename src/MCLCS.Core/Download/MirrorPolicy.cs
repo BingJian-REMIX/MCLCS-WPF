@@ -1,3 +1,4 @@
+using System;
 using MCLCS.Core.Utils;
 
 namespace MCLCS.Core.Download;
@@ -29,16 +30,55 @@ public static class MirrorPolicy
 
     /// <summary>
     /// 资源对象候选 URL（hash 为资源 sha1）。
-    /// 三个源都按 Mojang 约定以 hash 前两位分目录：<c>/{hash[0:2]}/{hash}</c>。
-    /// 缺少该分目录段（形如 <c>/assets/{hash}</c> 或 <c>/assets/objects/{hash}</c>）会一律 404，
-    /// 这正是"Minecraft 核心游戏文件无法下载"的根因（bug #20），已实测确认。
+    /// BMCLAPI 与官方源都按 Mojang 约定以 hash 前两位分目录：<c>/{hash[0:2]}/{hash}</c>。
+    /// 注意：BMCLAPI 的资源对象路径是 <c>/assets/{prefix}/{hash}</c>，
+    /// 形如 <c>/assets/{hash}</c> 或 <c>/objects/{prefix}/{hash}</c> 的路径一律 404（已实测确认）。
     /// </summary>
     public static IEnumerable<string> AssetUrls(string hash)
     {
         var prefix = hash[..2];
         yield return $"{GameConstants.BmclapiBase}/assets/{prefix}/{hash}";
-        yield return $"{GameConstants.BmclapiBase}/objects/{prefix}/{hash}";
         yield return $"{GameConstants.OfficialAssetsBase}/{prefix}/{hash}";
+    }
+
+    /// <summary>
+    /// 资源索引候选 URL（BMCLAPI 优先）。
+    /// BMCLAPI 镜像官方资源索引需做<b>主机替换</b>（保留官方路径
+    /// <c>/v1/packages/{sha1}/{id}.json</c>），而非 <c>/assets/indexes/{id}.json</c>
+    /// （该路径实测恒 404）。例如官方
+    /// <c>https://piston-meta.mojang.com/v1/packages/{sha1}/5.json</c>
+    /// → BMCLAPI <c>https://bmclapi2.bangbang93.com/v1/packages/{sha1}/5.json</c>（实测 200）。
+    /// </summary>
+    public static IEnumerable<string> AssetIndexUrls(string officialUrl)
+    {
+        var mirror = ToBmclapiMirror(officialUrl);
+        if (mirror is not null) yield return mirror;
+        yield return officialUrl;
+    }
+
+    /// <summary>
+    /// 将官方 Mojang URL 转换为 BMCLAPI 镜像 URL（主机替换）。
+    /// BMCLAPI 镜像官方源的方式是把 mojang 主机整体替换成 BMCLAPI 主机、路径不变。
+    /// 无法识别的主机返回 null（调用方应回退官方 URL）。
+    /// </summary>
+    private static readonly string[] MojangHosts =
+    {
+        "piston-meta.mojang.com", "piston-data.mojang.com", "launcher.mojang.com",
+        "resources.download.minecraft.net", "mc.resources.download.minecraft.net",
+        "libraries.minecraft.net", "meta.mojang.com"
+    };
+
+    private static readonly string BmclapiHost = new Uri(GameConstants.BmclapiBase).Host;
+
+    private static string? ToBmclapiMirror(string? officialUrl)
+    {
+        if (string.IsNullOrEmpty(officialUrl)) return null;
+        foreach (var host in MojangHosts)
+        {
+            if (officialUrl.Contains(host, StringComparison.OrdinalIgnoreCase))
+                return officialUrl.Replace(host, BmclapiHost, StringComparison.OrdinalIgnoreCase);
+        }
+        return null;
     }
 
     /// <summary>依次尝试候选 URL，返回首个成功的内容。全部失败抛异常。</summary>

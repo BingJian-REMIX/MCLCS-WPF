@@ -1,0 +1,6 @@
+{
+  "version": "2.5.3",
+  "notes": "启动器自身崩溃捕获 + 资源包/光影崩溃自动修复 + 存档损坏检测（只读）；BMCLAPI 镜像路径修正（资源索引主机替换、移除恒 404 的 /objects/ 回退）。",
+  "singleFileUrl": "https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases/v2.5.3",
+  "mandatory": false
+}
