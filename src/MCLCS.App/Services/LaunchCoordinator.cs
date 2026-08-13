@@ -179,6 +179,15 @@ public static class LaunchCoordinator
 
         if (policy == CrashRepairPolicy.Always)
         {
+            // 冲突触发的禁用（如 Mod 冲突）必须先弹窗让用户选择保留哪一个，
+            // 即便策略为「始终」也不得静默执行（默认保留第一个）。
+            if (result.RepairPlan is { Strategy: RepairStrategy.DisableConflictingMods })
+            {
+                ShowReport(result, allowRepair: true, versionId);
+                status?.Invoke("检测到 Mod 冲突，已弹出选择窗口，请选择要保留的 Mod");
+                return;
+            }
+
             var cur = result;
             var attempts = 0;
             while (cur.CrashReportPath is not null
