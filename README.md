@@ -1,20 +1,11 @@
 # MCLCS — Minecraft 启动器 (WPF)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-2.5.4-blue" alt="version">
-  <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4" alt="platform">
-  <img src="https://img.shields.io/badge/.NET-8-512BD4" alt="dotnet">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
-  <a href="https://cnb.cool/RLRS-Studio/MCLCS-WPF"><img src="https://img.shields.io/badge/source-CNB%20Pages-178600" alt="source"></a>
-</p>
-
-> **当前版本：v2.5.4** · 语言：C# / WPF / .NET 8 · 平台：Windows
+> **当前版本：v2.5.4** · C# / WPF / .NET 8 · Windows
 
 MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft 启动器，覆盖版本安装、启动、崩溃修复、下载、Mod 管理与工具箱等。
 
-- **仓库（CNB，主）**：<https://cnb.cool/RLRS-Studio/MCLCS-WPF>
-- **Releases**：<https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases>
-- **GitHub**：<https://github.com/BingJian-REMIX/MCLCS-WPF>（仅作 CNB 的代码镜像）
+- 仓库（CNB）：<https://cnb.cool/RLRS-Studio/MCLCS-WPF>
+- Releases：<https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases>
 
 ## 功能一览
 
@@ -59,7 +50,7 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 
 下载后直接解压，运行 `MCLCS.App.exe` 即可。启动器内置**自动更新器**：启动时读取 CNB Pages 上的 `latest.json`，发现新版本后直接下载 CNB 发布直链、解压并原地替换安装目录、接力启动新版本，全程无需手动下载或 winget。
 
-> **关于分卷**：v2.5.4 起发布物改为**单个 ZIP**（约 128MB）。因 CNB Release 单文件资产上限为 64GiB，远未触及，故不再切分卷。早期 v2.5.3 及以前文档中提到的 `.00` / `.01` 分卷合并方式已不再适用。
+> v2.5.4 起发布物为单个 ZIP，不再切分卷（早期 v2.5.3 及以前的 `.00`/`.01` 分卷方式已废弃）。
 
 ## 编译与发布
 
