@@ -9,7 +9,8 @@ namespace MCLCS.App.Views;
 
 /// <summary>
 /// 更新可用时的模态弹窗：展示新版本号与更新日志（来自 CNB Pages latest.json 的 changelog 字段），
-/// 提供「下载更新」（调用启动器内置下载器拉取 cnb 发布直链，解压后原地替换并接力启动新版本）与「稍后」按钮。
+/// 提供「下载更新」（调用启动器内置下载器拉取 cnb 发布直链，下载完成后生成 PowerShell 更新脚本，
+/// 由脚本在退出旧进程后解压覆盖、删除压缩包并重启启动器）与「稍后」按钮。
 /// 半透明遮罩覆盖整个主窗口，卡片居中（规格 1.4：弹窗模态居中、半透明遮罩、主操作按钮右置）。
 /// </summary>
 public partial class UpdateDialog : Window
@@ -42,7 +43,8 @@ public partial class UpdateDialog : Window
         };
     }
 
-    /// <summary>点击「下载更新」：用启动器内置下载器拉取 cnb 发布直链，解压后原地替换并接力启动新版本。</summary>
+    /// <summary>点击「下载更新」：用启动器内置下载器拉取 cnb 发布直链，下载完成后生成 PowerShell 更新脚本并启动它，
+    /// 随后退出当前进程；脚本在旧进程退出后解压覆盖安装目录、删除压缩包并重启启动器。</summary>
     private async void Download_Click(object sender, RoutedEventArgs e)
     {
         var url = _result.DownloadUrl;
@@ -59,10 +61,10 @@ public partial class UpdateDialog : Window
         StatusText.Text = "正在通过内置下载器获取更新包…";
 
         var version = _result.LatestVersion ?? GameConstants.LauncherVersion;
-        var updRoot = Path.Combine(Path.GetTempPath(), "MCLCS", "updates");
+        var updRoot = Path.Combine(Path.GetTempPath(), "MCLCS", "update");
         Directory.CreateDirectory(updRoot);
         var zipPath = Path.Combine(updRoot, $"MCLCS-v{version}-win-x64.zip");
-        var extractDir = Path.Combine(updRoot, version);
+        var scriptPath = Path.Combine(updRoot, "update.ps1");
 
         var progress = new Progress<double>(p =>
         {
@@ -73,20 +75,53 @@ public partial class UpdateDialog : Window
         try
         {
             await LauncherService.Instance.DownloadFileAsync(url, zipPath, progress);
-            StatusText.Text = "下载完成，正在解压…";
-            if (Directory.Exists(extractDir)) Directory.Delete(extractDir, true);
-            Unzip.ExtractToDirectory(zipPath, extractDir);
 
-            // 定位新版本主程序，由它接管并完成原地替换（避免覆盖正在运行的自身）
-            var exe = Directory.GetFiles(extractDir, "MCLCS.App.exe", SearchOption.AllDirectories).FirstOrDefault()
-                      ?? Directory.GetFiles(extractDir, "*.exe", SearchOption.AllDirectories).FirstOrDefault();
-            if (exe is null) throw new FileNotFoundException("更新包中未找到启动器主程序。");
-
+            // 当前启动器安装目录（供脚本覆盖替换用）
             var installDir = Path.GetDirectoryName(
                 Environment.ProcessPath ?? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar))!;
-            StatusText.Text = "正在应用更新…";
-            // 以 --apply-update 启动新副本并退出当前进程，释放被锁定的旧 exe
-            Process.Start(new ProcessStartInfo(exe, $"--apply-update \"{installDir}\"") { UseShellExecute = true });
+            var exeName = Path.GetFileName(
+                Environment.ProcessPath ?? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) + ".exe");
+            var extractDir = Path.Combine(updRoot, version);
+
+            // 生成 PowerShell 更新脚本：等待旧进程退出 → 解压 → 覆盖安装目录 → 删 zip → 重启
+            var script = @"$ErrorActionPreference = 'Stop'
+$zip     = '__ZIP__'
+$extract = '__EXTRACT__'
+$install = '__INSTALL__'
+$exe     = '__EXE__'
+
+# 等待旧启动器完全退出，释放被锁定的文件
+Start-Sleep -Seconds 2
+
+# 清理并解压
+if (Test-Path -LiteralPath $extract) { Remove-Item -LiteralPath $extract -Recurse -Force }
+Expand-Archive -Path $zip -DestinationPath $extract -Force
+
+# 若 zip 内含单层根目录，则以其内容为准
+$src = $extract
+$top = Get-ChildItem -LiteralPath $extract
+if ($top.Count -eq 1 -and $top[0].PSIsContainer) { $src = $top[0].FullName }
+
+# 覆盖安装目录（程序文件），用户数据目录不受影响
+Copy-Item -Path (Join-Path $src '*') -Destination $install -Recurse -Force
+
+# 清理压缩包
+Remove-Item -LiteralPath $zip -Force
+
+# 重启启动器
+Start-Process -FilePath $exe
+"
+                .Replace("__ZIP__", zipPath)
+                .Replace("__EXTRACT__", extractDir)
+                .Replace("__INSTALL__", installDir)
+                .Replace("__EXE__", Path.Combine(installDir, exeName));
+
+            File.WriteAllText(scriptPath, script);
+
+            StatusText.Text = "下载完成，正在应用更新…";
+            // 启动脚本（不等待），随后退出当前进程以释放文件锁，由脚本完成替换与重启
+            Process.Start(new ProcessStartInfo("powershell",
+                $"-ExecutionPolicy Bypass -File \"{scriptPath}\"") { UseShellExecute = true });
             Environment.Exit(0);
         }
         catch (Exception ex)
