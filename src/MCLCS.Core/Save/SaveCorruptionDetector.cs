@@ -36,11 +36,15 @@ public class SaveCorruptionReport
     {
         get
         {
-            if (Issues.Count > 0)
-                return string.Join("；", Issues);
-            if (Notes.Count > 0)
-                return string.Join("；", Notes);
-            return "未发现明显损坏。";
+            var detail = Issues.Count > 0
+                ? string.Join("；", Issues)
+                : string.Join("；", Notes);
+            return Severity switch
+            {
+                SaveCorruptionSeverity.Corrupt => $"⚠ 已损坏，可能无法加载：{detail}",
+                SaveCorruptionSeverity.Warning => $"⚠ 可疑，建议先备份再进入：{detail}",
+                _ => "✓ 未检测到损坏。"
+            };
         }
     }
 }

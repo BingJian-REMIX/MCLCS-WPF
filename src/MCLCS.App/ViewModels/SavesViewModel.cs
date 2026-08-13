@@ -180,7 +180,7 @@ public class SavesViewModel : ObservableObject
                 }
                 else
                 {
-                    row.CorruptionText = "未检测到损坏。";
+                    row.CorruptionText = corrupt?.Summary ?? "✓ 未检测到损坏。";
                     row.CorruptionColor = "#5BBF6A";
                 }
 
@@ -221,7 +221,7 @@ public class SavesViewModel : ObservableObject
                 {
                     row.HasCorruption = false;
                     row.CorruptionColor = "#5BBF6A";
-                    row.CorruptionText = "未检测到损坏。";
+                    row.CorruptionText = "✓ 未检测到损坏。";
                 }
                 else
                 {
