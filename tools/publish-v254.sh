@@ -1,6 +1,7 @@
 #!/bin/bash
-# MCLCS v2.5.4 发布脚本
-# 发布 GUI 启动器 + CLI 工具，生成 portable 与 single-file 两种 ZIP 包
+# MCLCS v2.5.4 发布脚本（single-file 版）
+# 仅发布自包含 single-file 包（GUI + CLI 合并为一个 ZIP），不分卷。
+# 理由：CNB Release 单文件资产上限 64GiB，128MB 自包含包远未触及，无需切分。
 set -e
 
 export DOTNET_ROOT=/opt/dotnet10
@@ -8,37 +9,16 @@ DOTNET=/opt/dotnet10/dotnet
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/dist/v2.5.4"
 RID="win-x64"
+VERSION="2.5.4"
 
-echo "=== MCLCS v2.5.4 Publish ==="
+echo "=== MCLCS v$VERSION Publish (single-file only) ==="
 echo "Root: $ROOT"
 
 mkdir -p "$OUT"
 
-# --- 1. GUI 启动器 (portable) ---
+# --- 1. GUI 启动器 (single-file, self-contained) ---
 echo ""
-echo "[1/4] Publishing GUI (portable, framework-dependent)..."
-$DOTNET publish "$ROOT/src/MCLCS.App/MCLCS.App.csproj" \
-    -c Release \
-    -f net8.0-windows \
-    -r $RID \
-    -p:EnableWindowsTargeting=true \
-    -p:PublishReadyToRun=false \
-    --output "$OUT/gui-portable"
-
-# --- 2. CLI 工具 (portable) ---
-echo ""
-echo "[2/4] Publishing CLI (portable, framework-dependent)..."
-$DOTNET publish "$ROOT/tools/MCLCS.Cli/MCLCS.Cli.csproj" \
-    -c Release \
-    -f net8.0-windows \
-    -r $RID \
-    -p:EnableWindowsTargeting=true \
-    -p:PublishReadyToRun=false \
-    --output "$OUT/cli-portable"
-
-# --- 3. GUI 启动器 (single-file) ---
-echo ""
-echo "[3/4] Publishing GUI (single-file, self-contained)..."
+echo "[1/3] Publishing GUI (single-file, self-contained)..."
 $DOTNET publish "$ROOT/src/MCLCS.App/MCLCS.App.csproj" \
     -c Release \
     -f net8.0-windows \
@@ -50,9 +30,9 @@ $DOTNET publish "$ROOT/src/MCLCS.App/MCLCS.App.csproj" \
     -p:IncludeNativeLibrariesForSelfExtract=true \
     --output "$OUT/gui-singlefile"
 
-# --- 4. CLI 工具 (single-file) ---
+# --- 2. CLI 工具 (single-file, self-contained) ---
 echo ""
-echo "[4/4] Publishing CLI (single-file, self-contained)..."
+echo "[2/3] Publishing CLI (single-file, self-contained)..."
 $DOTNET publish "$ROOT/tools/MCLCS.Cli/MCLCS.Cli.csproj" \
     -c Release \
     -f net8.0-windows \
@@ -63,36 +43,19 @@ $DOTNET publish "$ROOT/tools/MCLCS.Cli/MCLCS.Cli.csproj" \
     -p:PublishReadyToRun=false \
     --output "$OUT/cli-singlefile"
 
-# --- 打包 ZIP ---
+# --- 3. 合并 + 打包（单个 ZIP，不分卷）---
 echo ""
-echo "=== Packaging ZIP ==="
+echo "[3/3] Packaging single-file ZIP..."
 cd "$OUT"
-
-# 合并 portable
-mkdir -p "MCLCS-v2.5.4-portable"
-cp -r gui-portable/* "MCLCS-v2.5.4-portable/"
-cp -r cli-portable/* "MCLCS-v2.5.4-portable/"
-zip -r "MCLCS-v2.5.4-portable.zip" "MCLCS-v2.5.4-portable/" > /dev/null
-
-# 合并 single-file
-mkdir -p "MCLCS-v2.5.4-singlefile"
-cp -r gui-singlefile/* "MCLCS-v2.5.4-singlefile/"
-cp -r cli-singlefile/* "MCLCS-v2.5.4-singlefile/"
-zip -r "MCLCS-v2.5.4-singlefile.zip" "MCLCS-v2.5.4-singlefile/" > /dev/null
-
-# single-file 自包含包约 128MB，超过多数平台附件上限（100MB），
-# 按 90MB 做字节级精确切分（split，无 marker，合并即还原原 zip）。
-echo "=== Splitting single-file into volumes (90MB each) ==="
-SPLIT_SIZE=90m
-rm -f "MCLCS-v2.5.4-singlefile.zip."*
-split -b "$SPLIT_SIZE" -d -a 2 "MCLCS-v2.5.4-singlefile.zip" "MCLCS-v2.5.4-singlefile.zip."
-rm -f "MCLCS-v2.5.4-singlefile.zip"   # 删除中间大包，仅保留分卷
+rm -rf "MCLCS-v$VERSION-singlefile"
+mkdir -p "MCLCS-v$VERSION-singlefile"
+cp -r gui-singlefile/* "MCLCS-v$VERSION-singlefile/"
+cp -r cli-singlefile/* "MCLCS-v$VERSION-singlefile/"
+zip -r "MCLCS-v$VERSION-singlefile.zip" "MCLCS-v$VERSION-singlefile/" > /dev/null
 
 echo "=== Done ==="
-ls -la "$OUT"/*.zip*
+ls -la "$OUT"/MCLCS-v$VERSION-singlefile.zip
+echo "Single-file ZIP: $(du -h "$OUT/MCLCS-v$VERSION-singlefile.zip" | cut -f1)"
 echo ""
-echo "Portable ZIP:     $(du -h "$OUT/MCLCS-v2.5.4-portable.zip" | cut -f1)"
-echo "Single-file 分卷: $(du -h "$OUT"/MCLCS-v2.5.4-singlefile.zip.* | cut -f1 | tr '\n' ' ')"
-echo ""
-echo "合并命令 (Linux/macOS): cat MCLCS-v2.5.4-singlefile.zip.* > MCLCS-v2.5.4-singlefile.zip"
-echo "合并命令 (Windows):     copy /b MCLCS-v2.5.4-singlefile.zip.00+MCLCS-v2.5.4-singlefile.zip.01 MCLCS-v2.5.4-singlefile.zip"
+echo "将 MCLCS-v$VERSION-singlefile.zip 作为 CNB Release v$VERSION 的单个资产上传即可"
+echo "（单文件上限 64GiB，无需分卷；合并命令不再需要）"
