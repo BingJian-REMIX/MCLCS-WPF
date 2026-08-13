@@ -24,9 +24,9 @@ public class SaveChoice
 /// </summary>
 public class DataPackViewModel : ObservableObject
 {
-    /// <summary>规则库联网更新地址（拉不到就继续用内置规则，不影响使用）。</summary>
+    /// <summary>规则库联网更新地址（拉不到就继续用内置规则，不影响使用）。经 jsDelivr 国内直连。</summary>
     private const string RulesUpdateUrl =
-        "https://raw.githubusercontent.com/bingjianremix/MCLCS/main/data/datapack-conflict-rules.json";
+        "https://cdn.jsdelivr.net/gh/BingJian-REMIX/MCLCS-WPF@main/data/datapack-conflict-rules.json";
 
     private ObservableCollection<SaveChoice> _saves = new();
     private ObservableCollection<DataPackInfo> _packs = new();

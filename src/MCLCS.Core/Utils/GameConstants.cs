@@ -131,8 +131,8 @@ public static class GameConstants
     /// <summary>CNB 仓库 git 地址（发布页链接、singlefile 包按 v{版本} 格式发布）。</summary>
     public const string CnbRepoGitUrl = CnbRepoUrl + ".git";
 
-    /// <summary>本项目在 GitHub 的镜像仓库地址（更新源的镜像；发布页/直链兜底均指向此处）。</summary>
-    public const string GitHubRepoUrl = "https://github.com/bingjianremix/MCLCS";
+    /// <summary>本项目在 GitHub 的镜像仓库地址（cnb.cool/RLRS-Studio/MCLCS-WPF 的镜像；更新源、发布页/直链兜底均指向此处）。</summary>
+    public const string GitHubRepoUrl = "https://github.com/BingJian-REMIX/MCLCS-WPF";
 
     /// <summary>winget 包标识符，对应 microsoft/winget-pkgs 中 MCLCS 的 PackageIdentifier。
     /// 更新弹窗「下载」会执行 <c>winget install {WingetPackageId} --version {最新版本}</c>，
@@ -143,8 +143,8 @@ public static class GameConstants
     /// 更新信息静态地址：GitHub 镜像仓库托管的 <c>latest.json</c>，经 jsDelivr CDN 在国内直连可达
     /// （jsDelivr 在国内有 CDN 节点，规避 raw.githubusercontent.com 被墙问题）。
     /// 普通 HTTPS GET 即可读取，终端用户零 git 依赖；网络超时/失败即视为「已是最新」，绝不误报。
-    /// 仓库路径为 <c>bingjianremix/MCLCS</c> 的 <c>updates/latest.json</c>（@main 分支）。
+    /// 仓库路径为 <c>BingJian-REMIX/MCLCS-WPF</c> 的 <c>updates/latest.json</c>（@main 分支）。
     /// 字段与解析逻辑见 <see cref="MCLCS.Core.Update.LauncherUpdater"/>。
     /// </summary>
-    public const string UpdateInfoUrl = "https://cdn.jsdelivr.net/gh/bingjianremix/MCLCS@main/updates/latest.json";
+    public const string UpdateInfoUrl = "https://cdn.jsdelivr.net/gh/BingJian-REMIX/MCLCS-WPF@main/updates/latest.json";
 }
