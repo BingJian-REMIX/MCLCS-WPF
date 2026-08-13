@@ -1,8 +1,20 @@
 # MCLCS — Minecraft 启动器 (WPF)
 
-> **当前版本：v2.5.3** · 语言：C# / WPF / .NET 8 · 平台：Windows
+<p align="center">
+  <img src="https://img.shields.io/badge/version-2.5.4-blue" alt="version">
+  <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4" alt="platform">
+  <img src="https://img.shields.io/badge/.NET-8-512BD4" alt="dotnet">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
+  <a href="https://cnb.cool/RLRS-Studio/MCLCS-WPF"><img src="https://img.shields.io/badge/source-CNB%20Pages-178600" alt="source"></a>
+</p>
+
+> **当前版本：v2.5.4** · 语言：C# / WPF / .NET 8 · 平台：Windows
 
 MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft 启动器，覆盖版本安装、启动、崩溃修复、下载、Mod 管理与工具箱等。
+
+- **仓库（CNB，主）**：<https://cnb.cool/RLRS-Studio/MCLCS-WPF>
+- **Releases**：<https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases>
+- **GitHub**：<https://github.com/BingJian-REMIX/MCLCS-WPF>（仅作 CNB 的代码镜像）
 
 ## 功能一览
 
@@ -22,7 +34,8 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 
 ## 更新日志
 
-- **v2.5.3** （当前）：新增启动器自身崩溃捕获与日志（`mclcs_crash.log`，覆盖启动期 XAML 解析等静默退出）；崩溃自动修复新增资源包/光影类别（回滚 vanilla / 停用光影 / 清缓存，非破坏性）；新增存档损坏检测（只读，三色分级：绿=正常 / 橙=可疑 / 红=已损坏）；Mod 冲突触发的禁用在「始终」策略下也改为先弹窗确认。
+- **v2.5.4** （当前）：更新源迁移至 CNB Pages（`cnb.cool` 官方静态页）托管的 `latest.json`，国内直连、稳定、免代理；更新下载改由启动器内置下载器直接拉取 CNB 发布直链（不再依赖 winget / 浏览器）；自更新改为「下载 → 解压 → 原地替换安装目录并接力启动新版本」；发布物改为单个 `MCLCS-v2.5.4-win-x64.zip`（不再切分卷）；GitHub 仓库仅作为 CNB 的代码镜像。
+- **v2.5.3**：新增启动器自身崩溃捕获与日志（`mclcs_crash.log`，覆盖启动期 XAML 解析等静默退出）；崩溃自动修复新增资源包/光影类别（回滚 vanilla / 停用光影 / 清缓存，非破坏性）；新增存档损坏检测（只读，三色分级：绿=正常 / 橙=可疑 / 红=已损坏）；Mod 冲突触发的禁用在「始终」策略下也改为先弹窗确认。
 - **v2.5.2**：修复开发工具，离线自检SelfCheck程序，52项断言全部PASS，修复了多项编译时错误，现启动器功能已基本完整。
 - **v2.5.1**：接入多分辨率应用图标与托盘图标（MCLCS.ico）；修正下载队列按钮置灰的反馈问题（按钮恢复常显）；折叠分组 / 下拉框样式明确归入换肤任务（非缺陷）。
 - **v2.5.0**：升级 Mojang 版本清单至 Piston v2；修复安装器版本选择缺陷（Fabric / Quilt / NeoForge）；修复外置登录 UI 线程卡死与全局样式；新增最小化到托盘；HUD 叠加层覆盖全部启动路径并修复内存与前台显示。
@@ -37,37 +50,30 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 
 ## 下载与安装
 
-发布包（v2.5.3）同时包含 GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`）：
+发布包为**自包含 single-file 版**：GUI 启动器（`MCLCS.App.exe`）与 CLI（`mclcs.exe`）合并于一个 ZIP，内嵌完整 .NET 8 运行时，**无需任何前置依赖**。
 
-| 包                                | 说明                      | 依赖     |
-| -------------------------------- | ----------------------- | ------ |
-| `MCLCS-v2.5.3-singlefile.zip.0n` | 自包含免运行时版（各含完整 .NET 运行时） | 无需任何依赖 |
+| 版本 | 资产 | 说明 |
+| --- | --- | --- |
+| **v2.5.4（最新）** | [`MCLCS-v2.5.4-win-x64.zip`](https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases/download/v2.5.4/MCLCS-v2.5.4-win-x64.zip) | 自包含免运行时，解压即用 |
+| 全部历史版本 | [CNB Releases](https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases) | 各版本发布直链 |
 
-> **single-file 分卷说明**：自包含包约 128MB，超过多数平台单文件附件上限（100MB），故按 90MB 切分为 `.00` / `.01` 两个分卷。该切分为**字节级精确**，合并后即还原为原始 ZIP，任意解压工具均可使用。
+下载后直接解压，运行 `MCLCS.App.exe` 即可。启动器内置**自动更新器**：启动时读取 CNB Pages 上的 `latest.json`，发现新版本后直接下载 CNB 发布直链、解压并原地替换安装目录、接力启动新版本，全程无需手动下载或 winget。
 
-**合并分卷**：
-
-- Windows（CMD / PowerShell）：
-  ```powershell
-  copy /b MCLCS-v2.5.3-singlefile.zip.00 + MCLCS-v2.5.3-singlefile.zip.01 MCLCS-v2.5.3-singlefile.zip
-  ```
-- Linux / macOS：
-  ```bash
-  cat MCLCS-v2.5.3-singlefile.zip.* > MCLCS-v2.5.3-singlefile.zip
-  ```
-
-合并得到 `MCLCS-v2.5.3-singlefile.zip`，解压后即可使用。发布包归档于 `history` 分支的 `dist/`，作为对应 Release 的附件。
+> **关于分卷**：v2.5.4 起发布物改为**单个 ZIP**（约 128MB）。因 CNB Release 单文件资产上限为 64GiB，远未触及，故不再切分卷。早期 v2.5.3 及以前文档中提到的 `.00` / `.01` 分卷合并方式已不再适用。
 
 ## 编译与发布
 
 - **环境**：Windows + .NET 8 SDK（WPF 仅 Windows 运行）。
-- **发布 GUI（自包含 EXE）**：
+- **一键发布（推荐）**：仓库内 `tools/publish-v254.sh` 会以 single-file + self-contained 方式分别发布 GUI 与 CLI，合并打包为单个 `MCLCS-v2.5.4-win-x64.zip`（即 CNB Release 资产）。
+- **手动发布 GUI（自包含 single-file）**：
   ```powershell
-  dotnet publish src/MCLCS.App/MCLCS.App.csproj -c Release -r win-x64 --self-contained
+  dotnet publish src/MCLCS.App/MCLCS.App.csproj -c Release -r win-x64 `
+    -p:PublishSingleFile=true -p:SelfContained=true -p:EnableWindowsTargeting=true
   ```
-- **发布 CLI**：
+- **手动发布 CLI**：
   ```powershell
-  dotnet publish tools/MCLCS.Cli/MCLCS.Cli.csproj -c Release -r win-x64 --self-contained
+  dotnet publish tools/MCLCS.Cli/MCLCS.Cli.csproj -c Release -r win-x64 `
+    -p:PublishSingleFile=true -p:SelfContained=true -p:EnableWindowsTargeting=true
   ```
 
 - **Linux 交叉编译校验**：可用 Roslyn 直接引用 .NET 8 参考程序集完成 App / CLI 层编译校验（详见 `docs/BUILD.md`）。
