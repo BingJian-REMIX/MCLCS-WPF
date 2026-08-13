@@ -1,3 +1,7 @@
+using System;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using MCLCS.Core.Localization;
@@ -9,6 +13,89 @@ namespace MCLCS.App;
 
 public partial class App : Application
 {
+    /// <summary>防止崩溃处理过程中重入导致级联弹窗。</summary>
+    private static bool _crashHandling;
+
+    /// <summary>
+    /// 静态构造函数：注册进程级未处理异常钩子。
+    /// 必须在任何实例构造之前注册，才能捕获 Application 基类 LoadBaml（App.xaml 解析）
+    /// 阶段的启动期崩溃——这类异常早于 <see cref="App"/> 实例构造函数与 OnStartup，
+    /// 早先的崩溃处理器（注册在实例构造函数里）完全抓不到，表现为"点开 exe 没反应、零日志"。
+    /// </summary>
+    static App()
+    {
+        AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+    }
+
+    public App()
+    {
+        // UI 线程未处理异常：写日志并弹窗，标记 Handled=true 让界面继续（不再静默崩溃退出）。
+        DispatcherUnhandledException += (_, e) =>
+        {
+            WriteCrashLog("DispatcherUnhandledException", e.Exception);
+            ShowFatalBox("启动器界面发生未处理异常，已写入 mclcs_crash.log。", e.Exception);
+            e.Handled = true;
+        };
+    }
+
+    private static void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        var ex = e.ExceptionObject as Exception;
+        WriteCrashLog("AppDomain.UnhandledException", ex);
+        if (e.IsTerminating)
+            ShowFatalBox("启动器发生未处理异常，已写入 mclcs_crash.log，即将退出。", ex);
+    }
+
+    private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        // 后台任务异常：仅记录，标记为已观察，不终止进程。
+        WriteCrashLog("TaskScheduler.UnobservedTaskException", e.Exception);
+        e.SetObserved();
+    }
+
+    /// <summary>将崩溃信息追加写入 exe 同目录的 mclcs_crash.log（single-file 下用 Environment.ProcessPath 取真实路径）。</summary>
+    private static void WriteCrashLog(string context, Exception? ex)
+    {
+        if (_crashHandling) return;
+        _crashHandling = true;
+        try
+        {
+            var exePath = Environment.ProcessPath ?? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar)
+                          + (Environment.ProcessPath is null ? "MCLCS.App.exe" : "");
+            var dir = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory;
+            var logPath = Path.Combine(dir, "mclcs_crash.log");
+            var sb = new StringBuilder();
+            sb.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] MCLCS 启动器崩溃（{context}）");
+            sb.AppendLine($"版本：{GameConstants.LauncherVersion}");
+            sb.AppendLine(ex?.ToString() ?? "(无异常对象)");
+            sb.AppendLine(new string('-', 60));
+            File.AppendAllText(logPath, sb.ToString());
+        }
+        catch
+        {
+            // 最后兜底：日志写入失败也不应再抛异常
+        }
+        finally
+        {
+            _crashHandling = false;
+        }
+    }
+
+    /// <summary>尽可能用原生 MessageBox 展示致命错误（WPF/Win32 存活时可用）。</summary>
+    private static void ShowFatalBox(string prefix, Exception? ex)
+    {
+        try
+        {
+            var detail = ex is null ? "" : $"\n\n{ex.GetType().Name}: {ex.Message}";
+            MessageBox.Show(prefix + detail, "MCLCS 崩溃", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch
+        {
+            // 极端情况下 UI 尚未就绪，忽略
+        }
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);

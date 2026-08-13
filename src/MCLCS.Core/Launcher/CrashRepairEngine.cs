@@ -44,6 +44,11 @@ public static class CrashRepairEngine
                 BuildJavaPlan(plan, analysis, currentJava);
                 return plan;
 
+            case CrashCategory.ResourcePackOrShader:
+                // 资源包 / 光影崩溃：安全回滚到默认（非破坏性、可恢复），纳入自动修复
+                BuildResourcePackPlan(plan, gameRoot);
+                return plan;
+
             // 其余类别：先检查 Mod 冲突 / 缺失前置（用户显式要求的崩溃修复增强），
             // 再尝试 §四.2 降级联动，最后按原类别兜底。
             default:
@@ -283,6 +288,22 @@ public static class CrashRepairEngine
         plan.Steps.Add($"合并版本 {versionId} 的依赖清单。");
         plan.Steps.Add("校验每个库文件：缺失或校验和不符的将重新下载（不删除其它文件）。");
         plan.Steps.Add("使用修复后的库重新启动游戏。");
+    }
+
+    private static void BuildResourcePackPlan(CrashRepairPlan plan, string gameRoot)
+    {
+        // 即便无法定位具体 shaderpacks 目录也照常给出方案（options.txt 一定存在时才会真正执行）。
+        plan.CanRepair = true;
+        plan.Strategy = RepairStrategy.ResetResourcePacks;
+        plan.Title = "回滚资源包 / 光影到默认";
+        plan.Description =
+            "检测到资源包或光影引起的崩溃。将把 options.txt 中的资源包重置为 vanilla（原文件已备份），" +
+            "并临时停用光影目录（shaderpacks 重命名为 .disabled，可改回）、清空缓存目录（cache 重命名为 .disabled，游戏会重建）。" +
+            "全程不删除任何文件，可随时恢复。";
+        plan.Steps.Add("备份 options.txt，将其 resourcePacks 设为 [\"vanilla\"]。");
+        plan.Steps.Add("将 shaderpacks 目录重命名为 shaderpacks.disabled（停用光影，可改回）。");
+        plan.Steps.Add("将 cache 目录重命名为 cache.disabled（清空缓存，游戏会重建）。");
+        plan.Steps.Add("重新启动游戏以加载默认资源包 / 关闭光影。");
     }
 
     private static void BuildUnrepairablePlan(CrashRepairPlan plan, CrashAnalysis analysis)

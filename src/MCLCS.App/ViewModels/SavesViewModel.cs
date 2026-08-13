@@ -20,6 +20,9 @@ public class SaveRow : ObservableObject
     private string _severityColor = "#888888";
     private bool _hasBackup;
     private string _backupText = "";
+    private string _corruptionText = "";
+    private string _corruptionColor = "#888888";
+    private bool _hasCorruption;
 
     public string CurrentVersion { get => _currentVersion; set => SetField(ref _currentVersion, value); }
     public int DataVersion { get => _dataVersion; set => SetField(ref _dataVersion, value); }
@@ -27,6 +30,13 @@ public class SaveRow : ObservableObject
     public string SeverityColor { get => _severityColor; set => SetField(ref _severityColor, value); }
     public bool HasBackup { get => _hasBackup; set => SetField(ref _hasBackup, value); }
     public string BackupText { get => _backupText; set => SetField(ref _backupText, value); }
+
+    /// <summary>存档损坏检测结果文本。</summary>
+    public string CorruptionText { get => _corruptionText; set => SetField(ref _corruptionText, value); }
+    /// <summary>损坏指示颜色。</summary>
+    public string CorruptionColor { get => _corruptionColor; set => SetField(ref _corruptionColor, value); }
+    /// <summary>是否存在致命损坏（无法加载）。</summary>
+    public bool HasCorruption { get => _hasCorruption; set => SetField(ref _hasCorruption, value); }
 }
 
 /// <summary>
@@ -72,6 +82,7 @@ public class SavesViewModel : ObservableObject
     }
 
     public ICommand ScanCommand { get; }
+    public ICommand ScanCorruptionCommand { get; }
     public ICommand DowngradeCommand { get; }
     public ICommand RestoreCommand { get; }
     public ICommand BackupSaveCommand { get; }
@@ -81,6 +92,7 @@ public class SavesViewModel : ObservableObject
     public SavesViewModel()
     {
         ScanCommand = new AsyncRelayCommand(_ => ScanAsync(), _ => !IsBusy);
+        ScanCorruptionCommand = new AsyncRelayCommand(_ => ScanCorruptionAsync(), _ => !IsBusy);
         DowngradeCommand = new AsyncRelayCommand(p => DowngradeAsync(p as string), _ => !IsBusy);
         RestoreCommand = new AsyncRelayCommand(p => RestoreAsync(p as string), _ => !IsBusy);
         BackupSaveCommand = new AsyncRelayCommand(p => BackupSaveAsync(p as string), _ => !IsBusy);
@@ -158,6 +170,20 @@ public class SavesViewModel : ObservableObject
                     ? $"{backups.Count} 个备份（最新 {backups[^1].CreatedUtc:yyyy-MM-dd HH:mm}）"
                     : "无备份";
 
+                // 存档损坏检测（只读，不修复）
+                var corrupt = SaveCorruptionDetector.ScanSingle(dir);
+                if (corrupt is not null && corrupt.Severity != SaveCorruptionSeverity.Ok)
+                {
+                    row.HasCorruption = corrupt.IsCorrupt;
+                    row.CorruptionColor = corrupt.Severity == SaveCorruptionSeverity.Corrupt ? "#E0533A" : "#E0A040";
+                    row.CorruptionText = corrupt.Summary;
+                }
+                else
+                {
+                    row.CorruptionText = "未检测到损坏。";
+                    row.CorruptionColor = "#5BBF6A";
+                }
+
                 rows.Add(row);
             }
 
@@ -174,6 +200,50 @@ public class SavesViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    private async Task ScanCorruptionAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var gameRoot = LauncherService.Instance.GameRoot;
+            var reports = await Task.Run(() => SaveCorruptionDetector.Scan(gameRoot));
+
+            var corrupt = reports.Where(r => r.IsCorrupt).ToList();
+            var warn = reports.Where(r => !r.IsCorrupt && r.Severity == SaveCorruptionSeverity.Warning).ToList();
+
+            // 同步刷新列表中各行的损坏状态
+            foreach (var row in Saves)
+            {
+                var hit = reports.FirstOrDefault(r => r.SaveName == row.SaveName);
+                if (hit is null || hit.Severity == SaveCorruptionSeverity.Ok)
+                {
+                    row.HasCorruption = false;
+                    row.CorruptionColor = "#5BBF6A";
+                    row.CorruptionText = "未检测到损坏。";
+                }
+                else
+                {
+                    row.HasCorruption = hit.IsCorrupt;
+                    row.CorruptionColor = hit.Severity == SaveCorruptionSeverity.Corrupt ? "#E0533A" : "#E0A040";
+                    row.CorruptionText = hit.Summary;
+                }
+            }
+
+            if (corrupt.Count == 0 && warn.Count == 0)
+                StatusMessage = "存档损坏扫描完成：未发现损坏。";
+            else
+                StatusMessage = $"存档损坏扫描完成：{corrupt.Count} 个可能损坏，{warn.Count} 个需注意。";
+            ToastService.Show("存档损坏检测",
+                $"{corrupt.Count} 个可能损坏，{warn.Count} 个需注意。",
+                corrupt.Count > 0 ? ToastKind.Warning : ToastKind.Success);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"损坏扫描失败：{ex.Message}";
+        }
+        finally { IsBusy = false; }
     }
 
     private async Task DowngradeAsync(string? saveName)

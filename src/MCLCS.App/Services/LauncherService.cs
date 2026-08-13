@@ -348,6 +348,14 @@ public class LauncherService : ILogger
             case RepairStrategy.InstallMissingModDependency:
                 return await ApplyInstallMissingModsAsync(plan, ct);
 
+            case RepairStrategy.ResetResourcePacks:
+            {
+                var r = MCLCS.Core.Resources.ResourcePackRepairer.ResetToVanilla(GameRoot);
+                foreach (var a in r.Actions) Log(a);
+                if (!r.Success) Log($"资源包/光影回滚失败：{r.Error}");
+                return r.Success;
+            }
+
             // §四.2 降级联动
             case RepairStrategy.RevertDowngradeBackup:
             case RepairStrategy.RetryDowngradeOtherMethod:

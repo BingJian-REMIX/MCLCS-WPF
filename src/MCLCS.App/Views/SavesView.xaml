@@ -19,7 +19,8 @@
                       SelectedItem="{Binding TargetVersion, Mode=TwoWay}"
                       Width="140" VerticalAlignment="Center"/>
             <Button Content="扫描兼容性" Command="{Binding ScanCommand}" Width="100" Margin="12,0,4,0" Padding="0,2"/>
-            <TextBlock Text="(§二.4 检测 / §三 降级与回滚)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0"/>
+            <Button Content="扫描损坏" Command="{Binding ScanCorruptionCommand}" Width="80" Margin="0,0,4,0" Padding="0,2"/>
+            <TextBlock Text="(§二.4 检测 / §三 降级与回滚 / 损坏检测只检测不修复)" Foreground="#888" VerticalAlignment="Center" Margin="8,0,0,0"/>
         </StackPanel>
 
         <TextBlock Grid.Row="1" Text="{Binding StatusMessage}" Foreground="{DynamicResource StatusForeground}" Margin="0,0,0,4"/>
@@ -51,6 +52,10 @@
                                     <TextBlock Margin="0,2,0,0" Foreground="#8FA">
                                         <Run Text="备份："/>
                                         <Run Text="{Binding BackupText}"/>
+                                    </TextBlock>
+                                    <TextBlock Margin="0,2,0,0" Foreground="{Binding CorruptionColor}">
+                                        <Run Text="损坏检测："/>
+                                        <Run Text="{Binding CorruptionText}"/>
                                     </TextBlock>
                                 </StackPanel>
 

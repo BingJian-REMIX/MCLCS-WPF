@@ -28,7 +28,10 @@ public enum RepairStrategy
     RetryDowngradeOtherMethod,
 
     /// <summary>§四.2 安装存档原始版本（不再降级，用原版本打开）。</summary>
-    InstallOriginalVersion
+    InstallOriginalVersion,
+
+    /// <summary>资源包 / 光影崩溃：将 options.txt 资源包重置为 vanilla、停用 shaderpacks、清空 cache（均非破坏性、可恢复）。</summary>
+    ResetResourcePacks
 }
 
 /// <summary>一个相互冲突的 Mod 条目（用于"保留哪一个"的选择）。</summary>

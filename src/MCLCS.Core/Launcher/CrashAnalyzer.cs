@@ -24,7 +24,10 @@ public enum CrashCategory
     ModConflict,
 
     /// <summary>OpenGL / 显卡相关错误。</summary>
-    OpenGL
+    OpenGL,
+
+    /// <summary>资源包 / 光影（着色器）引起的加载崩溃。</summary>
+    ResourcePackOrShader
 }
 
 /// <summary>崩溃分析结果。</summary>
@@ -79,6 +82,11 @@ public static class CrashAnalyzer
         new("ModResolutionException", CrashCategory.ModConflict, "Fabric 模组冲突（ModResolutionException）",
             new[] { "Fabric 模组依赖不满足或相互冲突。" },
             new[] { "根据日志提示安装缺失的依赖模组。", "移除/更新冲突模组。" }),
+
+        new("resourcepack|ResourcePack|ShaderPack|Shader|net\\.coderbot\\.iris|net\\.irisshaders|Oculus|optifine|Rubidium|Embeddium|shaderpack",
+            CrashCategory.ResourcePackOrShader, "资源包 / 光影相关崩溃",
+            new[] { "资源包或光影（着色器）与当前游戏版本 / 显卡环境不兼容，导致加载时崩溃。" },
+            new[] { "将资源包回滚到默认（vanilla）并临时关闭光影后重试。", "确认资源包 / 光影与游戏版本匹配。", "如仍崩溃，检查显卡驱动或移除问题资源包。" }),
 
         new("OpenGL", CrashCategory.OpenGL, "OpenGL / 显卡相关错误",
             new[] { "显卡驱动过旧、不支持所需 OpenGL 版本，或 OptiFine/光影不兼容。" },

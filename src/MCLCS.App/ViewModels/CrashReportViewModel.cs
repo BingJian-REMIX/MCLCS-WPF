@@ -254,6 +254,7 @@ public class CrashReportViewModel : ObservableObject
         CrashCategory.LinkageError => "兼容性",
         CrashCategory.ModConflict => "Mod 冲突",
         CrashCategory.OpenGL => "OpenGL",
+        CrashCategory.ResourcePackOrShader => "资源包/光影",
         _ => "未知"
     };
 
