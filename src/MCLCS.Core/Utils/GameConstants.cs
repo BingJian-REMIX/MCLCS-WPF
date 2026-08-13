@@ -131,10 +131,20 @@ public static class GameConstants
     /// <summary>CNB 仓库 git 地址（发布页链接、singlefile 包按 v{版本} 格式发布）。</summary>
     public const string CnbRepoGitUrl = CnbRepoUrl + ".git";
 
+    /// <summary>本项目在 GitHub 的镜像仓库地址（更新源的镜像；发布页/直链兜底均指向此处）。</summary>
+    public const string GitHubRepoUrl = "https://github.com/bingjianremix/MCLCS";
+
+    /// <summary>winget 包标识符，对应 microsoft/winget-pkgs 中 MCLCS 的 PackageIdentifier。
+    /// 更新弹窗「下载」会执行 <c>winget install {WingetPackageId} --version {最新版本}</c>，
+    /// 由 winget 从清单解析并下载 <c>MCLCS-v{版本}-win-x64.zip</c> 安装器。</summary>
+    public const string WingetPackageId = "MCLCS.MCLCS";
+
     /// <summary>
-    /// 更新信息静态地址：EdgeOne Pages 托管的 <c>latest.json</c>（普通 GET 即可读取，终端用户零 git 依赖）。
-    /// 部署 EdgeOne Pages 后更新地址即 <c>mclcs.edgeone.cool/latest.json</c>（EdgeOne 分配的默认域名）；
+    /// 更新信息静态地址：GitHub 镜像仓库托管的 <c>latest.json</c>，经 jsDelivr CDN 在国内直连可达
+    /// （jsDelivr 在国内有 CDN 节点，规避 raw.githubusercontent.com 被墙问题）。
+    /// 普通 HTTPS GET 即可读取，终端用户零 git 依赖；网络超时/失败即视为「已是最新」，绝不误报。
+    /// 仓库路径为 <c>bingjianremix/MCLCS</c> 的 <c>updates/latest.json</c>（@main 分支）。
     /// 字段与解析逻辑见 <see cref="MCLCS.Core.Update.LauncherUpdater"/>。
     /// </summary>
-    public const string UpdateInfoUrl = "https://mclcs.edgeone.cool/latest.json";
+    public const string UpdateInfoUrl = "https://cdn.jsdelivr.net/gh/bingjianremix/MCLCS@main/updates/latest.json";
 }

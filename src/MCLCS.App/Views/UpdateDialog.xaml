@@ -34,7 +34,7 @@
                             Margin="0,0,10,0" Background="{DynamicResource ControlBackground}"
                             Foreground="{DynamicResource PrimaryForeground}" BorderThickness="1"
                             BorderBrush="{DynamicResource ControlBorder}" Click="Later_Click"/>
-                    <Button Grid.Column="2" x:Name="DownloadButton" Content="前往下载" Width="104" Padding="0,8"
+                    <Button Grid.Column="2" x:Name="DownloadButton" Content="下载更新" Width="104" Padding="0,8"
                             Background="{DynamicResource AccentBrush}" Foreground="White" BorderThickness="0"
                             Click="Download_Click"/>
                 </Grid>

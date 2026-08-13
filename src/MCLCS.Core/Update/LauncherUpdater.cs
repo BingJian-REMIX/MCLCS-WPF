@@ -24,7 +24,7 @@ public class UpdateCheckResult
 
 /// <summary>
 /// 启动器自动更新（全局功能 13）。
-/// 更新源为 EdgeOne Pages 托管的静态 <c>latest.json</c>（<see cref="GameConstants.UpdateInfoUrl"/>）：
+/// 更新源为 GitHub 镜像仓库（jsDelivr CDN 国内直连）托管的静态 <c>latest.json</c>（<see cref="GameConstants.UpdateInfoUrl"/>）：
 /// 普通 HTTPS GET 即可读取，终端用户零 git 依赖、不写临时仓库、无头客户端可达。
 /// 网络不可用 / JSON 解析失败时安全返回「无更新」（带 Error），绝不误报。
 /// </summary>
@@ -88,7 +88,7 @@ public static class LauncherUpdater
             {
                 result.Changelog = info.Changelog;
                 result.DownloadUrl = info.DownloadUrl
-                    ?? $"{GameConstants.CnbRepoUrl}/-/releases/v{info.Version}";
+                    ?? $"{GameConstants.GitHubRepoUrl}/releases/v{info.Version}";
                 result.SingleFileAvailable = info.SingleFileAvailable;
                 result.Mandatory = info.Mandatory;
             }
