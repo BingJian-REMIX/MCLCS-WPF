@@ -1,24 +1,10 @@
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using MCLCS.Core.Utils;
 
 namespace MCLCS.Core.Update;
-
-/// <summary>远端版本信息。</summary>
-public class RemoteVersion
-{
-    public string? Version { get; set; }
-    [JsonPropertyName("notes")]
-    public string? Notes { get; set; }
-    [JsonPropertyName("url")]
-    public string? DownloadUrl { get; set; }
-    /// <summary>singlefile 自包含包的直链（CNB 发布资产）。更新检查会 HEAD 验证其是否真的发布。</summary>
-    [JsonPropertyName("singleFileUrl")]
-    public string? SingleFileUrl { get; set; }
-    [JsonPropertyName("mandatory")]
-    public bool Mandatory { get; set; }
-}
 
 /// <summary>更新检查结果。</summary>
 public class UpdateCheckResult
@@ -27,21 +13,25 @@ public class UpdateCheckResult
     public string? CurrentVersion { get; set; }
     public string? LatestVersion { get; set; }
     public string? Notes { get; set; }
+    /// <summary>singlefile 包的下载入口（CNB 发布页，按 v{版本} 格式构造）。</summary>
     public string? DownloadUrl { get; set; }
-    /// <summary>singlefile 包是否已在 CNB 发布（HEAD 验证通过）。</summary>
+    /// <summary>singlefile 包是否已在 CNB 发布（tag 存在即代表 Release 已出，含 singlefile 包）。</summary>
     public bool SingleFileAvailable { get; set; }
     public bool Mandatory { get; set; }
     public string? Error { get; set; }
 }
 
 /// <summary>
-/// 启动器自动更新（全局功能 13）：从远端 version.json 拉取最新版本并比对，
-/// 网络不可用时安全返回"无更新"。
+/// 启动器自动更新（全局功能 13）。
+/// 更新源为 CNB 仓库的 git smart-HTTP 引用广播（<c>info/refs?service=git-upload-pack</c>）：
+/// 无需鉴权、无头客户端可直接读取，列出全部 <c>vX.Y.Z</c> tag 取最新版本。
+/// 网络不可用时安全返回「无更新」。
+/// 注：CNB 的 -/raw/ 与 API 对无头客户端只返回 SPA 页面，无法读取 version.json，故采用 tag 方式。
 /// </summary>
 public static class LauncherUpdater
 {
-    /// <summary>默认远端版本清单地址（CNB 仓库 main 分支的 version.json，raw 读取）。</summary>
-    public const string DefaultVersionJsonUrl = GameConstants.CnbVersionJsonUrl;
+    /// <summary>默认更新源：CNB 仓库 git 地址（附加 /info/refs 读取 tag）。</summary>
+    public const string DefaultRepoGitUrl = GameConstants.CnbRepoGitUrl;
 
     /// <summary>比对两个版本号字符串（如 "0.5.0" 与 "1.0.0"），返回 latest &gt; current 的结果。</summary>
     public static bool IsNewer(string current, string latest)
@@ -69,33 +59,40 @@ public static class LauncherUpdater
 
     /// <summary>检查更新；异常时返回 Available=false（带 Error）。</summary>
     public static async Task<UpdateCheckResult> CheckAsync(string currentVersion,
-        string? versionJsonUrl = null, HttpClient? client = null)
+        string? repoGitUrl = null, HttpClient? client = null)
     {
         var result = new UpdateCheckResult { CurrentVersion = currentVersion };
-        var url = versionJsonUrl ?? DefaultVersionJsonUrl;
         var own = client is null;
-        client ??= new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+        client ??= new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
         try
         {
-            var json = await client.GetStringAsync(url);
-            var remote = JsonSerializer.Deserialize<RemoteVersion>(json);
-            if (remote?.Version is null) return result;
-            result.LatestVersion = remote.Version;
-            result.Notes = remote.Notes;
-            result.Mandatory = remote.Mandatory;
-            result.Available = IsNewer(currentVersion, remote.Version);
+            var repo = repoGitUrl ?? DefaultRepoGitUrl;
+            var infoRefs = repo.EndsWith(".git", StringComparison.OrdinalIgnoreCase)
+                ? repo + "/info/refs?service=git-upload-pack"
+                : repo + ".git/info/refs?service=git-upload-pack";
 
-            // singlefile 包直链：优先用 singleFileUrl，回退 url
-            var singleFileUrl = remote.SingleFileUrl ?? remote.DownloadUrl;
-            result.DownloadUrl = singleFileUrl;
+            var txt = await client.GetStringAsync(infoRefs);
 
-            // 仅在「有更新」时校验 singlefile 包是否真的在 CNB 发布：
-            // CNB 对缺失/二进制文件会返回 200 + text/html 的 SPA 外壳，
-            // 故以 Content-Type 非 text/html 且状态 200 判定为真实可下载。
-            // 发布页（/-/releases/）本身即代表已发布，无需严格校验。
-            if (result.Available && !string.IsNullOrEmpty(singleFileUrl))
-                result.SingleFileAvailable = singleFileUrl.Contains("/-/releases/", StringComparison.OrdinalIgnoreCase)
-                                            || await IsRealFileAsync(client, singleFileUrl);
+            // 解析 refs/tags/vX.Y.Z（ peeled 的 vX.Y.Z^{} 也会匹配，靠 HashSet 去重）
+            var versions = new HashSet<string>();
+            foreach (Match m in Regex.Matches(txt, @"refs/tags/v(\d+\.\d+\.\d+)"))
+                versions.Add(m.Groups[1].Value);
+            if (versions.Count == 0) return result;
+
+            // 取语义版本最大者
+            var latest = (string?)null;
+            foreach (var v in versions)
+                if (latest is null || IsNewer(latest, v)) latest = v;
+
+            result.LatestVersion = latest;
+            result.Available = IsNewer(currentVersion, latest!);
+            if (result.Available)
+            {
+                // 按格式构造 singlefile 下载入口：CNB 发布页 v{版本}
+                result.DownloadUrl = $"{GameConstants.CnbRepoUrl}/-/releases/v{latest}";
+                // tag 存在即代表该版本 Release 已发布（含 singlefile 包），按格式视为已发布
+                result.SingleFileAvailable = true;
+            }
         }
         catch (Exception ex)
         {
@@ -106,25 +103,5 @@ public static class LauncherUpdater
             if (own) client.Dispose();
         }
         return result;
-    }
-
-    /// <summary>
-    /// HEAD 探测 URL 是否为真实可下载文件（而非 CNB 缺失文件返回的 200 + text/html SPA 外壳）。
-    /// 真实文件：状态 200 且 Content-Type 不以 text/html 开头。
-    /// </summary>
-    private static async Task<bool> IsRealFileAsync(HttpClient client, string url)
-    {
-        try
-        {
-            using var req = new HttpRequestMessage(HttpMethod.Head, url);
-            using var resp = await client.SendAsync(req);
-            if (!resp.IsSuccessStatusCode) return false;
-            var ct = resp.Content.Headers.ContentType?.MediaType ?? "";
-            return !ct.StartsWith("text/html", StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
     }
 }

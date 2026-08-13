@@ -745,13 +745,7 @@ public class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(result.Error))
             UpdateMessage = $"检查更新失败：{result.Error}";
         else if (result.Available)
-        {
-            var msg = $"发现新版本 {result.LatestVersion}（当前 {result.CurrentVersion}）{(result.Mandatory ? "，建议立即更新" : "")}";
-            msg += result.SingleFileAvailable
-                ? " · singlefile 包已发布"
-                : " · singlefile 包尚未发布，请稍后或前往 CNB 发布页查看";
-            UpdateMessage = msg;
-        }
+            UpdateMessage = $"发现新版本 {result.LatestVersion}（当前 {result.CurrentVersion}）{(result.Mandatory ? "，建议立即更新" : "")} · singlefile 包已发布（CNB 发布页）";
         else
             UpdateMessage = $"已是最新版本（{result.CurrentVersion}）";
     }

@@ -125,9 +125,9 @@ public static class GameConstants
 
     public const string AdoptiumApiBase = "https://api.adoptium.net/v3";
 
-    /// <summary>本项目在 CNB 的仓库地址（关于页链接、地图站 User-Agent、更新源均指向此处）。</summary>
+    /// <summary>本项目在 CNB 的仓库地址（关于页链接、地图站 User-Agent 均指向此处）。</summary>
     public const string CnbRepoUrl = "https://cnb.cool/RLRS-Studio/MCLCS-WPF";
 
-    /// <summary>更新检查使用的远端版本清单（托管在 CNB 仓库 main 分支，raw 方式读取）。</summary>
-    public const string CnbVersionJsonUrl = CnbRepoUrl + "/-/raw/main/version.json";
+    /// <summary>CNB 仓库 git 地址（更新检查通过 git smart-HTTP 读取 tag 列表）。</summary>
+    public const string CnbRepoGitUrl = CnbRepoUrl + ".git";
 }
