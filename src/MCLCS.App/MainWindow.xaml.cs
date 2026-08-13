@@ -116,6 +116,21 @@ public partial class MainWindow : Window
         _tray = new TrayIconService(this, RestoreFromTray, () => Application.Current.Shutdown());
         StateChanged += MainWindow_StateChanged;
         Closing += (_, _) => _tray?.Dispose();
+
+        // 启动时自动检查更新（设置项 AutoUpdateCheck，默认开启）：发现新版本则拉取 tag 日志并弹窗。
+        // 与「设置页-检查更新」共用 UpdateNotifier，失败静默忽略，不阻塞启动。
+        Loaded += (_, _) =>
+        {
+            try
+            {
+                if (ProfileStore.Load(GameConstants.DefaultGameRoot).AutoUpdateCheck)
+                    _ = UpdateNotifier.CheckAndShowAsync();
+            }
+            catch
+            {
+                // 自动检查失败不影响启动
+            }
+        };
     }
 
     private void MainWindow_StateChanged(object? sender, EventArgs e)

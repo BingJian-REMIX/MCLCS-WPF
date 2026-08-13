@@ -741,7 +741,7 @@ public class SettingsViewModel : ObservableObject
 
     private async Task CheckUpdateAsync()
     {
-        var result = await LauncherUpdater.CheckAsync(GameConstants.LauncherVersion, null, new HttpClient());
+        var result = await UpdateNotifier.CheckAndShowAsync();
         if (!string.IsNullOrEmpty(result.Error))
             UpdateMessage = $"检查更新失败：{result.Error}";
         else if (result.Available)

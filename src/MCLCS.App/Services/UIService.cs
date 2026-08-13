@@ -1,5 +1,7 @@
 using System.Windows;
 using Microsoft.Win32;
+using MCLCS.App.Views;
+using MCLCS.Core.Update;
 
 namespace MCLCS.App.Services;
 
@@ -63,5 +65,17 @@ public static class UIService
         };
 
         return dialog.ShowDialog() == true ? dialog.FileName : null;
+    }
+
+    /// <summary>
+    /// 展示「发现新版本」模态弹窗（含更新日志与前往下载按钮）。
+    /// 仅在 <paramref name="result"/> 指示有可用更新时调用。
+    /// </summary>
+    public static void ShowUpdateAvailable(UpdateCheckResult result)
+    {
+        if (result is null || !result.Available) return;
+        var dlg = new UpdateDialog(result);
+        if (Application.Current.MainWindow is Window owner) dlg.Owner = owner;
+        dlg.ShowDialog();
     }
 }
