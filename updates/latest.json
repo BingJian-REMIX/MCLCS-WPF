@@ -1,9 +1,9 @@
 {
-  "version": "2.5.3",
+  "version": "2.5.4",
   "channel": "stable",
   "mandatory": false,
   "releaseDate": "2026-08-13",
-  "downloadUrl": "https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases/v2.5.3",
+  "downloadUrl": "https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases/v2.5.4",
   "singleFileAvailable": true,
-  "changelog": "## MCLCS 2.5.3\n\n- BMCLAPI 镜像修正：资源索引改用主机替换官方 URL（修复恒 404 的 /assets/indexes/{id}.json），移除恒 404 的 /objects/ 冗余回退\n- 仓库地址重定向至 CNB：地图站 User-Agent、设置/关于链接、常量统一指向 CNB 仓库\n- 更新检查改用 CNB git tag 列表（版本即 tag，singlefile 包按 v{版本} 格式发布）\n- 更新日志弹窗：发现新版本时展示发布说明，支持「前往下载」\n- 更新源升级为 EdgeOne Pages 托管的 latest.json，终端用户零 git 依赖"
+  "changelog": "## MCLCS 2.5.4\n\n- 更新源重构：版本信息改为 EdgeOne Pages 托管的 latest.json（普通 GET），终端用户**零 git 依赖**\n- 更新日志弹窗：发现新版本时展示发布说明（来自 latest.json），支持「前往下载」\n- 启动即自动检查更新（AutoUpdateCheck 默认开），仅在有新版本时弹窗，不会提示更新自身\n- 仓库地址、地图站 User-Agent 已统一指向 CNB\n- BMCLAPI 镜像修正：资源索引主机替换法、移除恒 404 的 /objects/ 冗余回退（随 2.5.3 并入）"
 }

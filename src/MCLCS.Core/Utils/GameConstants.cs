@@ -84,7 +84,7 @@ public static class GameConstants
     public const string LauncherName = "MCLCS";
 
     /// <summary>启动器版本（写入 ${launcher_version}）。</summary>
-    public const string LauncherVersion = "2.5.3";
+    public const string LauncherVersion = "2.5.4";
 
     /// <summary>离线账号类型（写入 ${user_type}）。</summary>
     public const string OfflineUserType = "mojang";
@@ -128,7 +128,7 @@ public static class GameConstants
     /// <summary>本项目在 CNB 的仓库地址（关于页链接、地图站 User-Agent 均指向此处）。</summary>
     public const string CnbRepoUrl = "https://cnb.cool/RLRS-Studio/MCLCS-WPF";
 
-    /// <summary>CNB 仓库 git 地址（更新检查通过 git smart-HTTP 读取 tag 列表）。</summary>
+    /// <summary>CNB 仓库 git 地址（发布页链接、singlefile 包按 v{版本} 格式发布）。</summary>
     public const string CnbRepoGitUrl = CnbRepoUrl + ".git";
 
     /// <summary>
