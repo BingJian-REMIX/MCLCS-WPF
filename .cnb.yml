@@ -1,0 +1,10 @@
+# CNB 云原生构建：推送 main 时自动把 updates/ 部署到 EdgeOne Pages (Makers)
+# 部署后默认域名：https://mclcs.pages.edgeone.ai/latest.json
+# 前置条件：EDGEONE_API_TOKEN 存放于下面的密钥仓库 envs.yml（不要写进本仓库）
+main:
+  push:
+    - imports: https://cnb.cool/RLRS-Studio/mclcs-deploy-keys/-/blob/main/envs.yml
+      stages:
+        - name: Deploy updates to EdgeOne Pages
+          image: node:20
+          script: npx edgeone makers deploy ./updates -n mclcs -t $EDGEONE_API_TOKEN
