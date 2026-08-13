@@ -131,20 +131,15 @@ public static class GameConstants
     /// <summary>CNB 仓库 git 地址（发布页链接、singlefile 包按 v{版本} 格式发布）。</summary>
     public const string CnbRepoGitUrl = CnbRepoUrl + ".git";
 
-    /// <summary>本项目在 GitHub 的镜像仓库地址（cnb.cool/RLRS-Studio/MCLCS-WPF 的镜像；更新源、发布页/直链兜底均指向此处）。</summary>
+    /// <summary>本项目在 GitHub 的镜像仓库地址（cnb.cool/RLRS-Studio/MCLCS-WPF 的代码镜像，仅作源码备份，不参与更新下载）。</summary>
     public const string GitHubRepoUrl = "https://github.com/BingJian-REMIX/MCLCS-WPF";
 
-    /// <summary>winget 包标识符，对应 microsoft/winget-pkgs 中 MCLCS 的 PackageIdentifier。
-    /// 更新弹窗「下载」会执行 <c>winget install {WingetPackageId} --version {最新版本}</c>，
-    /// 由 winget 从清单解析并下载 <c>MCLCS-v{版本}-win-x64.zip</c> 安装器。</summary>
-    public const string WingetPackageId = "MCLCS.MCLCS";
-
     /// <summary>
-    /// 更新信息静态地址：GitHub 镜像仓库托管的 <c>latest.json</c>，经 jsDelivr CDN 在国内直连可达
-    /// （jsDelivr 在国内有 CDN 节点，规避 raw.githubusercontent.com 被墙问题）。
+    /// 更新信息静态地址：CNB Pages 托管的 <c>latest.json</c>（cnb.cool 官方静态页，国内直连、稳定、免代理）。
+    /// ⚠️ 需在本仓库「Pages」设置中启用静态页（指向 main 分支根目录）后该地址才生效；
+    ///    若启用后的实际子域名与此不同，请改为对应地址（路径 <c>/updates/latest.json</c> 保持不变）。
     /// 普通 HTTPS GET 即可读取，终端用户零 git 依赖；网络超时/失败即视为「已是最新」，绝不误报。
-    /// 仓库路径为 <c>BingJian-REMIX/MCLCS-WPF</c> 的 <c>updates/latest.json</c>（@main 分支）。
     /// 字段与解析逻辑见 <see cref="MCLCS.Core.Update.LauncherUpdater"/>。
     /// </summary>
-    public const string UpdateInfoUrl = "https://cdn.jsdelivr.net/gh/BingJian-REMIX/MCLCS-WPF@main/updates/latest.json";
+    public const string UpdateInfoUrl = "https://RLRS-Studio-MCLCS-WPF.pages.cnb.cool/updates/latest.json";
 }

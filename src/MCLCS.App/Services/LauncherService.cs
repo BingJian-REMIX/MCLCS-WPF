@@ -52,6 +52,10 @@ public class LauncherService : ILogger
     /// <summary>底层 HttpClient（供外联图标/封面等 UI 层复用，已带 MCLCS User-Agent）。</summary>
     public HttpClient ApiClient => _client;
 
+    /// <summary>用内置下载器下载单个文件到本地（更新包等），支持进度回调与取消。</summary>
+    public async Task DownloadFileAsync(string url, string destination, IProgress<double>? progress = null, CancellationToken ct = default)
+        => await _downloader.DownloadAsync(new DownloadItem(new[] { url }, destination, null, null), progress, ct);
+
     /// <summary>像素茶艺（PixelMap）地图站客户端（下载页 → 地图）。</summary>
     public PixelmapClient Pixelmap { get; }
 

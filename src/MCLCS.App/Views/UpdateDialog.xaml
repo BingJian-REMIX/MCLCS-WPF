@@ -24,6 +24,14 @@
                 <TextBlock x:Name="SubtitleText" DockPanel.Dock="Top" Margin="0,4,0,0" FontSize="12"
                            Foreground="{DynamicResource SecondaryForeground}" Text=""/>
 
+                <!-- 下载进度（默认隐藏，点击「下载更新」后显示） -->
+                <StackPanel DockPanel.Dock="Bottom" x:Name="ProgressPanel" Visibility="Collapsed" Margin="0,12,0,0">
+                    <TextBlock x:Name="StatusText" FontSize="12" Foreground="{DynamicResource SecondaryForeground}"
+                               Text="准备下载…" Margin="0,0,0,6"/>
+                    <ProgressBar x:Name="ProgressBar" Height="10" Minimum="0" Maximum="1" Value="0"
+                                 Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource ControlBackground}"/>
+                </StackPanel>
+
                 <Grid DockPanel.Dock="Bottom" Margin="0,16,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

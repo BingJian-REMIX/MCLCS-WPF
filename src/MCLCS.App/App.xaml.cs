@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -98,6 +99,16 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // 自更新接管：以 --apply-update <安装目录> 启动时，把临时副本覆盖回安装目录并接力启动新版本，不进入主界面
+        for (int i = 0; i < e.Args.Length; i++)
+        {
+            if (e.Args[i] == "--apply-update" && i + 1 < e.Args.Length)
+            {
+                PerformUpdateSwap(e.Args[i + 1]);
+                return;
+            }
+        }
+
         base.OnStartup(e);
 
         // 必须最先执行：读取用户自定义的游戏目录，之后所有 GameConstants.DefaultGameRoot 才是正确值（bug #26）
@@ -140,6 +151,49 @@ public partial class App : Application
 
         // 应用背景图片（bug #20：路径此前已持久化，但从未真正渲染到窗口）
         ApplyBackgroundImage(profile.BackgroundImagePath);
+    }
+
+    /// <summary>
+    /// 自更新替换：把当前（临时）副本的全部文件复制回安装目录，再启动安装目录内的新版本并退出。
+    /// 由旧进程下载解压后，以 --apply-update &lt;安装目录&gt; 启动本（新）副本触发；此时旧进程已退出，安装目录内被锁定的旧 exe 已释放。
+    /// </summary>
+    private static void PerformUpdateSwap(string installDir)
+    {
+        try
+        {
+            var srcDir = Path.GetDirectoryName(
+                Environment.ProcessPath ?? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar))!;
+            var exeName = Path.GetFileName(
+                Environment.ProcessPath ?? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) + ".exe");
+
+            foreach (var file in Directory.GetFiles(srcDir, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(srcDir, file);
+                var dest = Path.Combine(installDir, rel);
+                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                try { File.Copy(file, dest, overwrite: true); }
+                catch { /* 非关键文件被占用则跳过，尽量复制其余 */ }
+            }
+
+            // 主程序可能被尚未完全退出的旧进程短暂锁定，重试复制
+            var newExe = Path.Combine(installDir, exeName);
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                try { File.Copy(Path.Combine(srcDir, exeName), newExe, overwrite: true); break; }
+                catch { Thread.Sleep(100); }
+            }
+
+            try { Process.Start(new ProcessStartInfo(newExe) { UseShellExecute = true }); }
+            catch { /* 启动失败不阻塞，原进程即将退出 */ }
+        }
+        catch
+        {
+            // 替换失败不阻塞，直接退出
+        }
+        finally
+        {
+            Environment.Exit(0);
+        }
     }
 
     private void ApplyTheme(ThemeType theme)

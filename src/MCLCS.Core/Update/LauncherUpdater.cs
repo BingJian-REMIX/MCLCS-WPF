@@ -24,9 +24,10 @@ public class UpdateCheckResult
 
 /// <summary>
 /// 启动器自动更新（全局功能 13）。
-/// 更新源为 GitHub 镜像仓库（jsDelivr CDN 国内直连）托管的静态 <c>latest.json</c>（<see cref="GameConstants.UpdateInfoUrl"/>）：
+/// 更新源为 CNB Pages 托管的静态 <c>latest.json</c>（<see cref="GameConstants.UpdateInfoUrl"/>，cnb.cool 官方静态页、国内直连）：
 /// 普通 HTTPS GET 即可读取，终端用户零 git 依赖、不写临时仓库、无头客户端可达。
 /// 网络不可用 / JSON 解析失败时安全返回「无更新」（带 Error），绝不误报。
+/// 下载由 UI 层调用内置 <c>HttpDownloader</c> 直接拉取 latest.json 中的 cnb 发布直链，不依赖 winget / 浏览器。
 /// </summary>
 public static class LauncherUpdater
 {
@@ -88,7 +89,7 @@ public static class LauncherUpdater
             {
                 result.Changelog = info.Changelog;
                 result.DownloadUrl = info.DownloadUrl
-                    ?? $"{GameConstants.GitHubRepoUrl}/releases/v{info.Version}";
+                    ?? $"{GameConstants.CnbRepoUrl}/-/releases/download/v{info.Version}/MCLCS-v{info.Version}-win-x64.zip";
                 result.SingleFileAvailable = info.SingleFileAvailable;
                 result.Mandatory = info.Mandatory;
             }

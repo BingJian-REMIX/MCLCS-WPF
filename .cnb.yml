@@ -1,6 +1,6 @@
-# 更新源已迁移至 GitHub：
-#   updates/latest.json 直接放在公开 GitHub 仓库内，通过 jsDelivr CDN 国内直连，
-#   地址形如 https://cdn.jsdelivr.net/gh/<owner>/<repo>@main/updates/latest.json
-# 本仓库（cnb.cool）不再需要任何 CI 部署脚本，故置空以免误触发默认流水线。
+# 更新源（updates/latest.json）通过 CNB Pages 静态页对外提供，地址形如：
+#   https://<group>-<repo>.pages.cnb.cool/updates/latest.json
+# 在仓库「Pages」设置中启用静态页（指向 main 分支根目录）即可，无需 CI 构建脚本。
+# 本 .cnb.yml 置空，避免误触发默认流水线。
 main:
   push: []
