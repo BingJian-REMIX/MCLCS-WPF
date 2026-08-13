@@ -130,4 +130,11 @@ public static class GameConstants
 
     /// <summary>CNB 仓库 git 地址（更新检查通过 git smart-HTTP 读取 tag 列表）。</summary>
     public const string CnbRepoGitUrl = CnbRepoUrl + ".git";
+
+    /// <summary>
+    /// 更新信息静态地址：EdgeOne Pages 托管的 <c>latest.json</c>（普通 GET 即可读取，终端用户零 git 依赖）。
+    /// 部署 EdgeOne Pages 后把 <c>mclcs.pages.edgeone.app</c> 替换为你的真实域名；
+    /// 字段与解析逻辑见 <see cref="MCLCS.Core.Update.LauncherUpdater"/>。
+    /// </summary>
+    public const string UpdateInfoUrl = "https://mclcs.pages.edgeone.app/latest.json";
 }
