@@ -1,4 +1,5 @@
 using System;
+using MCLCS.Core.Profiles;
 using MCLCS.Core.Utils;
 
 namespace MCLCS.Core.Download;
@@ -9,9 +10,21 @@ namespace MCLCS.Core.Download;
 /// </summary>
 public static class MirrorPolicy
 {
-    /// <summary>版本清单候选 URL（BMCLAPI 优先）。</summary>
+    /// <summary>
+    /// 下载源偏好（设置 → 下载）。由启动器在启动时 / 设置保存时从 profile 同步，
+    /// 决定各候选 URL 中 BMCLAPI 与官方源的前后顺序。默认镜像优先，保持向后兼容。
+    /// </summary>
+    public static DownloadSourcePreference Preference { get; set; } = DownloadSourcePreference.MirrorFirst;
+
+    /// <summary>按偏好返回 [首选, 回退] 顺序的候选对。</summary>
+    private static IEnumerable<string> Order(string mirror, string official)
+        => Preference == DownloadSourcePreference.OfficialFirst
+            ? new[] { official, mirror }
+            : new[] { mirror, official };
+
+    /// <summary>版本清单候选 URL（按偏好决定 BMCLAPI / 官方先后）。</summary>
     public static IEnumerable<string> VersionManifestUrls()
-        => new[] { GameConstants.BmclapiVersionManifest, GameConstants.OfficialVersionManifest };
+        => Order(GameConstants.BmclapiVersionManifest, GameConstants.OfficialVersionManifest);
 
     /// <summary>
     /// 版本 JSON 候选 URL。官方源需要 manifest 中的 url，这里传入其官方地址作为回退。
@@ -19,14 +32,14 @@ public static class MirrorPolicy
     /// </summary>
     public static IEnumerable<string> VersionJsonUrls(string id, string? officialUrl = null)
     {
-        yield return $"{GameConstants.BmclapiBase}/version/{id}/json";
-        if (!string.IsNullOrEmpty(officialUrl))
-            yield return officialUrl!;
+        var mirror = $"{GameConstants.BmclapiBase}/version/{id}/json";
+        foreach (var u in Order(mirror, officialUrl ?? mirror))
+            yield return u;
     }
 
     /// <summary>Library 候选 URL（path 为本地仓库相对路径）。</summary>
     public static IEnumerable<string> LibraryUrls(string path)
-        => new[] { $"{GameConstants.BmclapiBase}/libraries/{path}", $"{GameConstants.OfficialLibrariesBase}/{path}" };
+        => Order($"{GameConstants.BmclapiBase}/libraries/{path}", $"{GameConstants.OfficialLibrariesBase}/{path}");
 
     /// <summary>
     /// 资源对象候选 URL（hash 为资源 sha1）。
@@ -37,12 +50,13 @@ public static class MirrorPolicy
     public static IEnumerable<string> AssetUrls(string hash)
     {
         var prefix = hash[..2];
-        yield return $"{GameConstants.BmclapiBase}/assets/{prefix}/{hash}";
-        yield return $"{GameConstants.OfficialAssetsBase}/{prefix}/{hash}";
+        return Order(
+            $"{GameConstants.BmclapiBase}/assets/{prefix}/{hash}",
+            $"{GameConstants.OfficialAssetsBase}/{prefix}/{hash}");
     }
 
     /// <summary>
-    /// 资源索引候选 URL（BMCLAPI 优先）。
+    /// 资源索引候选 URL。
     /// BMCLAPI 镜像官方资源索引需做<b>主机替换</b>（保留官方路径
     /// <c>/v1/packages/{sha1}/{id}.json</c>），而非 <c>/assets/indexes/{id}.json</c>
     /// （该路径实测恒 404）。例如官方
@@ -52,8 +66,17 @@ public static class MirrorPolicy
     public static IEnumerable<string> AssetIndexUrls(string officialUrl)
     {
         var mirror = ToBmclapiMirror(officialUrl);
-        if (mirror is not null) yield return mirror;
-        yield return officialUrl;
+        // 镜像优先时先镜像后官方；官方优先时先官方后镜像
+        if (Preference == DownloadSourcePreference.OfficialFirst)
+        {
+            yield return officialUrl;
+            if (mirror is not null) yield return mirror;
+        }
+        else
+        {
+            if (mirror is not null) yield return mirror;
+            yield return officialUrl;
+        }
     }
 
     /// <summary>
