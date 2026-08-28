@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace MCLCS.Core.Toolbox;
 
@@ -73,6 +74,7 @@ public static class ShortcutGenerator
         }
     }
 
+    [SupportedOSPlatform("windows")]
     private static bool TryCreateLnk(string path, string target, string args, string workingDir, string? iconPath)
     {
         try

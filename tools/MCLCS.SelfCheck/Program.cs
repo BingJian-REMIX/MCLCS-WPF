@@ -1276,9 +1276,19 @@ side=""BOTH""
         Check("IsNewer 0.5.0 < 1.0.0 为假", !LauncherUpdater.IsNewer("1.0.0", "0.5.0"));
         Check("IsNewer 相等为假", !LauncherUpdater.IsNewer("1.0.0", "1.0.0"));
 
-        var result = LauncherUpdater.CheckAsync("1.0.0", "http://127.0.0.1:1/version.json", new HttpClient())
-            .GetAwaiter().GetResult();
+        // CheckAsync 的 url 参数已移除（更新源收敛到 GameConstants.UpdateInfoUrl），
+        // 改用始终失败的处理器模拟「更新源不可达」：离线、确定，不依赖真实网络。
+        using var unreachableClient = new HttpClient(new UnreachableHandler());
+        var result = LauncherUpdater.CheckAsync("1.0.0", unreachableClient).GetAwaiter().GetResult();
         Check("CheckAsync 不可达 Available=false 不抛异常", result.Available == false && result.Error is not null);
+    }
+
+    /// <summary>始终失败的处理器，用于离线模拟更新源不可达。</summary>
+    private sealed class UnreachableHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+            => Task.FromException<HttpResponseMessage>(new HttpRequestException("模拟更新源不可达"));
     }
 
     private static void InstanceTrackerTest()

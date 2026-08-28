@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
@@ -107,6 +108,7 @@ public static class JavaDetector
         return results.DistinctBy(r => r.JavaExe).ToList();
     }
 
+    [SupportedOSPlatform("windows")]
     private static void AddRegistryJava(HashSet<string> candidates)
     {
         try
