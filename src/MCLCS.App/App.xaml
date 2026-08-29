@@ -27,6 +27,8 @@
             <conv:InverseBoolToVisibilityConverter x:Key="BoolToVisInvert"/>
             <!-- 非空字符串 → 可见（详情文本、空状态提示） -->
             <conv:NonEmptyToVisibilityConverter x:Key="NonEmptyToVis"/>
+            <!-- 进度 0–100 → 环形进度条虚线串（bug.txt #7 细环形，对齐 Linux） -->
+            <conv:ProgressToRingDashConverter x:Key="ProgressToRingDash"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

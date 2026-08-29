@@ -59,8 +59,29 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock FontWeight="Bold" Text="{Binding Title}"/>
-                            <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="10"
-                                         Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource ProgressBackground}"/>
+                            <Grid Height="22" Margin="0,2,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- bug.txt #7：细环形进度条（对齐 Linux 的 Ellipse+Arc 细环） -->
+                                <Grid Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0">
+                                    <Ellipse Width="18" Height="18" Stroke="{DynamicResource ProgressBackground}"
+                                             StrokeThickness="2.5"/>
+                                    <Ellipse Width="18" Height="18" Stroke="{DynamicResource AccentBrush}"
+                                             StrokeThickness="2.5" StrokeEndLineCap="Round"
+                                             StrokeDashArray="{Binding Progress, Converter={StaticResource ProgressToRingDash}, ConverterParameter=56.55}">
+                                        <Ellipse.RenderTransform>
+                                            <RotateTransform Angle="-90" CenterX="9" CenterY="9"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                    <TextBlock Text="{Binding Progress, StringFormat={}{0:0}%}" FontSize="8"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource AccentBrush}"/>
+                                </Grid>
+                                <TextBlock Grid.Column="1" Text="{Binding Status}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" Opacity="0.8"/>
+                            </Grid>
                         </StackPanel>
                         <TextBlock Grid.Column="1" Text="{Binding Status}" VerticalAlignment="Center" Margin="8,0,0,0"/>
                         <Button Grid.Column="2" Content="暂停" Command="{Binding DataContext.PauseItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
