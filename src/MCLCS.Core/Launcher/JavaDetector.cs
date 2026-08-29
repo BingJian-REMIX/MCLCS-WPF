@@ -1,10 +1,10 @@
-using System.Text.Json;
-using MCLCS.Core.Models;
-using MCLCS.Core.Utils;
 using System.Diagnostics;
 using System.Runtime.Versioning;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using MCLCS.Core.Models;
+using MCLCS.Core.Utils;
 
 namespace MCLCS.Core.Launcher;
 

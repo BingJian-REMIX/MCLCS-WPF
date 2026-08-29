@@ -38,7 +38,11 @@ public class ToolboxPanelItem : ObservableObject
 }
 
 /// <summary>
-/// 工具箱页视图模型：17 个面板的侧边栏导航（规格 2.3，第二梯队侧边栏改造）。
+/// 工具箱页视图模型：22 个面板的侧边栏导航（规格 2.3，第二梯队侧边栏改造）。
+/// <para>
+/// <c>versionlist</c> 为对齐 MCLCS-Linux 侧栏新增的入口（"管理已安装的游戏版本，选择并一键启动"），
+/// 此前 <c>VersionListView</c> 已存在但没有任何入口可达。
+/// </para>
 /// </summary>
 public class ToolboxViewModel : ObservableObject
 {
@@ -75,6 +79,7 @@ public class ToolboxViewModel : ObservableObject
         var items = new (string Id, string Icon, string Title, Func<UserControl> Factory)[]
         {
             ("log",        "\U0001F4CB", "日志管理",     () => new LogView()),
+            ("versionlist","\U0001F5C3", "版本列表",     () => new VersionListView()),
             ("saves",      "\U0001F4BE", "存档管理",     () => new SavesView()),
             ("screenshot", "\U0001F4F7", "截图管理",     () => new ScreenshotView()),
             ("perf",       "\u26A1",     "性能/实例",    () => new PerfView()),
@@ -95,6 +100,9 @@ public class ToolboxViewModel : ObservableObject
             ("skin",       "\U0001F3A8", "皮肤编辑器",   () => new SkinEditorView()),
             ("shadertoken","\u2600",     "光影配置",     () => new ShaderTokenView()),
             ("achievement","\U0001F3C6", "成就展示",     () => new AchievementView()),
+            ("command",    "\U0001F4DD", "命令助手",     () => new CommandView()),
+            ("moddev",     "\U0001F9F1", "Mod 开发",     () => new ModDevView()),
+            ("map",        "\U0001F5FA", "地图安装",     () => new MapView()),
         };
 
         foreach (var (id, icon, title, factory) in items)

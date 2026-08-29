@@ -165,6 +165,7 @@ public static class Sidebar
         new("clean",      "tool.clean",      "clean",     9, "tool.group.resource"),
         new("modpackio",  "tool.modpackio",  "modpack",  10, "tool.group.resource"),
         new("music",      "tool.music",      "music",    11, "tool.group.resource"),
+        new("map",        "tool.map",        "map",      12, "tool.group.resource"),
 
         // 开发工具
         new("moddev",     "tool.moddev",     "dev",      12, "tool.group.dev"),

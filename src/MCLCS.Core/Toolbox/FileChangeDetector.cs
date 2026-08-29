@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -106,9 +107,10 @@ public static class FileChangeDetector
     /// 目录不存在时静默跳过（用户可能还没装过 Mod）。
     /// </summary>
     public static DirectorySnapshot TakeWatched(
-        string gameRoot, IEnumerable<string>? targets = null, CancellationToken ct = default)
+        string gameRoot, IEnumerable<string>? targets = null, bool computeHash = false,
+        CancellationToken ct = default, HashSet<string>? onlyRelativePaths = null)
     {
-        var snapshot = new DirectorySnapshot { Root = gameRoot, Hashed = false };
+        var snapshot = new DirectorySnapshot { Root = gameRoot, Hashed = computeHash };
 
         foreach (var target in targets ?? WatchTargets)
         {
@@ -116,7 +118,18 @@ public static class FileChangeDetector
             var dir = Path.Combine(gameRoot, target);
             if (!Directory.Exists(dir)) continue;
 
-            var sub = Take(dir, computeHash: false, ct: ct);
+            // 第二段检测只取子集：把 "target/xxx" 还原为该目录下不带前缀的相对名
+            HashSet<string>? onlyNames = null;
+            if (onlyRelativePaths is not null)
+            {
+                onlyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var prefix = target + "/";
+                foreach (var p in onlyRelativePaths)
+                    if (p.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        onlyNames.Add(p.Substring(prefix.Length));
+            }
+
+            var sub = Take(dir, computeHash, ignoredDirs: null, ct, onlyNames);
             foreach (var e in sub.Entries)
             {
                 e.RelativePath = $"{target}/{e.RelativePath}";
@@ -144,6 +157,50 @@ public static class FileChangeDetector
         return before is null ? new SnapshotDiff() : Compare(before, after);
     }
 
+    /// <summary>
+    /// 两段式自动检测（规格 2.3-16 / 用户需求：先比占用空间、变了再哈希）：
+    /// ① 快：仅比对大小/修改时间（占用空间 + 单文件元数据），无变化直接返回，跳过昂贵的哈希；
+    /// ② 慢但准：仅对①中疑似变更（新增/修改）的文件算 SHA-256，按内容确认是否真改
+    ///    （剔除 mtime 抖动造成的误报），更新基线（全量元数据 + 已确认文件哈希）后返回 diff。
+    /// 首次运行只静默建基线，不打扰。
+    /// </summary>
+    public static SnapshotDiff DetectTwoStage(string gameRoot, CancellationToken ct = default)
+    {
+        var path = SnapshotPath(gameRoot);
+        var before = Load(path);
+        if (before is null)
+        {
+            ResetBaseline(gameRoot, ct);   // 首次：建立基线
+            return new SnapshotDiff();
+        }
+
+        // ① 快：元数据比对（全量，但不算哈希）
+        var afterMeta = TakeWatched(gameRoot, computeHash: false, ct: ct);
+        var quick = Compare(before, afterMeta);
+        if (!quick.HasChanges)
+        {
+            Save(afterMeta, path);         // 无变化：仅更新元数据基线，不碰哈希
+            return quick;
+        }
+
+        // ② 慢但准：只对疑似变更文件算哈希，确认内容是否真改
+        var suspects = quick.Changes
+            .Where(c => c.Kind != FileChangeKind.Removed)
+            .Select(c => c.Path)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var afterHashed = TakeWatched(gameRoot, computeHash: true, ct: ct, onlyRelativePaths: suspects);
+        var diff = Compare(before, afterHashed);
+
+        // 基线落盘：全量元数据 + 已确认变更文件的哈希（供下次精确比对）
+        var hashMap = afterHashed.Entries.ToDictionary(e => e.RelativePath, e => e.Hash, StringComparer.OrdinalIgnoreCase);
+        foreach (var e in afterMeta.Entries)
+            if (hashMap.TryGetValue(e.RelativePath, out var h) && h is not null)
+                e.Hash = h;
+        Save(afterMeta, path);
+
+        return diff;
+    }
+
     /// <summary>只看「新增」的变更（手动丢文件的典型形态），供 Toast 通知使用。</summary>
     public static List<FileChange> NewFilesOnly(SnapshotDiff diff) =>
         diff.Changes.Where(c => c.Kind == FileChangeKind.Added).ToList();
@@ -169,7 +226,8 @@ public static class FileChangeDetector
     public static DirectorySnapshot Take(
         string root, bool computeHash = false,
         IEnumerable<string>? ignoredDirs = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        HashSet<string>? onlyNames = null)
     {
         var snapshot = new DirectorySnapshot { Root = root, Hashed = computeHash };
         if (!Directory.Exists(root)) return snapshot;
@@ -183,9 +241,11 @@ public static class FileChangeDetector
             try
             {
                 var info = new FileInfo(file);
+                var rel = Normalize(Path.GetRelativePath(rootFull, file));
+                if (onlyNames is not null && !onlyNames.Contains(rel)) continue;
                 snapshot.Entries.Add(new FileSnapshotEntry
                 {
-                    RelativePath = Normalize(Path.GetRelativePath(rootFull, file)),
+                    RelativePath = rel,
                     Size = info.Length,
                     LastWriteUtc = info.LastWriteTimeUtc,
                     Hash = computeHash ? HashFile(file) : null

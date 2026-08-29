@@ -62,7 +62,7 @@ public static class GameLauncher
 
     /// <summary>构造 ${...} 变量字典（含 classpath、natives_directory 等）。</summary>
     public static Dictionary<string, string> BuildVariables(VersionJson merged,
-        string gameRoot, string leafId, string nativesDir, LaunchOptions options)
+        string gameRoot, string leafId, string nativesDir, LaunchOptions options, string gameDir)
     {
         var classpath = ClasspathBuilder.ComputeClasspath(gameRoot, leafId, merged);
         var assetsIndexName = merged.Assets ?? merged.AssetIndex?.Id ?? "";
@@ -80,8 +80,8 @@ public static class GameLauncher
             ["version_type"] = merged.Type,
             ["assets_root"] = PathEx.AssetsDir(gameRoot),
             ["assets_index_name"] = assetsIndexName,
-            // 隔离版本（整合包）指向 versions/<id>，否则共用 .minecraft
-            ["game_directory"] = VersionIsolation.GameDirFor(gameRoot, leafId),
+            // 隔离版本（整合包）指向 versions/<id>，否则共用 .minecraft；每版本可经 options.GameDir 覆盖
+            ["game_directory"] = gameDir,
             ["natives_directory"] = nativesDir,
             ["library_directory"] = PathEx.LibrariesDir(gameRoot),
             ["classpath"] = classpath,
@@ -112,18 +112,18 @@ public static class GameLauncher
         var nativesDir = PathEx.NativesDir(gameRoot, versionId);
         Directory.CreateDirectory(nativesDir);
 
-        // 隔离版本的工作目录为 versions/<id>，需保证 mods / saves 等子目录存在
-        var gameDir = VersionIsolation.GameDirFor(gameRoot, versionId);
+        // 有效游戏工作目录：每版本覆盖（options.GameDir）优先，否则按隔离标记决定
+        var gameDir = options.GameDir ?? VersionIsolation.GameDirFor(gameRoot, versionId);
         if (!string.Equals(gameDir, gameRoot, StringComparison.Ordinal))
         {
             VersionIsolation.EnsureFolders(gameDir);
-            logger?.Log($"版本 {versionId} 已启用隔离，工作目录：{gameDir}");
+            logger?.Log($"版本 {versionId} 已启用隔离/自定义目录，工作目录：{gameDir}");
         }
 
         // 注入 logging 日志配置（下载 log4j XML 并注入 -Dlog4j.configurationFile）
         var loggingArgs = await InjectLoggingConfigAsync(gameRoot, versionId, merged, ct);
 
-        var variables = BuildVariables(merged, gameRoot, versionId, nativesDir, options);
+        var variables = BuildVariables(merged, gameRoot, versionId, nativesDir, options, gameDir);
         var resolved = ArgumentProcessor.Process(merged, variables, options, nativesDir);
 
         // 将 logging 参数追加到 JVM 参数末尾
@@ -138,11 +138,11 @@ public static class GameLauncher
             resolved.GameArgs.Add(parts[0].Trim());
             resolved.GameArgs.Add("--port");
             resolved.GameArgs.Add(parts.Length > 1 ? parts[1].Trim() : "25565");
+        }
 
         // 全屏启动
         if (options.Fullscreen)
             resolved.GameArgs.Add("--fullscreen");
-        }
 
         // 解压原生库
         var natives = ClasspathBuilder.GetNativeEntries(gameRoot, merged, nativesDir);
