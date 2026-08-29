@@ -80,16 +80,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <!-- bug #18：工具箱搜索框（子串匹配，支持中文）。
-                 子面板自带搜索框的（命令速查/开发工具）不重复显示，避免叠加成两个输入框。 -->
-            <TextBox Grid.Row="0" Margin="0,0,0,8" Padding="8,4"
-                     Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}"
-                     Background="{DynamicResource InputBackground}"
-                     Foreground="{DynamicResource InputForeground}"
-                     BorderBrush="{DynamicResource InputBorder}"
-                     Visibility="{Binding SelectedPanel.NeedsSearch, Converter={StaticResource BoolToVis}}"
-                     ToolTip="搜索工具箱面板（支持中文）"/>
-            <ContentControl Grid.Row="1" Content="{Binding SelectedView}"/>
+            <!-- 内容区直接承载子面板（命令速查/命令助手等自带搜索框，无需再叠加全局框） -->
+            <ContentControl Grid.Row="0" Content="{Binding SelectedView}"/>
         </Grid>
     </Grid>
 </UserControl>

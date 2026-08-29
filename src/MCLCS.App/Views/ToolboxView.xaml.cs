@@ -44,10 +44,12 @@ public partial class ToolboxView : UserControl
         if (extra is not null) Vm.SelectedView = extra;
     }
 
-    /// <summary>bug #18：由全局搜索调用，跳转到工具箱并按关键词过滤面板。</summary>
+    /// <summary>由全局搜索调用：标题栏全局搜索已通过 <see cref="ShowPanel"/> 跳到匹配面板，
+    /// 工具箱页内不再叠加搜索框，故此处仅保留兼容签名、无实际操作。</summary>
     public void SetSearchKeyword(string keyword)
     {
-        Vm.SearchKeyword = keyword;
+        // 工具箱页内无独立搜索框（命令速查/命令助手等子面板自带搜索），全局搜索的「预填」交给子面板自身，
+        // 此处无需把关键词写入页级搜索。保留方法签名以避免 MainWindow 调用点改动。
     }
 
     /// <summary>bug #17：由全局搜索调用——返回与关键词匹配的工具箱面板 Id，无匹配返回 null。</summary>

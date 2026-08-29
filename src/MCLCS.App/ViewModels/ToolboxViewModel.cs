@@ -25,12 +25,6 @@ public class ToolboxPanelItem : ObservableObject
     /// <summary>懒加载的视图（选中时才创建）。</summary>
     internal Func<UserControl> Factory { get; init; } = () => new UserControl();
 
-    /// <summary>
-    /// 子面板自身是否带搜索框。带搜索的面板（命令速查、下载中心、下载页等）不重复显示全局搜索框，
-    /// 避免 bug.txt 反馈的「每个工具箱页上方都多一个输入框」（#18 副作用修正）。
-    /// </summary>
-    public bool NeedsSearch { get; init; } = true;
-
     private UserControl? _view;
     public UserControl View
     {
@@ -59,17 +53,6 @@ public class ToolboxViewModel : ObservableObject
 
     public ObservableCollection<ToolboxPanelItem> PanelItems { get; } = new();
 
-    private string _searchKeyword = "";
-    /// <summary>bug #18：工具箱搜索关键词（子串匹配，支持中文）。置空则显示全部面板。</summary>
-    public string SearchKeyword
-    {
-        get => _searchKeyword;
-        set
-        {
-            if (SetField(ref _searchKeyword, value)) ApplyFilter();
-        }
-    }
-
     private ToolboxPanelItem? _selectedPanel;
     public ToolboxPanelItem? SelectedPanel
     {
@@ -96,22 +79,8 @@ public class ToolboxViewModel : ObservableObject
         set => SetField(ref _selectedView, value);
     }
 
-    private void ApplyFilter()
-    {
-        var kw = _searchKeyword.Trim();
-        PanelItems.Clear();
-        IEnumerable<ToolboxPanelItem> src = _allPanels;
-        if (kw.Length > 0)
-            src = src.Where(p =>
-                p.Title.Contains(kw, System.StringComparison.CurrentCultureIgnoreCase) ||
-                p.Id.Contains(kw, System.StringComparison.CurrentCultureIgnoreCase));
-        foreach (var p in src) PanelItems.Add(p);
-        if (PanelItems.Count > 0 && !PanelItems.Contains(SelectedPanel))
-            SelectedPanel = PanelItems[0];
-    }
-
     /// <summary>
-    /// bug #17：供全局搜索调用——返回与关键词匹配的第一个面板 Id（标题或 Id 子串，忽略大小写）；无匹配返回 null。
+    /// bug #17：供标题栏全局搜索调用——返回与关键词匹配的第一个面板 Id（标题或 Id 子串，忽略大小写）；无匹配返回 null。
     /// 仅做匹配，不修改当前选中项，由调用方决定是否跳转。
     /// </summary>
     public string? MatchPanelId(string keyword)
@@ -126,40 +95,41 @@ public class ToolboxViewModel : ObservableObject
 
     public ToolboxViewModel()
     {
-        var items = new (string Id, string Icon, string Title, Func<UserControl> Factory, bool NeedsSearch)[]
+        var items = new (string Id, string Icon, string Title, Func<UserControl> Factory)[]
         {
-            ("log",        "\U0001F4CB", "日志管理",     () => new LogView(),          true),
-            ("versionlist","\U0001F5C3", "版本列表",     () => new VersionListView(),   true),
-            ("saves",      "\U0001F4BE", "存档管理",     () => new SavesView(),         true),
-            ("screenshot", "\U0001F4F7", "截图管理",     () => new ScreenshotView(),    true),
-            ("perf",       "\u26A1",     "性能/实例",    () => new PerfView(),          true),
-            ("network",    "\U0001F310", "网络诊断",     () => new NetworkDiagView(),   true),
-            ("shortcut",   "\U0001F517", "快捷方式",     () => new ShortcutView(),      true),
-            ("clean",      "\U0001F9F9", "冗余清理",     () => new RedundantCleanView(),true),
-            ("modpackio",  "\U0001F4E6", "整合包",       () => new ModpackView(),       true),
-            ("backup",     "\U0001F6E1", "备份管理器",   () => new BackupView(),        true),
-            ("nbt",        "\U0001F527", "NBT 编辑器",   () => new NbtView(),           true),
-            ("datapack",   "\u26A0",     "数据包冲突检测", () => new DataPackView(),     true),
-            ("serverpack", "\U0001F5C4", "资源包缓存",   () => new ServerPackView(),    true),
-            ("filewatch",  "\U0001F50D", "文件变更检测", () => new FileWatchView(),     true),
-            ("annual",     "\U0001F4CA", "年度报告",     () => new AnnualReportView(),  true),
-            ("aichat",     "\U0001F916", "AI 助手",      () => new AiAssistView(),      true),
-            ("music",      "\U0001F3B5", "音乐播放器",   () => new MusicPlayerView(),   true),
-            ("afk",        "\U0001F5A5", "挂机工作流",   () => new AfkWorkflowView(),   true),
-            ("dev",        "\U0001F6E0", "开发工具",     () => new DevToolsView(),      false),
-            ("skin",       "\U0001F3A8", "皮肤编辑器",   () => new SkinEditorView(),    true),
-            ("shadertoken","\u2600",     "光影配置",     () => new ShaderTokenView(),   true),
-            ("achievement","\U0001F3C6", "成就展示",     () => new AchievementView(),    true),
-            ("command",    "\U0001F4DD", "命令助手",     () => new CommandView(),       false),
-            ("moddev",     "\U0001F9F1", "Mod 开发",     () => new ModDevView(),        true),
-            ("map",        "\U0001F5FA", "地图安装",     () => new MapView(),           true),
+            ("log",        "\U0001F4CB", "日志管理",     () => new LogView()),
+            ("versionlist","\U0001F5C3", "版本列表",     () => new VersionListView()),
+            ("saves",      "\U0001F4BE", "存档管理",     () => new SavesView()),
+            ("screenshot", "\U0001F4F7", "截图管理",     () => new ScreenshotView()),
+            ("perf",       "\u26A1",     "性能/实例",    () => new PerfView()),
+            ("network",    "\U0001F310", "网络诊断",     () => new NetworkDiagView()),
+            ("shortcut",   "\U0001F517", "快捷方式",     () => new ShortcutView()),
+            ("clean",      "\U0001F9F9", "冗余清理",     () => new RedundantCleanView()),
+            ("modpackio",  "\U0001F4E6", "整合包",       () => new ModpackView()),
+            ("backup",     "\U0001F6E1", "备份管理器",   () => new BackupView()),
+            ("nbt",        "\U0001F527", "NBT 编辑器",   () => new NbtView()),
+            ("datapack",   "\u26A0",     "数据包冲突检测", () => new DataPackView()),
+            ("serverpack", "\U0001F5C4", "资源包缓存",   () => new ServerPackView()),
+            ("filewatch",  "\U0001F50D", "文件变更检测", () => new FileWatchView()),
+            ("annual",     "\U0001F4CA", "年度报告",     () => new AnnualReportView()),
+            ("aichat",     "\U0001F916", "AI 助手",      () => new AiAssistView()),
+            ("music",      "\U0001F3B5", "音乐播放器",   () => new MusicPlayerView()),
+            ("afk",        "\U0001F5A5", "挂机工作流",   () => new AfkWorkflowView()),
+            ("dev",        "\U0001F6E0", "开发工具",     () => new DevToolsView()),
+            ("skin",       "\U0001F3A8", "皮肤编辑器",   () => new SkinEditorView()),
+            ("shadertoken","\u2600",     "光影配置",     () => new ShaderTokenView()),
+            ("achievement","\U0001F3C6", "成就展示",     () => new AchievementView()),
+            ("command",    "\U0001F4DD", "命令助手",     () => new CommandView()),
+            ("moddev",     "\U0001F9F1", "Mod 开发",     () => new ModDevView()),
+            ("map",        "\U0001F5FA", "地图安装",     () => new MapView()),
         };
 
-        foreach (var (id, icon, title, factory, needsSearch) in items)
-            _allPanels.Add(new ToolboxPanelItem { Id = id, Icon = icon, Title = title, Factory = factory, NeedsSearch = needsSearch });
+        foreach (var (id, icon, title, factory) in items)
+            _allPanels.Add(new ToolboxPanelItem { Id = id, Icon = icon, Title = title, Factory = factory });
 
         // 默认选中第一项
-        ApplyFilter();
+        PanelItems.Clear();
+        foreach (var p in _allPanels) PanelItems.Add(p);
         SelectedPanel = PanelItems.FirstOrDefault();
     }
 }
