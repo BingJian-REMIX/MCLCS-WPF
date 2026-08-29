@@ -1,6 +1,0 @@
-# 更新源（updates/latest.json）通过 CNB Pages 静态页对外提供，地址形如：
-#   https://<group>-<repo>.pages.cnb.cool/updates/latest.json
-# 在仓库「Pages」设置中启用静态页（指向 main 分支根目录）即可，无需 CI 构建脚本。
-# 本 .cnb.yml 置空，避免误触发默认流水线。
-main:
-  push: []
