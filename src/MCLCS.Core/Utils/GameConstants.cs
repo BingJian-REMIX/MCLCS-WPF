@@ -128,6 +128,11 @@ public static class GameConstants
     /// <summary>本项目在 CNB 的仓库地址（关于页链接、地图站 User-Agent 均指向此处）。</summary>
     public const string CnbRepoUrl = "https://cnb.cool/RLRS-Studio/MCLCS-WPF";
 
+    /// <summary>CNB 仓库地址（Uri 类型），供 XAML 的 Hyperlink.NavigateUri 使用。
+    /// NavigateUri 是 Uri 依赖属性，x:Static 返回的字符串不会自动做 string→Uri 转换，
+    /// 直接赋值会在启动时抛 XamlParseException 导致启动器崩溃；因此单独提供 Uri 版本。</summary>
+    public static readonly Uri CnbRepoUri = new Uri(CnbRepoUrl);
+
     /// <summary>CNB 仓库 git 地址（发布页链接、singlefile 包按 v{版本} 格式发布）。</summary>
     public const string CnbRepoGitUrl = CnbRepoUrl + ".git";
 
