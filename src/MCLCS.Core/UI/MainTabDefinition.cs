@@ -5,12 +5,12 @@ namespace MCLCS.Core.UI;
 
 /// <summary>
 /// 四色索引贴主标签标识。
-/// 顺序即视觉排列顺序（从左到右：游戏 → 下载 → 工具箱 → 设置），
-/// 左侧标签压在右侧之上（ZIndex 递减），游戏页常驻展开。
-/// </summary>
+    /// 顺序即视觉排列顺序（从左到右：游戏 → 下载 → 工具箱 → 设置），
+    /// 左侧标签压在右侧之上（ZIndex 递减）。四贴未选中时均折叠为色块、仅显文字于展开态。
+    /// </summary>
 public enum MainTabKind
 {
-    /// <summary>游戏（绿 #4CAF50）。无侧边栏，常驻展开。</summary>
+    /// <summary>游戏（绿 #4CAF50）。无侧边栏，未选中时同样折叠为色块。</summary>
     Game,
     /// <summary>下载（蓝 #2196F3）。</summary>
     Download,
@@ -118,7 +118,7 @@ public static class MainTabs
     /// <summary>四个主标签，按 Order 升序（左 → 右）。</summary>
     public static IReadOnlyList<MainTabDefinition> All { get; } = new List<MainTabDefinition>
     {
-        new(MainTabKind.Game,     "tab.game",    DefaultGameColor,     "gamepad",  0, hasSidebar: false, alwaysExpanded: true),
+        new(MainTabKind.Game,     "tab.game",    DefaultGameColor,     "gamepad",  0, hasSidebar: false),
         new(MainTabKind.Download, "tab.download", DefaultDownloadColor, "download", 1, hasSidebar: true),
         new(MainTabKind.Toolbox,  "tab.toolbox",  DefaultToolboxColor,  "toolbox",  2, hasSidebar: true),
         new(MainTabKind.Settings, "tab.settings", DefaultSettingsColor, "cog",      3, hasSidebar: true)

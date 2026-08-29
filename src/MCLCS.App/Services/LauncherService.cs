@@ -85,12 +85,17 @@ public class LauncherService : ILogger
         _modpackSources.FirstOrDefault(s => s.Id == (id ?? "")) ?? _modpackSources[0];
 
     /// <summary>搜索整合包（当前仅 Modrinth，依 <paramref name="sourceId"/> 选择来源）。</summary>
-    public async Task<List<ModpackItem>> SearchModpacksAsync(string? keyword, string? gameVersion,
+    public Task<List<ModpackItem>> SearchModpacksAsync(string? keyword, string? gameVersion,
         string? loader, string? sourceId, CancellationToken ct)
+        => SearchModpacksAsync(keyword, gameVersion, loader, sourceId, ct, 24, 0);
+
+    /// <summary>带分页的整合包搜索（bug #16：整合包页此前无法翻页）。</summary>
+    public async Task<List<ModpackItem>> SearchModpacksAsync(string? keyword, string? gameVersion,
+        string? loader, string? sourceId, CancellationToken ct, int limit, int offset)
     {
         var source = GetModpackSource(sourceId);
         if (!source.IsAvailable) return new List<ModpackItem>();
-        return await source.SearchAsync(keyword, gameVersion, loader, 24, 0, ct);
+        return await source.SearchAsync(keyword, gameVersion, loader, limit, offset, ct);
     }
 
     /// <summary>获取整合包详情（含可安装版本列表）。</summary>
@@ -668,6 +673,19 @@ public class LauncherService : ILogger
         return result.Hits;
     }
 
+    /// <summary>
+    /// 分页搜索 Modrinth 项目（bug #16：mod / 光影 / 资源包此前一次性只取前 25 条且无法翻页）。
+    /// 返回本页条目与远端总命中数，供 UI 计算总页数。
+    /// </summary>
+    public async Task<(List<ModrinthHit> Hits, int TotalHits)> SearchModsPagedAsync(
+        string? query, string? gameVersion, LoaderType loader, ModrinthProjectType type,
+        int limit, int offset, CancellationToken ct = default)
+    {
+        var client = new ModrinthClient(_client);
+        var result = await client.SearchAsync(query, gameVersion, loader, type, limit, offset, null, ct);
+        return (result.Hits, result.TotalHits);
+    }
+
     public async Task<bool> DownloadModAsync(string projectId, string targetDir, string? gameVersion, LoaderType loader)
     {
         var client = new ModrinthClient(_client);
@@ -684,6 +702,48 @@ public class LauncherService : ILogger
         Directory.CreateDirectory(targetDir);
         var dest = Path.Combine(targetDir, file.FileName);
         await _downloader.DownloadAsync(new DownloadItem(new[] { file.Url }, dest, file.Hashes.Sha1), null, CancellationToken.None);
+        return true;
+    }
+
+    /// <summary>
+    /// bug #14：拉取项目版本列表（含每个版本的最佳文件直链），供 mod / 光影 / 资源包详情页选择版本。
+    /// 按当前筛选的游戏版本与加载器挑文件；无可用文件的版本会被跳过。
+    /// </summary>
+    public async Task<List<ProjectVersionChoice>> GetProjectVersionChoicesAsync(
+        string projectId, string? gameVersion, LoaderType loader, CancellationToken ct = default)
+    {
+        var client = new ModrinthClient(_client);
+        var versions = await client.GetVersionsAsync(projectId, ct);
+        var list = new List<ProjectVersionChoice>();
+        foreach (var v in versions)
+        {
+            var file = client.SelectBestFile(v, gameVersion, loader);
+            if (file is null) continue;
+            list.Add(new ProjectVersionChoice
+            {
+                Id = v.Id,
+                Name = v.Name,
+                VersionNumber = v.VersionNumber,
+                GameVersionSummary = v.GameVersions.Count > 0 ? string.Join(", ", v.GameVersions.Take(4)) : "-",
+                LoaderSummary = v.Loaders.Count > 0 ? string.Join(", ", v.Loaders) : "-",
+                FileUrl = file.Url,
+                FileName = file.FileName,
+                FileSha1 = file.Hashes.Sha1
+            });
+        }
+        return list;
+    }
+
+    /// <summary>
+    /// bug #14：按指定文件直链下载（详情页选择了具体版本时使用）。
+    /// 与 <see cref="DownloadModAsync"/> 的区别是不再自动挑版本，用户选哪个就装哪个。
+    /// </summary>
+    public async Task<bool> DownloadModFileAsync(string fileUrl, string fileName, string? sha1,
+        string targetDir, IProgress<double>? progress, CancellationToken ct)
+    {
+        Directory.CreateDirectory(targetDir);
+        var dest = Path.Combine(targetDir, fileName);
+        await _downloader.DownloadAsync(new DownloadItem(new[] { fileUrl }, dest, sha1), progress, ct);
         return true;
     }
 

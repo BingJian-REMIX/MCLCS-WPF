@@ -3,9 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:MCLCS.App.ViewModels"
              Width="380">
-    <UserControl.DataContext>
-        <vm:AddServerViewModel/>
-    </UserControl.DataContext>
+    <!-- DataContext 由 code-behind 注入（含已有名称/地址的编辑场景），此处不再在 XAML 内实例化，
+         否则会要求 AddServerViewModel 提供无参构造函数（bug #11）。 -->
 
     <StackPanel Margin="16">
         <TextBlock Text="服务器名称" FontWeight="Bold" Margin="0,0,0,4"

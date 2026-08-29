@@ -8,6 +8,7 @@
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -16,7 +17,10 @@
             <Button Content="重新检测" Command="{Binding DiagnoseCommand}" Width="90" Margin="16,0,0,0" Padding="0,2"/>
         </StackPanel>
 
-        <ListBox Grid.Row="1" ItemsSource="{Binding Results}"
+        <TextBlock Grid.Row="1" Text="{Binding Hint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,6"
+                   Foreground="{DynamicResource SecondaryForeground}"/>
+
+        <ListBox Grid.Row="2" ItemsSource="{Binding Results}"
                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
                  BorderBrush="{DynamicResource InputBorder}">
             <ListBox.ItemTemplate>

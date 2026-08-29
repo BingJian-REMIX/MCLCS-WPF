@@ -17,6 +17,16 @@ public interface IMediaPlayer
     void Resume();
     void Stop();
     void SetVolume(int volume);
+
+    /// <summary>当前播放位置（秒）。宿主不支持时为 0（bug #10：进度条）。</summary>
+    double PositionSec { get; }
+
+    /// <summary>当前媒体总时长（秒）；未知（如直播流）为 0。</summary>
+    double DurationSec { get; }
+
+    /// <summary>跳转到指定位置（秒）。</summary>
+    void Seek(double seconds);
+
     event Action? Ended;
 }
 
@@ -43,6 +53,7 @@ public class MusicPlayerViewModel : ObservableObject
     private PlayMode _mode = PlayMode.LoopAll;
     private string _onlineUrl = "";
     private bool _autoDuck = true;
+    private bool _resumeOnLaunch;
     private bool _expanded;
     private string _mcOstStatus = "";
 
@@ -70,10 +81,115 @@ public class MusicPlayerViewModel : ObservableObject
         ScanMcOstCommand = new RelayCommand(_ => ScanMcOst());
         PlayTrackCommand = new RelayCommand(p => PlayTrack(p as Track));
         ExpandCommand = new RelayCommand(_ => Expanded = !Expanded);
+        SeekCommand = new RelayCommand(p => Seek(p));
 
         var profile = ProfileStore.Load(GameConstants.DefaultGameRoot);
         _autoDuck = profile.MusicAutoDuck;
         _volume = profile.MusicVolume;
+        _resumeOnLaunch = profile.MusicResumeOnLaunch;
+
+        // bug #10：进度条。播放期间每 500ms 同步一次播放位置，暂停/停止时停表。
+        _progressTimer = new System.Windows.Threading.DispatcherTimer(
+            System.Windows.Threading.DispatcherPriority.Normal)
+        {
+            Interval = TimeSpan.FromMilliseconds(500)
+        };
+        _progressTimer.Tick += (_, _) => RefreshProgress();
+    }
+
+    private readonly System.Windows.Threading.DispatcherTimer _progressTimer;
+    private double _positionSec;
+    private double _durationSec;
+    private bool _isSeeking;
+
+    /// <summary>当前播放位置（秒）。</summary>
+    public double PositionSec
+    {
+        get => _positionSec;
+        set
+        {
+            if (SetField(ref _positionSec, value))
+            {
+                OnPropertyChanged(nameof(PositionText));
+                OnPropertyChanged(nameof(ProgressRatio));
+            }
+        }
+    }
+
+    /// <summary>当前曲目总时长（秒）：优先取解码器时长，其次取导入时读到的标签时长。</summary>
+    public double DurationSec
+    {
+        get => _durationSec;
+        set
+        {
+            if (SetField(ref _durationSec, value))
+            {
+                OnPropertyChanged(nameof(DurationText));
+                OnPropertyChanged(nameof(ProgressRatio));
+            }
+        }
+    }
+
+    /// <summary>进度比例 0-100，供 Slider 绑定。</summary>
+    public double ProgressRatio => DurationSec > 0 ? Math.Clamp(PositionSec / DurationSec * 100.0, 0, 100) : 0;
+
+    public string PositionText => FormatTime(PositionSec);
+    public string DurationText => FormatTime(DurationSec);
+
+    /// <summary>是否有可显示的进度（时长已知）。</summary>
+    public bool HasProgress => DurationSec > 0;
+
+    private static string FormatTime(double sec) =>
+        sec <= 0 ? "0:00" : TimeSpan.FromSeconds(sec).ToString(sec >= 3600 ? @"h\:mm\:ss" : @"m\:ss");
+
+    private void RefreshProgress()
+    {
+        var host = Host;
+        if (host is null) return;
+
+        var hostDuration = host.DurationSec;
+        if (hostDuration > 0) DurationSec = hostDuration;
+        else if (CurrentTrack is { DurationSec: > 0 } t) DurationSec = t.DurationSec;
+
+        if (!_isSeeking) PositionSec = host.PositionSec;
+    }
+
+    /// <summary>拖动进度条跳转（Slider 传来的值可能是比例或秒，按值域判断）。</summary>
+    private void Seek(object? value)
+    {
+        var seconds = value switch
+        {
+            double d => d,
+            int i => (double)i,
+            string s when double.TryParse(s, out var parsed) => parsed,
+            _ => 0
+        };
+
+        // 进度条绑定的是 0-100 的比例，超过 100 才按秒处理
+        if (seconds > 100 && DurationSec > 0) seconds = seconds / 100.0 * DurationSec;
+        if (DurationSec > 0 && seconds <= 100) seconds = seconds / 100.0 * DurationSec;
+
+        try
+        {
+            _isSeeking = true;
+            Host?.Seek(seconds);
+            PositionSec = seconds;
+        }
+        finally
+        {
+            _isSeeking = false;
+        }
+    }
+
+    /// <summary>开始/停止进度刷新（与播放状态同步）。</summary>
+    private void StartProgressTimer()
+    {
+        try { _progressTimer.Start(); } catch { }
+    }
+
+    private void StopProgressTimer()
+    {
+        try { _progressTimer.Stop(); } catch { }
     }
 
     public ICommand PlayPauseCommand { get; }
@@ -86,6 +202,9 @@ public class MusicPlayerViewModel : ObservableObject
     public ICommand ScanMcOstCommand { get; }
     public ICommand PlayTrackCommand { get; }
     public ICommand ExpandCommand { get; }
+
+    /// <summary>拖动进度条跳转（bug #10）。</summary>
+    public ICommand SeekCommand { get; }
 
     public string SourceKind
     {
@@ -169,6 +288,68 @@ public class MusicPlayerViewModel : ObservableObject
         }
     }
 
+    /// <summary>启动时自动断点续播（bug #10）。</summary>
+    public bool ResumeOnLaunch
+    {
+        get => _resumeOnLaunch;
+        set
+        {
+            if (SetField(ref _resumeOnLaunch, value))
+                SavePrefs();
+        }
+    }
+
+    /// <summary>记录断点续播位置（当前曲目路径 + 进度秒），供下次启动恢复。</summary>
+    private void SaveResumePoint()
+    {
+        try
+        {
+            var p = ProfileStore.Load(GameConstants.DefaultGameRoot);
+            p.MusicLastTrack = CurrentTrack?.Path ?? "";
+            p.MusicLastPosition = PositionSec;
+            ProfileStore.Save(p);
+        }
+        catch { /* 忽略持久化失败 */ }
+    }
+
+    /// <summary>启动后尝试断点续播：若开启且存在上次曲目，则载入并跳到上次位置播放。</summary>
+    public void RestoreLastState()
+    {
+        if (!_resumeOnLaunch) return;
+        string? path = null;
+        double pos = 0;
+        try
+        {
+            var p = ProfileStore.Load(GameConstants.DefaultGameRoot);
+            path = string.IsNullOrWhiteSpace(p.MusicLastTrack) ? null : p.MusicLastTrack;
+            pos = p.MusicLastPosition;
+        }
+        catch { return; }
+        if (path is null || !File.Exists(path)) return;
+
+        var track = new Track { Path = path, Title = Path.GetFileNameWithoutExtension(path) };
+        var meta = AudioMetadata.Read(path);
+        if (meta != AudioTag.Empty)
+        {
+            track.Title = meta.Title ?? track.Title;
+            track.Artist = meta.Artist;
+            track.Album = meta.Album;
+            track.DurationSec = meta.DurationSec;
+        }
+        _playlist.Add(track);
+        SyncTracks();
+        _playlist.Select(_playlist.Count - 1);
+        CurrentTrack = _playlist.Current;
+        Host?.LoadAndPlay(path);
+        try { Host?.Seek(pos); } catch { }
+        PositionSec = pos;
+        DurationSec = track.DurationSec;
+        IsPlaying = true;
+        StartProgressTimer();
+        StatusText = "已续播：" + CurrentTrack.Display;
+        OnPropertyChanged(nameof(CurrentTrackDisplay));
+    }
+
     /// <summary>状态栏迷你条是否展开为完整列表。</summary>
     public bool Expanded
     {
@@ -208,12 +389,15 @@ public class MusicPlayerViewModel : ObservableObject
         {
             IsPlaying = false;
             Host?.Pause();
+            StopProgressTimer();
+            SaveResumePoint();
             StatusText = "已暂停：" + CurrentTrack.Display;
         }
         else
         {
             IsPlaying = true;
             Host?.Resume();
+            StartProgressTimer();
             StatusText = "正在播放：" + CurrentTrack.Display;
         }
     }
@@ -242,6 +426,7 @@ public class MusicPlayerViewModel : ObservableObject
         {
             IsPlaying = false;
             Host?.Stop();
+            StopProgressTimer();
             StatusText = "播放列表结束";
             return;
         }
@@ -255,6 +440,8 @@ public class MusicPlayerViewModel : ObservableObject
         CurrentTrack = _playlist.Current;
         IsPlaying = true;
         Host?.LoadAndPlay(CurrentTrack!.Path);
+        StartProgressTimer();
+        SaveResumePoint();
         StatusText = "正在播放：" + CurrentTrack.Display;
         OnPropertyChanged(nameof(CurrentTrackDisplay));
     }
@@ -356,6 +543,7 @@ public class MusicPlayerViewModel : ObservableObject
             var p = ProfileStore.Load(GameConstants.DefaultGameRoot);
             p.MusicAutoDuck = _autoDuck;
             p.MusicVolume = _volume;
+            p.MusicResumeOnLaunch = _resumeOnLaunch;
             ProfileStore.Save(p);
         }
         catch { /* 忽略持久化失败 */ }

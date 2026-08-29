@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows.Input;
 using MCLCS.App.ViewModels;
 
 namespace MCLCS.App.Views;
@@ -11,5 +12,7 @@ public partial class MusicPlayerView : UserControl
     {
         InitializeComponent();
         DataContext = MusicPlayerViewModel.Instance;
+        // bug #10：点击 / 拖动进度条松手时跳转（拖动过程中不触发，避免抖动）
+        SeekBar.PreviewMouseUp += (_, _) => MusicPlayerViewModel.Instance.SeekCommand.Execute(SeekBar.Value);
     }
 }

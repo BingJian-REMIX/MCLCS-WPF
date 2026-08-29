@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows.Controls;
 using MCLCS.Core.Mvvm;
 using MCLCS.App.Views;
@@ -46,7 +48,21 @@ public class ToolboxPanelItem : ObservableObject
 /// </summary>
 public class ToolboxViewModel : ObservableObject
 {
+    /// <summary>全部面板（不受搜索过滤影响），用于重建过滤后的 <see cref="PanelItems"/>。</summary>
+    private readonly List<ToolboxPanelItem> _allPanels = new();
+
     public ObservableCollection<ToolboxPanelItem> PanelItems { get; } = new();
+
+    private string _searchKeyword = "";
+    /// <summary>bug #18：工具箱搜索关键词（子串匹配，支持中文）。置空则显示全部面板。</summary>
+    public string SearchKeyword
+    {
+        get => _searchKeyword;
+        set
+        {
+            if (SetField(ref _searchKeyword, value)) ApplyFilter();
+        }
+    }
 
     private ToolboxPanelItem? _selectedPanel;
     public ToolboxPanelItem? SelectedPanel
@@ -72,6 +88,34 @@ public class ToolboxViewModel : ObservableObject
     {
         get => _selectedView;
         set => SetField(ref _selectedView, value);
+    }
+
+    private void ApplyFilter()
+    {
+        var kw = _searchKeyword.Trim();
+        PanelItems.Clear();
+        IEnumerable<ToolboxPanelItem> src = _allPanels;
+        if (kw.Length > 0)
+            src = src.Where(p =>
+                p.Title.Contains(kw, System.StringComparison.CurrentCultureIgnoreCase) ||
+                p.Id.Contains(kw, System.StringComparison.CurrentCultureIgnoreCase));
+        foreach (var p in src) PanelItems.Add(p);
+        if (PanelItems.Count > 0 && !PanelItems.Contains(SelectedPanel))
+            SelectedPanel = PanelItems[0];
+    }
+
+    /// <summary>
+    /// bug #17：供全局搜索调用——返回与关键词匹配的第一个面板 Id（标题或 Id 子串，忽略大小写）；无匹配返回 null。
+    /// 仅做匹配，不修改当前选中项，由调用方决定是否跳转。
+    /// </summary>
+    public string? MatchPanelId(string keyword)
+    {
+        var kw = (keyword ?? "").Trim();
+        if (kw.Length == 0) return null;
+        var hit = _allPanels.FirstOrDefault(p =>
+            p.Title.Contains(kw, System.StringComparison.CurrentCultureIgnoreCase) ||
+            p.Id.Contains(kw, System.StringComparison.CurrentCultureIgnoreCase));
+        return hit?.Id;
     }
 
     public ToolboxViewModel()
@@ -106,9 +150,10 @@ public class ToolboxViewModel : ObservableObject
         };
 
         foreach (var (id, icon, title, factory) in items)
-            PanelItems.Add(new ToolboxPanelItem { Id = id, Icon = icon, Title = title, Factory = factory });
+            _allPanels.Add(new ToolboxPanelItem { Id = id, Icon = icon, Title = title, Factory = factory });
 
         // 默认选中第一项
+        ApplyFilter();
         SelectedPanel = PanelItems.FirstOrDefault();
     }
 }

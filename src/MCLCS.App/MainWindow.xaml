@@ -170,9 +170,9 @@
                 </Border>
             </Popup>
 
-            <!-- 四色索引贴主标签 -->
+            <!-- 四色索引贴主标签（bug #5：下移贴标题栏底部、下端直角齐平） -->
             <StackPanel x:Name="TabPanel" Grid.Column="2" Orientation="Horizontal"
-                        HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,0"/>
 
             <!-- 窗口控制 -->
             <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
@@ -234,12 +234,12 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- 全局侧边栏 -->
+            <!-- 全局侧边栏（bug #6：隐藏竖滚动条，避免遮挡图标/截断长名；bug #20：右边线随当前主标签色） -->
             <Border x:Name="SidebarRoot" Grid.Column="0" Width="56"
                     Background="{DynamicResource ControlBackground}"
-                    BorderThickness="0,0,1,0" BorderBrush="{DynamicResource ControlBorder}"
+                    BorderThickness="0,0,1,0" BorderBrush="{DynamicResource SidebarIndicatorBrush}"
                     MouseEnter="Sidebar_MouseEnter" MouseLeave="Sidebar_MouseLeave">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="SidebarItemsPanel" Orientation="Vertical" Margin="6,8"/>
                 </ScrollViewer>
             </Border>
@@ -297,40 +297,42 @@
                            Visibility="{Binding HasTrack, Source={x:Static vm:MusicPlayerViewModel.Instance}, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel Orientation="Horizontal" x:Name="MusicMini">
                     <Button Width="26" Height="22" BorderThickness="0" Background="Transparent"
+                            Command="{Binding PreviousCommand, Source={x:Static vm:MusicPlayerViewModel.Instance}}"
+                            ToolTip="上一首" VerticalAlignment="Center" Content="⏮" FontSize="11"/>
+                    <Button Width="26" Height="22" BorderThickness="0" Background="Transparent"
                             Command="{Binding PlayPauseCommand, Source={x:Static vm:MusicPlayerViewModel.Instance}}"
-                            ToolTip="播放 / 暂停" VerticalAlignment="Center">
-                        <theme:PngIcon Size="12">
-                            <theme:PngIcon.Style>
-                                <Style TargetType="theme:PngIcon">
-                                    <Setter Property="Token" Value="play"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsPlaying, Source={x:Static vm:MusicPlayerViewModel.Instance}}" Value="True">
-                                            <Setter Property="Token" Value="pause"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </theme:PngIcon.Style>
-                        </theme:PngIcon>
+                            ToolTip="播放 / 暂停" VerticalAlignment="Center" FontSize="11">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Setter Property="Content" Value="▶"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPlaying, Source={x:Static vm:MusicPlayerViewModel.Instance}}" Value="True">
+                                        <Setter Property="Content" Value="⏸"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                     </Button>
-                    <TextBlock Text="{Binding CurrentTrackDisplay, Source={x:Static vm:MusicPlayerViewModel.Instance}}"
-                               VerticalAlignment="Center" Margin="6,0,0,0" MaxWidth="200"
-                               TextTrimming="CharacterEllipsis" Foreground="{DynamicResource StatusForeground}"/>
+                    <Button Width="26" Height="22" BorderThickness="0" Background="Transparent"
+                            Command="{Binding NextCommand, Source={x:Static vm:MusicPlayerViewModel.Instance}}"
+                            ToolTip="下一首" VerticalAlignment="Center" Content="⏭" FontSize="11"/>
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="8,0,0,0">
+                        <TextBlock Text="{Binding CurrentTrackDisplay, Source={x:Static vm:MusicPlayerViewModel.Instance}}"
+                                   MaxWidth="200" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource StatusForeground}"/>
+                        <TextBlock FontSize="10" Opacity="0.65" MaxWidth="200" TextTrimming="CharacterEllipsis"
+                                   Foreground="{DynamicResource StatusForeground}">
+                            <Run Text="{Binding CurrentTrack.Artist, Source={x:Static vm:MusicPlayerViewModel.Instance}, Mode=OneWay}"/>
+                            <Run Text=" · "/>
+                            <Run Text="{Binding CurrentTrack.Album, Source={x:Static vm:MusicPlayerViewModel.Instance}, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                    <!-- bug #10/#12：微条细长进度条（仅时长已知时显示） -->
+                    <Slider Minimum="0" Maximum="100" Width="80" VerticalAlignment="Center" Margin="10,0,0,0"
+                            Value="{Binding ProgressRatio, Source={x:Static vm:MusicPlayerViewModel.Instance}, Mode=OneWay}"
+                            Visibility="{Binding HasProgress, Source={x:Static vm:MusicPlayerViewModel.Instance}, Converter={StaticResource BoolToVisibility}}"/>
                     <Button x:Name="MusicExpandBtn" Width="24" Height="22" BorderThickness="0" Background="Transparent"
                             Command="{Binding ExpandCommand, Source={x:Static vm:MusicPlayerViewModel.Instance}}"
-                            ToolTip="展开 / 收起播放列表" VerticalAlignment="Center">
-                        <theme:PngIcon Size="12">
-                            <theme:PngIcon.Style>
-                                <Style TargetType="theme:PngIcon">
-                                    <Setter Property="Token" Value="menu-unfold"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Expanded, Source={x:Static vm:MusicPlayerViewModel.Instance}}" Value="True">
-                                            <Setter Property="Token" Value="menu-fold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </theme:PngIcon.Style>
-                        </theme:PngIcon>
-                    </Button>
+                            ToolTip="展开 / 收起播放列表" VerticalAlignment="Center" Content="▤" FontSize="11"/>
                 </StackPanel>
             </StatusBarItem>
 

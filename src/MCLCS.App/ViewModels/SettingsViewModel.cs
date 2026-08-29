@@ -163,7 +163,24 @@ public class SettingsViewModel : ObservableObject
     // ===== 通用 =====
     public string SelectedLanguage { get => _selectedLanguage; set => SetField(ref _selectedLanguage, value); }
     public bool AutoStartLauncher { get => _autoStartLauncher; set => SetField(ref _autoStartLauncher, value); }
-    public bool MinimizeToTray { get => _minimizeToTray; set => SetField(ref _minimizeToTray, value); }
+    public bool MinimizeToTray
+    {
+        get => _minimizeToTray;
+        set
+        {
+            if (SetField(ref _minimizeToTray, value))
+            {
+                // bug #9：即时落盘，避免「切换后未点保存就最小化」导致托盘不生效
+                try
+                {
+                    var p = ProfileStore.Load(GameConstants.DefaultGameRoot);
+                    p.MinimizeToTray = value;
+                    ProfileStore.Save(p);
+                }
+                catch { /* 忽略持久化失败 */ }
+            }
+        }
+    }
     public bool AnimationsEnabled
     {
         get => _animationsEnabled;
@@ -186,6 +203,13 @@ public class SettingsViewModel : ObservableObject
     {
         get => MusicPlayerViewModel.Instance.AutoDuck;
         set => MusicPlayerViewModel.Instance.AutoDuck = value;
+    }
+
+    /// <summary>启动器启动时自动续播上次音乐（bug #10）。代理到音乐播放器单例。</summary>
+    public bool MusicResumeOnLaunch
+    {
+        get => MusicPlayerViewModel.Instance.ResumeOnLaunch;
+        set => MusicPlayerViewModel.Instance.ResumeOnLaunch = value;
     }
 
     // ===== 下载 =====

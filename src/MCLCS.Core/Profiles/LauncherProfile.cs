@@ -182,6 +182,18 @@ public class LauncherProfile
     /// <summary>音乐播放器音量（0-100）。</summary>
     [JsonPropertyName("musicVolume")]
     public int MusicVolume { get; set; } = 60;
+
+    /// <summary>启动时自动断点续播（bug #10）：恢复上次停下的曲目与位置。</summary>
+    [JsonPropertyName("musicResumeOnLaunch")]
+    public bool MusicResumeOnLaunch { get; set; }
+
+    /// <summary>断点续播：上次播放的本地曲目路径（空表示无）。</summary>
+    [JsonPropertyName("musicLastTrack")]
+    public string MusicLastTrack { get; set; } = "";
+
+    /// <summary>断点续播：上次停下的位置（秒）。</summary>
+    [JsonPropertyName("musicLastPosition")]
+    public double MusicLastPosition { get; set; }
 }
 
 /// <summary>缺失 Mod 前置依赖的自动安装策略。</summary>

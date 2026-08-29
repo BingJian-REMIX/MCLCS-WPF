@@ -17,9 +17,9 @@
 
     <!-- Foreground -->
     <SolidColorBrush x:Key="PrimaryForeground" Color="#1A1A1A"/>
-    <SolidColorBrush x:Key="SecondaryForeground" Color="#6B7280"/>
+    <SolidColorBrush x:Key="SecondaryForeground" Color="#4B5563"/>
     <SolidColorBrush x:Key="AccentForeground" Color="#2563EB"/>
-    <SolidColorBrush x:Key="StatusForeground" Color="#6B7280"/>
+    <SolidColorBrush x:Key="StatusForeground" Color="#4B5563"/>
 
     <!-- Accent -->
     <SolidColorBrush x:Key="AccentBrush" Color="#2563EB"/>

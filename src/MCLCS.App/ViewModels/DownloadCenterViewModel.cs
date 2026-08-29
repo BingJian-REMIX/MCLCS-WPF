@@ -50,6 +50,19 @@ public class DownloadQueueItem : ObservableObject
     /// <summary>版本安装所选加载器（none / forge / fabric / neoforge / quilt），仅 Kind=version 使用。</summary>
     public string InstallLoader { get; init; } = "none";
 
+    /// <summary>
+    /// bug #14：用户在详情页指定了具体版本时的主文件直链。
+    /// 非空时队列直接下载该文件，而不是让服务端按 gameVersion/loader 自动挑一个
+    /// （此前详情页只能「加入队列」，实际装的不一定是所选版本）。
+    /// </summary>
+    public string? FileUrl { get; init; }
+
+    /// <summary>配合 <see cref="FileUrl"/> 的落地文件名。</summary>
+    public string? FileName { get; init; }
+
+    /// <summary>配合 <see cref="FileUrl"/> 的 SHA1 校验值（可为空）。</summary>
+    public string? FileSha1 { get; init; }
+
     public CancellationTokenSource? Cts { get; set; }
 
     private string _status = "排队中";
@@ -144,6 +157,8 @@ public class DownloadCenterViewModel : ObservableObject
     public ICommand StartQueueCommand { get; }
     public ICommand PauseItemCommand { get; }
     public ICommand CancelItemCommand { get; }
+    public ICommand RemoveItemCommand { get; }
+    public ICommand ClearCompletedCommand { get; }
 
     public DownloadCenterViewModel()
     {
@@ -153,6 +168,8 @@ public class DownloadCenterViewModel : ObservableObject
         StartQueueCommand = new AsyncRelayCommand(_ => StartQueueAsync(), _ => !IsBusy);
         PauseItemCommand = new RelayCommand(p => PauseItem(p as DownloadQueueItem));
         CancelItemCommand = new RelayCommand(p => CancelItem(p as DownloadQueueItem));
+        RemoveItemCommand = new RelayCommand(p => RemoveItem(p as DownloadQueueItem));
+        ClearCompletedCommand = new RelayCommand(_ => ClearCompleted());
         _ = LoadGameVersionsAsync();
     }
 
@@ -271,5 +288,20 @@ public class DownloadCenterViewModel : ObservableObject
         if (item is null) return;
         item.Cts?.Cancel();
         item.Status = "已取消";
+    }
+
+    // bug #7：下载完成后任务仍留在队列（重启才重置）。允许手动移除任意队列项，
+    // 并提供「清空已完成」一键清理已结束（完成/取消/失败）的项。
+    private void RemoveItem(DownloadQueueItem? item)
+    {
+        if (item is null) return;
+        item.Cts?.Cancel();
+        Queue.Remove(item);
+    }
+
+    private void ClearCompleted()
+    {
+        foreach (var it in Queue.Where(q => q.Status is "已完成" or "已取消" or "失败").ToList())
+            Queue.Remove(it);
     }
 }

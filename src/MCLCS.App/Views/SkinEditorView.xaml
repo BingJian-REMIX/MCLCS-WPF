@@ -105,10 +105,9 @@
                               FontSize="11" IsChecked="True" Click="Mode_Changed"/>
                 <ToggleButton x:Name="Mode3D" Content="3D 预览" Width="64" Height="24"
                               FontSize="11" IsChecked="False" Click="Mode_Changed" Margin="4,0,0,0"/>
-                <TextBlock VerticalAlignment="Center" Margin="12,0,0,0"
-                           Foreground="{DynamicResource AccentBrush}">
-                    <Run Text="{Binding SelectedFace.Display}"/>
-                </TextBlock>
+            <TextBlock VerticalAlignment="Center" Margin="12,0,0,0"
+                       Foreground="{DynamicResource AccentBrush}"
+                       Text="{Binding SelectedFace.Display}"/>
             </WrapPanel>
 
             <!-- 2D 面编辑 -->

@@ -29,6 +29,9 @@ public partial class ToolboxView : UserControl
         if (panel is not null)
         {
             Vm.SelectedPanel = panel;
+            // bug #13：开发工具面板按入口切换内部模式（命令速查 / Mod 骨架 / 资源包创建）
+            if (lookup == "dev" && panel.View is DevToolsView dev)
+                dev.SetMode(id);
             return;
         }
 
@@ -40,4 +43,13 @@ public partial class ToolboxView : UserControl
         };
         if (extra is not null) Vm.SelectedView = extra;
     }
+
+    /// <summary>bug #18：由全局搜索调用，跳转到工具箱并按关键词过滤面板。</summary>
+    public void SetSearchKeyword(string keyword)
+    {
+        Vm.SearchKeyword = keyword;
+    }
+
+    /// <summary>bug #17：由全局搜索调用——返回与关键词匹配的工具箱面板 Id，无匹配返回 null。</summary>
+    public string? MatchPanelId(string keyword) => Vm.MatchPanelId(keyword);
 }

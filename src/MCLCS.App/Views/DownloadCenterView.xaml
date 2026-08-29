@@ -42,6 +42,7 @@
             <Button Content="开始下载队列" Command="{Binding StartQueueCommand}" Width="120" Margin="8,0,0,0" Padding="0,4"
                     Background="{DynamicResource AccentBrush}" Foreground="White" BorderThickness="0"/>
             <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            <Button Content="清空已完成" Command="{Binding ClearCompletedCommand}" Width="100" Margin="12,0,0,0" Padding="0,4"/>
         </StackPanel>
 
         <ListBox Grid.Row="4" ItemsSource="{Binding Queue}" Margin="0,8,0,0"
@@ -54,6 +55,7 @@
                             <ColumnDefinition Width="120"/>
                             <ColumnDefinition Width="60"/>
                             <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="60"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock FontWeight="Bold" Text="{Binding Title}"/>
@@ -64,6 +66,8 @@
                         <Button Grid.Column="2" Content="暂停" Command="{Binding DataContext.PauseItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" Padding="2" Margin="4,0"/>
                         <Button Grid.Column="3" Content="取消" Command="{Binding DataContext.CancelItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" Padding="2"/>
+                        <Button Grid.Column="4" Content="移除" Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" Padding="2"/>
                     </Grid>
                 </DataTemplate>

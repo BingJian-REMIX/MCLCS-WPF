@@ -60,7 +60,9 @@
                     <WrapPanel>
                         <TextBlock Text="动作类型：" VerticalAlignment="Center" Width="70"
                                    Foreground="{DynamicResource SecondaryForeground}"/>
-                        <ComboBox SelectedItem="{Binding SelectedAction.ActionType}" Width="100">
+                        <!-- bug #13：此前用 SelectedItem 绑定，选中值被赋成 ComboBoxItem 本身而非 Tag，
+                             导致无论选哪种动作类型，生成/保存的都还是默认的帧率限制 (F)。 -->
+                        <ComboBox SelectedValue="{Binding SelectedAction.ActionType}" SelectedValuePath="Tag" Width="140">
                             <ComboBoxItem Content="帧率限制 (F)" Tag="F"/>
                             <ComboBoxItem Content="渲染距离 (D)" Tag="D"/>
                             <ComboBoxItem Content="音量 (V)" Tag="V"/>
@@ -105,6 +107,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0">
@@ -139,6 +142,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{Binding}" VerticalAlignment="Center"
                                            Foreground="{DynamicResource PrimaryForeground}"/>
@@ -146,15 +150,21 @@
                                         Command="{Binding DataContext.LoadCommand,
                                             RelativeSource={RelativeSource AncestorType=ListBox}}"
                                         CommandParameter="{Binding}" Margin="0,0,4,0"/>
-                                <Button Grid.Column="1" Content="✕" Width="30" Padding="0,2"
+                                <!-- bug #13：删除按钮此前与「载入」同处 Grid.Column=1，被完全遮挡点不到 -->
+                                <Button Grid.Column="2" Content="✕" Width="30" Padding="0,2"
                                         Command="{Binding DataContext.DeleteCommand,
                                             RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                        CommandParameter="{Binding}" Foreground="#E74C3C"/>
+                                        CommandParameter="{Binding}" Foreground="#E74C3C"
+                                        ToolTip="删除该工作流"/>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </StackPanel>
+
+            <!-- bug #13：操作结果此前没有任何反馈位置，保存/删除看起来"没反应" -->
+            <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" Margin="0,10,0,0" FontSize="12"
+                       TextWrapping="Wrap" Foreground="{DynamicResource AccentBrush}"/>
         </Grid>
     </Grid>
 </UserControl>

@@ -26,6 +26,35 @@ public class ModpackSourceEntry
 }
 
 /// <summary>
+/// bug #14：mod / 光影 / 资源包的项目详情绑定模型。
+/// 此前这三类点详情会直接跳转 Modrinth 网页，既没有页内详情，也没有「返回」的余地；
+/// 现在改为在启动器内爬取版本列表并支持选择版本后安装。
+/// </summary>
+public class ModrinthProjectDetail
+{
+    public string Id { get; init; } = "";
+    public string Title { get; init; } = "";
+    public string Author { get; init; } = "";
+    public string Description { get; init; } = "";
+    public string IconUrl { get; init; } = "";
+    public string FallbackToken { get; init; } = "mod";
+    public string SubTab { get; init; } = "mod";
+    public string ProjectUrl { get; init; } = "";
+    public List<ProjectVersionChoice> Versions { get; set; } = new();
+
+    public bool HasVersions => Versions.Count > 0;
+    public int VersionCount => Versions.Count;
+
+    /// <summary>版本聚合出的加载器摘要。</summary>
+    public string Loaders =>
+        Versions.Count == 0 ? "-" : string.Join(", ",
+            Versions.SelectMany(v => v.LoaderSummary.Split(',', StringSplitOptions.TrimEntries))
+                    .Where(s => s.Length > 0 && s != "-")
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(4));
+}
+
+/// <summary>
 /// 下载页（规格 2.2）ViewModel：按全局侧边栏副标签（mod / shader / resourcepack / modpack / map）切换内容，
 /// 顶部版本 + 加载器筛选（地图为分类 / 版本 / 排序 / 分页），卡片网格（外联封面由 ExternalIcon 渲染），
 /// 底部下载队列（进度 / 暂停 / 取消）。Mod 类走 Modrinth，地图走像素茶艺（PixelMap），
@@ -64,6 +93,13 @@ public class DownloadPageViewModel : ObservableObject
     private int _mapTotalPages = 1;
     private bool _mapFacetsLoaded;
 
+    // bug #16：通用分页（mod / 光影 / 资源包 / 整合包 / 地图共用一套页码；Minecraft 页用分组折叠，不分页）
+    private int _page = 1;
+    private int _totalPages = 1;
+
+    /// <summary>在途搜索的取消源：切换副页/重新搜索时取消旧请求，避免慢请求后到覆盖新页内容（bug #16）。</summary>
+    private CancellationTokenSource? _searchCts;
+
     // 地图详情弹窗
     private PixelMapDetail? _currentMapDetail;
     private bool _isDetailOpen;
@@ -79,6 +115,13 @@ public class DownloadPageViewModel : ObservableObject
     private bool _installIsolated = true;
     private string _currentModpackSourceId = "modrinth";
     private string _modpackDetailHint = "";
+
+    // bug #14：Modrinth 项目（mod / 光影 / 资源包）页内详情
+    private ModrinthProjectDetail? _currentProjectDetail;
+    private bool _isProjectDetailOpen;
+    private ProjectVersionChoice? _selectedProjectVersion;
+    private string _projectDetailHint = "";
+    private string _projectTranslated = "";
 
     // Minecraft 版本下载（规格新增）
     private bool _isMinecraft;
@@ -130,6 +173,8 @@ public class DownloadPageViewModel : ObservableObject
         {
             if (SetField(ref _isMinecraft, value))
                 RaiseFilterVisibilityChanged();
+            // 分页条显隐依赖当前是否为 Minecraft 页（bug #16）
+            OnPropertyChanged(nameof(HasPaging));
         }
     }
 
@@ -258,17 +303,55 @@ public class DownloadPageViewModel : ObservableObject
         set => MapSort = value == "views" ? MapSort.Views : MapSort.Published;
     }
 
+    /// <summary>地图页码。与通用 <see cref="Page"/> 同源（bug #16），保留属性名以兼容既有绑定。</summary>
     public int MapPage
     {
-        get => _mapPage;
-        set => SetField(ref _mapPage, value);
+        get => Page;
+        set => Page = value;
     }
 
+    /// <summary>地图总页数。与通用 <see cref="TotalPages"/> 同源（bug #16）。</summary>
     public int MapTotalPages
     {
-        get => _mapTotalPages;
-        set => SetField(ref _mapTotalPages, value);
+        get => TotalPages;
+        set => TotalPages = value;
     }
+
+    /// <summary>当前页码（1 起）。mod / 光影 / 资源包 / 整合包 / 地图共用。</summary>
+    public int Page
+    {
+        get => _page;
+        set
+        {
+            if (SetField(ref _page, value))
+            {
+                OnPropertyChanged(nameof(CanPrevPage));
+                OnPropertyChanged(nameof(CanNextPage));
+            }
+        }
+    }
+
+    /// <summary>总页数。Minecraft 页使用分组折叠展示，恒为 1。</summary>
+    public int TotalPages
+    {
+        get => _totalPages;
+        set
+        {
+            if (SetField(ref _totalPages, value))
+            {
+                OnPropertyChanged(nameof(HasPaging));
+                OnPropertyChanged(nameof(CanPrevPage));
+                OnPropertyChanged(nameof(CanNextPage));
+            }
+        }
+    }
+
+    /// <summary>是否展示分页条：Minecraft 页不分页，其余页总页数大于 1 时展示。</summary>
+    public bool HasPaging => !IsMinecraft && _totalPages > 1;
+
+    public bool CanPrevPage => _page > 1;
+
+    public bool CanNextPage => _page < _totalPages;
 
     public DownloadCardItem? SelectedCard
     {
@@ -422,6 +505,9 @@ public class DownloadPageViewModel : ObservableObject
     public ICommand CancelItemCommand { get; }
     public ICommand OpenDetailCommand { get; }
     public ICommand ChangeMapPageCommand { get; }
+
+    /// <summary>通用翻页命令（bug #16：mod / 光影 / 资源包 / 整合包 / 地图共用）。</summary>
+    public ICommand ChangePageCommand { get; }
     public ICommand SetModpackSourceCommand { get; }
     public ICommand OpenModpackDetailCommand { get; }
     public ICommand InstallModpackCommand { get; }
@@ -436,6 +522,19 @@ public class DownloadPageViewModel : ObservableObject
     public ICommand OpenMapPageCommand { get; }
 
     public ICommand CloseDetailCommand { get; }
+
+    /// <summary>关闭项目详情弹窗（bug #14：mod / 光影 / 资源包详情返回）。</summary>
+    public ICommand CloseProjectDetailCommand { get; }
+
+    /// <summary>把详情页所选版本加入下载队列（bug #14）。</summary>
+    public ICommand InstallProjectVersionCommand { get; }
+
+    /// <summary>AI 翻译项目描述（未启用 AI 助手时按钮置灰，bug #14）。</summary>
+    public ICommand TranslateDetailCommand { get; }
+
+    /// <summary>在浏览器打开项目页（详情页内的外部入口）。</summary>
+    public ICommand OpenProjectPageCommand { get; }
+
     public ICommand EnqueueInstallCommand { get; }
     public ICommand CloseInstallCommand { get; }
 
@@ -448,7 +547,8 @@ public class DownloadPageViewModel : ObservableObject
         PauseItemCommand = new RelayCommand(p => PauseItem(p as DownloadQueueItem));
         CancelItemCommand = new RelayCommand(p => CancelItem(p as DownloadQueueItem));
         OpenDetailCommand = new RelayCommand(p => OpenDetail(p as DownloadCardItem));
-        ChangeMapPageCommand = new RelayCommand(p => ChangeMapPage(p as string));
+        ChangeMapPageCommand = new RelayCommand(p => ChangePage(p as string));
+        ChangePageCommand = new RelayCommand(p => ChangePage(p as string));
         SetModpackSourceCommand = new RelayCommand(p => SetModpackSource(p as string));
         OpenModpackDetailCommand = new RelayCommand(p => _ = OpenModpackDetailAsync(p as DownloadCardItem));
         InstallModpackCommand = new AsyncRelayCommand(_ => InstallModpackAsync(), _ => ModpackDetailCanInstall && !IsBusy);
@@ -458,6 +558,13 @@ public class DownloadPageViewModel : ObservableObject
         DownloadExtraCommand = new AsyncRelayCommand(_ => DownloadExtraAsync(), _ => DetailHasExtra && !IsBusy);
         OpenMapPageCommand = new RelayCommand(_ => OpenMapPage());
         CloseDetailCommand = new RelayCommand(_ => IsDetailOpen = false);
+        CloseProjectDetailCommand = new RelayCommand(_ => IsProjectDetailOpen = false);
+        InstallProjectVersionCommand = new AsyncRelayCommand(
+            _ => InstallProjectVersionAsync(), _ => ProjectDetailCanInstall && !IsBusy);
+        // 未启用 AI 助手时置灰（bug #14）
+        TranslateDetailCommand = new AsyncRelayCommand(
+            _ => TranslateDetailAsync(), _ => AiEnabled && !IsBusy);
+        OpenProjectPageCommand = new RelayCommand(_ => OpenProjectPage());
         // 「加入队列」按钮在版本已选中的安装弹窗内，直接始终可用，不再门控置灰（修复：下载队列按钮持续置灰）。
         EnqueueInstallCommand = new RelayCommand(_ => EnqueueVersionInstall());
         CloseInstallCommand = new RelayCommand(_ => IsInstallOpen = false);
@@ -471,6 +578,62 @@ public class DownloadPageViewModel : ObservableObject
 
         _ = LoadGameVersionsAsync();
     }
+
+    // ---- Modrinth 项目详情（bug #14：mod / 光影 / 资源包）----
+
+    public ModrinthProjectDetail? CurrentProjectDetail
+    {
+        get => _currentProjectDetail;
+        set
+        {
+            if (!SetField(ref _currentProjectDetail, value)) return;
+            OnPropertyChanged(nameof(ProjectDetailCanInstall));
+            OnPropertyChanged(nameof(ProjectDetailHasVersions));
+            OnPropertyChanged(nameof(ProjectDetailLoaders));
+        }
+    }
+
+    public bool IsProjectDetailOpen
+    {
+        get => _isProjectDetailOpen;
+        set => SetField(ref _isProjectDetailOpen, value);
+    }
+
+    public ProjectVersionChoice? SelectedProjectVersion
+    {
+        get => _selectedProjectVersion;
+        set
+        {
+            if (SetField(ref _selectedProjectVersion, value))
+            {
+                _projectDetailHint = "";
+                OnPropertyChanged(nameof(ProjectDetailHint));
+                OnPropertyChanged(nameof(ProjectDetailCanInstall));
+            }
+        }
+    }
+
+    public string ProjectDetailHint
+    {
+        get => _projectDetailHint;
+        set => SetField(ref _projectDetailHint, value);
+    }
+
+    /// <summary>AI 翻译结果（详情页展示）。</summary>
+    public string ProjectTranslated
+    {
+        get => _projectTranslated;
+        set { if (SetField(ref _projectTranslated, value)) OnPropertyChanged(nameof(ProjectHasTranslation)); }
+    }
+
+    public bool ProjectHasTranslation => _projectTranslated.Length > 0;
+
+    public bool ProjectDetailCanInstall => !string.IsNullOrEmpty(SelectedProjectVersion?.FileUrl);
+    public bool ProjectDetailHasVersions => CurrentProjectDetail?.HasVersions ?? false;
+    public string ProjectDetailLoaders => CurrentProjectDetail?.Loaders ?? "-";
+
+    /// <summary>AI 助手是否启用：未启用时详情页「AI 翻译」按钮置灰（bug #14）。</summary>
+    public bool AiEnabled => MCLCS.Core.Ai.Assistant.Config.Enabled;
 
     /// <summary>队列项数（标题栏下载弹窗角标用）。</summary>
     public int QueueCount => Queue.Count;
@@ -570,21 +733,43 @@ public class DownloadPageViewModel : ObservableObject
         }
     }
 
-    /// <summary>执行搜索。<paramref name="resetPage"/> 为 false 时保留当前地图页码（翻页场景）。</summary>
+    /// <summary>执行搜索。<paramref name="resetPage"/> 为 false 时保留当前页码（翻页场景）。</summary>
     private async Task SearchAsync(bool resetPage = true)
     {
+        // bug #16：切换副页 / 重新搜索时取消仍在途的旧请求。
+        // 否则慢请求后到会把上一个副页的结果写进当前页（表现为"显示的还是第一次副页的内容"）。
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _searchCts = cts;
+        var token = cts.Token;
+        var tabAtStart = CurrentSubTab;
+
         IsBusy = true;
         try
         {
             Cards.Clear();
-            if (IsMinecraft) await LoadVersionsAsync();
-            else if (IsMap) await SearchMapsAsync(resetPage);
-            else if (IsModpack) await SearchModpackAsync();
-            else await SearchModrinthAsync();
+            if (resetPage) Page = 1;
+
+            try
+            {
+                if (IsMinecraft) { TotalPages = 1; await LoadVersionsAsync(); }
+                else if (IsMap) await SearchMapsAsync(resetPage, token);
+                else if (IsModpack) await SearchModpackAsync(token);
+                else await SearchModrinthAsync(token);
+            }
+            catch (OperationCanceledException)
+            {
+                return; // 已被新搜索取代：结果丢弃，不写 UI
+            }
+
+            // bug #16：加载期间用户已切到其他副页 → 丢弃本次结果
+            if (token.IsCancellationRequested || !string.Equals(tabAtStart, CurrentSubTab, StringComparison.Ordinal))
+                return;
 
             StatusMessage = Cards.Count > 0
-                ? IsMap && MapTotalPages > 1
-                    ? $"找到 {Cards.Count} 个结果（第 {MapPage} / {MapTotalPages} 页）"
+                ? TotalPages > 1
+                    ? $"找到 {Cards.Count} 个结果（第 {Page} / {TotalPages} 页）"
                     : $"找到 {Cards.Count} 个结果"
                 : "未找到结果";
         }
@@ -594,9 +779,40 @@ public class DownloadPageViewModel : ObservableObject
         }
         finally
         {
+            if (_searchCts == cts)
+            {
+                _searchCts = null;
+                cts.Dispose();
+            }
             IsBusy = false;
+            OnPropertyChanged(nameof(HasPaging));
         }
     }
+
+    /// <summary>通用翻页（bug #16）：next / prev，越界则无操作。</summary>
+    private void ChangePage(string? dir)
+    {
+        if (dir == "next" && CanNextPage) Page++;
+        else if (dir == "prev" && CanPrevPage) Page--;
+        else return;
+
+        OnPropertyChanged(nameof(Page));
+        _ = SearchAsync(resetPage: false);
+    }
+
+    /// <summary>关键词是否含中日韩字符：Modrinth 对中文分词支持差，需要本地二次过滤兜底（bug #17）。</summary>
+    private static bool HasCjk(string text)
+    {
+        foreach (var ch in text)
+            if (ch >= '\u3400' && ch <= '\u9FFF') return true;
+        return false;
+    }
+
+    /// <summary>条目字段是否包含关键词（序号无关比较，中文可用）。</summary>
+    private static bool HitContains(ModrinthHit h, string kw) =>
+        (h.Title?.Contains(kw, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (h.Slug?.Contains(kw, StringComparison.OrdinalIgnoreCase) ?? false)
+        || (h.Description?.Contains(kw, StringComparison.OrdinalIgnoreCase) ?? false);
 
     // ---- Minecraft 版本下载 ----
 
@@ -632,7 +848,8 @@ public class DownloadPageViewModel : ObservableObject
                 _ => "old"
             };
             if (type != "all" && bucket != type) continue;
-            if (q.Length > 0 && !v.Id.ToLowerInvariant().Contains(q)) continue;
+            // bug #17：显式序号无关比较，避免文化敏感 Contains 在部分环境下的中文匹配异常
+            if (q.Length > 0 && v.Id.IndexOf(q, StringComparison.OrdinalIgnoreCase) < 0) continue;
 
             var key = GroupKey(v.Id, bucket);
             if (!groups.TryGetValue(key, out var list))
@@ -688,7 +905,7 @@ public class DownloadPageViewModel : ObservableObject
         return 0;
     }
 
-    private async Task SearchModrinthAsync()
+    private async Task SearchModrinthAsync(CancellationToken ct = default)
     {
         var (type, fallback) = CurrentSubTab switch
         {
@@ -699,10 +916,39 @@ public class DownloadPageViewModel : ObservableObject
         };
 
         var loader = ParseLoader(SelectedLoader);
-        var hits = await LauncherService.Instance.SearchModsAsync(
-            Query,
-            string.IsNullOrEmpty(SelectedGameVersion) ? null : SelectedGameVersion,
-            loader, type);
+        var gameVersion = string.IsNullOrEmpty(SelectedGameVersion) ? null : SelectedGameVersion;
+        const int pageSize = 24;
+
+        // bug #16：传入 offset/limit 实现翻页，并用远端 total_hits 计算总页数
+        var (hits, total) = await LauncherService.Instance.SearchModsPagedAsync(
+            Query, gameVersion, loader, type, pageSize, (Page - 1) * pageSize, ct);
+
+        // bug #17：Modrinth 对中文分词支持极差，中文关键词常常返回一堆无关结果。
+        // 先在本地按标题/slug/描述子串过滤；若本地过滤为空，再拉一批该类型的热门项目做本地匹配，
+        // 保证中文关键词"搜得到"，而不是只能靠英文。
+        var kw = (Query ?? "").Trim();
+        if (kw.Length > 0 && HasCjk(kw))
+        {
+            var local = hits.Where(h => HitContains(h, kw)).ToList();
+            if (local.Count == 0)
+            {
+                var (pool, poolTotal) = await LauncherService.Instance.SearchModsPagedAsync(
+                    null, gameVersion, loader, type, 100, 0, ct);
+                local = pool.Where(h => HitContains(h, kw)).ToList();
+                // 回退命中时页码无远端含义：整批结果视为一页
+                if (local.Count > 0) { hits = local; total = local.Count; Page = 1; }
+                else hits = local;
+            }
+            else
+            {
+                hits = local;
+                total = local.Count;
+                Page = 1;
+            }
+        }
+
+        ct.ThrowIfCancellationRequested();
+        TotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
 
         foreach (var h in hits)
             Cards.Add(new DownloadCardItem
@@ -720,14 +966,20 @@ public class DownloadPageViewModel : ObservableObject
 
     // ---- 整合包在线浏览（规格 2.2 → 整合包）----
 
-    private async Task SearchModpackAsync()
+    private async Task SearchModpackAsync(CancellationToken ct = default)
     {
+        const int pageSize = 24;
         var items = await LauncherService.Instance.SearchModpacksAsync(
             Query,
             string.IsNullOrEmpty(SelectedGameVersion) ? null : SelectedGameVersion,
             SelectedLoader == "Any" ? null : SelectedLoader,
             _selectedModpackSource,
-            CancellationToken.None);
+            ct, pageSize, (Page - 1) * pageSize);
+
+        ct.ThrowIfCancellationRequested();
+
+        // 整合包源不返回总命中数：本页被填满即认为还有下一页，否则当前页即末页（bug #16）。
+        TotalPages = items.Count >= pageSize ? Page + 1 : Math.Max(1, Page);
 
         foreach (var it in items)
         {
@@ -751,21 +1003,23 @@ public class DownloadPageViewModel : ObservableObject
         }
     }
 
-    private async Task SearchMapsAsync(bool resetPage = true)
+    private async Task SearchMapsAsync(bool resetPage = true, CancellationToken ct = default)
     {
         var client = LauncherService.Instance.Pixelmap;
 
-        // 新搜索回到第一页；翻页时沿用 ChangeMapPage 已改好的页码
-        if (resetPage) _mapPage = 1;
+        // 新搜索回到第一页；翻页时沿用 ChangePage 已改好的页码
+        if (resetPage) Page = 1;
 
         var result = await client.SearchAsync(
             keyword: string.IsNullOrWhiteSpace(Query) ? null : Query,
             category: string.IsNullOrEmpty(SelectedCategory) ? null : SelectedCategory,
             version: string.IsNullOrEmpty(SelectedMapVersion) ? null : SelectedMapVersion,
-            page: _mapPage, limit: 24, sort: _mapSort);
+            page: Page, limit: 24, sort: _mapSort);
 
-        MapTotalPages = result.PageCount;
-        MapPage = result.Page;
+        ct.ThrowIfCancellationRequested();
+
+        TotalPages = result.PageCount;
+        Page = result.Page;
 
         foreach (var it in result.Items)
             Cards.Add(new DownloadCardItem
@@ -785,16 +1039,6 @@ public class DownloadPageViewModel : ObservableObject
                 CanDownload = it.DownloadAllowed,
                 HasExtra = it.ExtensionExist
             });
-    }
-
-    private void ChangeMapPage(string? dir)
-    {
-        if (dir == "next" && _mapPage < _mapTotalPages) _mapPage++;
-        else if (dir == "prev" && _mapPage > 1) _mapPage--;
-        else return;
-
-        MapPage = _mapPage;
-        _ = SearchAsync(resetPage: false);
     }
 
     /// <summary>宽松解析加载器名称：无法识别时回退 Any，避免 Enum.Parse 抛异常中断加入队列（bug #7）。</summary>
@@ -886,9 +1130,14 @@ public class DownloadPageViewModel : ObservableObject
                             local.Slug ?? "", Progress(local), local.Cts.Token),
                         "version" => (await LauncherService.Instance.InstallVersionAsync(
                             local.ProjectId, local.InstallLoader, Progress(local), local.Cts.Token)) is not null,
-                        _ => await LauncherService.Instance.DownloadModAsync(
-                            local.ProjectId, local.TargetDir, local.GameVersion, local.Loader,
-                            Progress(local), local.Cts.Token)
+                        // bug #14：详情页指定了版本时按该版本的文件直链下载，避免装到自动挑选的其它版本
+                        _ => !string.IsNullOrEmpty(local.FileUrl) && !string.IsNullOrEmpty(local.FileName)
+                            ? await LauncherService.Instance.DownloadModFileAsync(
+                                local.FileUrl!, local.FileName!, local.FileSha1, local.TargetDir,
+                                Progress(local), local.Cts.Token)
+                            : await LauncherService.Instance.DownloadModAsync(
+                                local.ProjectId, local.TargetDir, local.GameVersion, local.Loader,
+                                Progress(local), local.Cts.Token)
                     };
 
                     if (local.Cts.Token.IsCancellationRequested && local.Status != "已暂停")
@@ -964,17 +1213,128 @@ public class DownloadPageViewModel : ObservableObject
         }
         else if (!string.IsNullOrEmpty(card.Id))
         {
-            // Modrinth 项目页（浏览器打开）
-            var url = $"https://modrinth.com/project/{card.Id}";
-            try
-            {
-                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-            }
-            catch
-            {
-                StatusMessage = "无法打开外部浏览器";
-            }
+            // bug #14：Modrinth 项目（mod / 光影 / 资源包）改为在启动器内打开页内详情，
+            // 可返回、可选版本、可 AI 翻译；浏览器入口仍在详情弹窗内保留。
+            _ = OpenProjectDetailAsync(card);
         }
+    }
+
+    /// <summary>
+    /// bug #14：拉取项目版本并打开页内详情弹窗。
+    /// 先用卡片已有信息（标题 / 封面 / 描述）立即渲染，版本列表异步补上，避免弹窗空白等待。
+    /// </summary>
+    private async Task OpenProjectDetailAsync(DownloadCardItem card)
+    {
+        CurrentProjectDetail = new ModrinthProjectDetail
+        {
+            Id = card.Id,
+            Title = card.Title,
+            Author = card.Author,
+            Description = card.Summary,
+            IconUrl = card.IconUrl ?? "",
+            FallbackToken = card.FallbackToken,
+            SubTab = card.SubTab ?? "mod",
+            ProjectUrl = $"https://modrinth.com/project/{card.Id}"
+        };
+        SelectedProjectVersion = null;
+        ProjectTranslated = "";
+        ProjectDetailHint = "正在加载版本…";
+        IsProjectDetailOpen = true;
+
+        try
+        {
+            var versions = await LauncherService.Instance.GetProjectVersionChoicesAsync(
+                card.Id,
+                string.IsNullOrEmpty(SelectedGameVersion) ? null : SelectedGameVersion,
+                ParseLoader(SelectedLoader));
+
+            var detail = CurrentProjectDetail;
+            if (detail is null) return;
+            detail.Versions = versions;
+            SelectedProjectVersion = versions.FirstOrDefault();
+
+            // 关闭弹窗后迟到的响应不应再改动 UI
+            if (!IsProjectDetailOpen) return;
+
+            ProjectDetailHint = versions.Count == 0
+                ? "该项目没有与当前筛选（游戏版本 / 加载器）匹配的版本文件"
+                : "";
+            OnPropertyChanged(nameof(CurrentProjectDetail));
+            OnPropertyChanged(nameof(ProjectDetailHasVersions));
+            OnPropertyChanged(nameof(ProjectDetailLoaders));
+        }
+        catch (Exception ex)
+        {
+            ProjectDetailHint = $"版本加载失败：{ex.Message}";
+        }
+    }
+
+    /// <summary>把详情页所选版本加入下载队列并自动开始（bug #14）。</summary>
+    private async Task InstallProjectVersionAsync()
+    {
+        var detail = CurrentProjectDetail;
+        var ver = SelectedProjectVersion;
+        if (detail is null || ver is null) { ProjectDetailHint = "请先选择一个版本"; return; }
+
+        var dir = detail.SubTab switch
+        {
+            "shader" => PathEx.ShaderPacksDir(GameConstants.DefaultGameRoot),
+            "resourcepack" => PathEx.ResourcePacksDir(GameConstants.DefaultGameRoot),
+            _ => PathEx.ModsDir(GameConstants.DefaultGameRoot)
+        };
+
+        Queue.Add(new DownloadQueueItem
+        {
+            ProjectId = detail.Id,
+            Title = detail.Title,
+            Summary = ver.DisplayText,
+            TargetDir = dir,
+            GameVersion = string.IsNullOrEmpty(SelectedGameVersion) ? null : SelectedGameVersion,
+            Loader = ParseLoader(SelectedLoader),
+            Kind = "mod",
+            Source = "modrinth",
+            // 指定版本 → 直链下载该文件，避免装到自动挑选的其它版本
+            FileUrl = ver.FileUrl,
+            FileName = ver.FileName,
+            FileSha1 = ver.FileSha1
+        });
+
+        ProjectDetailHint = $"已加入队列：{detail.Title} · {ver.VersionNumber}";
+        StatusMessage = $"已加入队列：{detail.Title}（共 {Queue.Count} 项）";
+        await StartQueueAsync();
+    }
+
+    /// <summary>用 AI 翻译项目描述（bug #14）。</summary>
+    private async Task TranslateDetailAsync()
+    {
+        var detail = CurrentProjectDetail;
+        if (detail is null) return;
+        if (string.IsNullOrWhiteSpace(detail.Description))
+        {
+            ProjectDetailHint = "该项目没有可翻译的描述";
+            return;
+        }
+
+        ProjectDetailHint = "AI 翻译中…";
+        try
+        {
+            var text = await MCLCS.Core.Ai.Assistant.TranslateModDescriptionAsync(detail.Description);
+            ProjectTranslated = text ?? "";
+            ProjectDetailHint = AiEnabled ? "翻译完成" : "AI 未启用，已返回原文";
+        }
+        catch (Exception ex)
+        {
+            ProjectDetailHint = $"翻译失败：{ex.Message}";
+        }
+    }
+
+    /// <summary>在浏览器打开项目页（详情页保留的外部入口）。</summary>
+    private void OpenProjectPage()
+    {
+        var url = CurrentProjectDetail?.ProjectUrl;
+        if (string.IsNullOrEmpty(url)) return;
+        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch { ProjectDetailHint = "无法打开外部浏览器"; }
     }
 
     /// <summary>把选中的 Minecraft 版本（含加载器）加入底部下载队列，随后自动开始队列。

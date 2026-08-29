@@ -75,7 +75,19 @@
         </ListBox>
 
         <!-- ===== 右侧内容区 ===== -->
-        <ContentControl Grid.Column="1" Content="{Binding SelectedView}"
-                        Margin="8,0,0,0"/>
+        <Grid Grid.Column="1" Margin="8,0,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <!-- bug #18：工具箱搜索框（子串匹配，支持中文） -->
+            <TextBox Grid.Row="0" Margin="0,0,0,8" Padding="8,4"
+                     Text="{Binding SearchKeyword, UpdateSourceTrigger=PropertyChanged}"
+                     Background="{DynamicResource InputBackground}"
+                     Foreground="{DynamicResource InputForeground}"
+                     BorderBrush="{DynamicResource InputBorder}"
+                     ToolTip="搜索工具箱面板（支持中文）"/>
+            <ContentControl Grid.Row="1" Content="{Binding SelectedView}"/>
+        </Grid>
     </Grid>
 </UserControl>

@@ -119,8 +119,9 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <!-- bug #14：原 Row3（开始队列按钮）/ Row4（队列列表 160px）已合并到
-                 标题栏全局搜索栏右侧的下载进度弹窗，此处收为 0 以让出卡片区空间。 -->
-            <RowDefinition Height="0"/>
+                 标题栏全局搜索栏右侧的下载进度弹窗，此处收为 0 以让出卡片区空间。
+                 bug #16：Row3 改为 Auto，复用为通用分页行（mod / 光影 / 资源包 / 整合包 / 地图）。 -->
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="0"/>
         </Grid.RowDefinitions>
 
@@ -180,11 +181,21 @@
                 <ComboBoxItem Content="最新发布" Tag="published"/>
                 <ComboBoxItem Content="最多浏览" Tag="views"/>
             </ComboBox>
-            <Button Content="上一页" Command="{Binding ChangeMapPageCommand}" CommandParameter="prev"
-                    Margin="8,0,0,0" Padding="8,2"/>
-            <Button Content="下一页" Command="{Binding ChangeMapPageCommand}" CommandParameter="next"
-                    Margin="8,0,0,0" Padding="8,2"/>
-            <TextBlock Text="{Binding MapPage, StringFormat='第 {0} 页'}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+            <!-- bug #16：分页控件已上移为下方统一分页行（HasPaging 控制显隐），此处不再重复 -->
+        </StackPanel>
+
+        <!-- 通用分页行：mod / 光影 / 资源包 / 整合包 / 地图共用；Minecraft 页用分组折叠不分页（bug #16） -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="12,4,12,10"
+                    Visibility="{Binding HasPaging, Converter={StaticResource BoolToVisibility}}">
+            <Button Content="上一页" Command="{Binding ChangePageCommand}" CommandParameter="prev" Padding="14,3"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0">
+                <TextBlock Text="第 "/>
+                <TextBlock Text="{Binding Page}"/>
+                <TextBlock Text=" / "/>
+                <TextBlock Text="{Binding TotalPages}"/>
+                <TextBlock Text=" 页"/>
+            </StackPanel>
+            <Button Content="下一页" Command="{Binding ChangePageCommand}" CommandParameter="next" Padding="14,3"/>
         </StackPanel>
 
         <!-- 卡片网格 -->
@@ -408,6 +419,88 @@
                         <Button Content="安装" Command="{Binding InstallModpackCommand}"
                                 Style="{StaticResource PrimaryButtonStyle}" Padding="10,4"
                                 Visibility="{Binding ModpackDetailCanInstall, Converter={StaticResource BoolToVisibility}}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Modrinth 项目详情弹窗（bug #14：mod / 光影 / 资源包在启动器内查看详情，可返回 / 选版本 / AI 翻译） -->
+        <Grid Grid.RowSpan="5" Style="{StaticResource ModalOverlayStyle}"
+              Visibility="{Binding IsProjectDetailOpen, Converter={StaticResource BoolToVisibility}}">
+            <Border Style="{StaticResource ModalCardStyle}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid Margin="18" Width="560" MaxHeight="640">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="180"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 标题行：右上角关闭即"返回" -->
+                    <DockPanel Grid.Row="0" LastChildFill="True">
+                        <Button DockPanel.Dock="Right" Content="返回" Command="{Binding CloseProjectDetailCommand}" Padding="12,2"/>
+                        <TextBlock Text="{Binding CurrentProjectDetail.Title}" FontWeight="Bold" FontSize="17"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding CurrentProjectDetail.Title}"/>
+                    </DockPanel>
+
+                    <!-- 封面 -->
+                    <Border Grid.Row="1" Background="{DynamicResource ControlBackground}" CornerRadius="8" Margin="0,12,0,0">
+                        <theme:ExternalIcon Url="{Binding CurrentProjectDetail.IconUrl}"
+                                            FallbackToken="{Binding CurrentProjectDetail.FallbackToken}" CornerRadius="8"/>
+                    </Border>
+
+                    <!-- 元信息 -->
+                    <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="作者" Style="{StaticResource DetailMetaLabelStyle}"/>
+                        <TextBlock Text="{Binding CurrentProjectDetail.Author}" Style="{StaticResource DetailMetaValueStyle}" FontWeight="Bold"/>
+                        <TextBlock Text="加载器" Style="{StaticResource DetailMetaLabelStyle}"/>
+                        <TextBlock Text="{Binding ProjectDetailLoaders}" Style="{StaticResource DetailMetaValueStyle}"/>
+                        <TextBlock Text="版本数" Style="{StaticResource DetailMetaLabelStyle}"/>
+                        <TextBlock Text="{Binding CurrentProjectDetail.VersionCount}" Style="{StaticResource DetailMetaValueStyle}"/>
+                    </WrapPanel>
+
+                    <!-- 版本选择 -->
+                    <StackPanel Grid.Row="3" Margin="0,8,0,0"
+                                Visibility="{Binding ProjectDetailHasVersions, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="选择版本" FontSize="12" Opacity="0.8" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding CurrentProjectDetail.Versions}"
+                                  DisplayMemberPath="DisplayText"
+                                  SelectedItem="{Binding SelectedProjectVersion}"
+                                  MaxDropDownHeight="220"/>
+                    </StackPanel>
+
+                    <!-- 描述 / AI 翻译结果 -->
+                    <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0" MinHeight="48">
+                        <StackPanel>
+                            <TextBlock Text="{Binding CurrentProjectDetail.Description}" TextWrapping="Wrap"
+                                       Opacity="0.85" LineHeight="20"/>
+                            <StackPanel Margin="0,10,0,0"
+                                        Visibility="{Binding ProjectHasTranslation, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock Text="AI 翻译" FontSize="12" Opacity="0.7" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding ProjectTranslated}" TextWrapping="Wrap" LineHeight="20"
+                                           Foreground="{DynamicResource PrimaryForeground}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- 提示行 -->
+                    <TextBlock Grid.Row="5" Text="{Binding ProjectDetailHint}" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Foreground="{DynamicResource AccentBrush}" FontSize="12"
+                               Visibility="{Binding ProjectDetailHint, Converter={StaticResource NonEmptyToVisibility}}"/>
+
+                    <!-- 操作行 -->
+                    <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                        <Button Content="AI 翻译" Command="{Binding TranslateDetailCommand}"
+                                Style="{StaticResource GhostButtonStyle}" Padding="10,4" Margin="0,0,8,0"
+                                ToolTip="未启用 AI 助手时不可用"/>
+                        <Button Content="项目页面" Command="{Binding OpenProjectPageCommand}"
+                                Style="{StaticResource GhostButtonStyle}" Padding="10,4" Margin="0,0,8,0"/>
+                        <Button Content="安装所选版本" Command="{Binding InstallProjectVersionCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}" Padding="10,4"/>
                     </StackPanel>
                 </Grid>
             </Border>

@@ -23,7 +23,12 @@ public class AddServerViewModel : ObservableObject
     /// <summary>窗口关闭前设置为 true 表示用户点了确定。</summary>
     public bool Confirmed { get; internal set; }
 
-    public AddServerViewModel(string? existingName = null, string? existingAddress = null)
+    /// <summary>无参构造：供 XAML 中以对象元素方式声明 DataContext 时使用（bug #11）。</summary>
+    public AddServerViewModel() : this(null, null)
+    {
+    }
+
+    public AddServerViewModel(string? existingName, string? existingAddress)
     {
         Name = existingName ?? "";
         Address = existingAddress ?? "";

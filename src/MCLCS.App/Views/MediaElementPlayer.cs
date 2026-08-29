@@ -55,4 +55,68 @@ public sealed class MediaElementPlayer : IMediaPlayer
         _media.Volume = v;
         _media.IsMuted = v <= 0;
     }
+
+    /// <summary>避免重复挂钩 MediaOpened（同一个 MediaElement 只挂一次）。</summary>
+    private bool _openedHooked;
+
+    /// <summary>bug #10：进度条数据源。媒体未打开或不具备时间信息时返回 0。</summary>
+    public double PositionSec
+    {
+        get
+        {
+            try
+            {
+                if (!_media.HasAudio && !_media.HasVideo) return 0;
+                return _media.Position.TotalSeconds;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+    }
+
+    public double DurationSec
+    {
+        get
+        {
+            try
+            {
+                if (_media.NaturalDuration.HasTimeSpan)
+                    return _media.NaturalDuration.TimeSpan.TotalSeconds;
+            }
+            catch
+            {
+                // 部分解码器在打开瞬间会抛异常
+            }
+            return 0;
+        }
+    }
+
+    public void Seek(double seconds)
+    {
+        try
+        {
+            if (seconds < 0) seconds = 0;
+            // 媒体尚未打开时 Position 不可写，等 MediaOpened 后再跳
+            if (!_media.NaturalDuration.HasTimeSpan)
+            {
+                if (_openedHooked) return;
+                _openedHooked = true;
+                void OnOpened(object? s, System.Windows.RoutedEventArgs e)
+                {
+                    _media.MediaOpened -= OnOpened;
+                    _openedHooked = false;
+                    try { _media.Position = TimeSpan.FromSeconds(seconds); } catch { }
+                }
+                _media.MediaOpened += OnOpened;
+                return;
+            }
+            _media.Position = TimeSpan.FromSeconds(seconds);
+        }
+        catch
+        {
+            // 不支持跳转的解码器：静默忽略
+        }
+    }
 }

@@ -38,7 +38,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" Text="{theme:Loc settings.general}" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
@@ -70,6 +70,12 @@
                         <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
                                       IsChecked="{Binding MusicAutoDuck, Mode=TwoWay}"/>
                         <TextBlock Text="游戏启动时音乐自动降音量" VerticalAlignment="Center" Margin="8,0,0,0"
+                                   Foreground="{DynamicResource PrimaryForeground}"/>
+                    </WrapPanel>
+                    <WrapPanel Grid.Row="7" Margin="0,4">
+                        <ToggleButton Style="{StaticResource ToggleSwitchStyle}"
+                                      IsChecked="{Binding MusicResumeOnLaunch, Mode=TwoWay}"/>
+                        <TextBlock Text="启动器启动时自动续播上次音乐" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
                     <WrapPanel Grid.Row="6" Margin="0,4">

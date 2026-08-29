@@ -16,11 +16,31 @@ using MCLCS.App.Themes;
 using MCLCS.App.ViewModels;
 using MCLCS.App.Views;
 using System.Windows.Shapes;
+using System.Runtime.InteropServices;
 
 namespace MCLCS.App;
 
 public partial class MainWindow : Window
 {
+    // bug #12：Win11 圆角。通过 DWM 让系统把整个窗口位图圆角化（需 Windows 11）。
+    private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+    private const int DWM_WINDOW_CORNER_PREFERENCE_ROUND = 2;
+
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int pvAttribute, int cbAttribute);
+
+    private void EnableWin11Corners()
+    {
+        try
+        {
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            if (hwnd == IntPtr.Zero) return;
+            int pref = DWM_WINDOW_CORNER_PREFERENCE_ROUND;
+            DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref pref, sizeof(int));
+        }
+        catch { /* 非 Win11 或失败则忽略，保持直角 */ }
+    }
+
     // 主标签 → 页面
     private readonly Dictionary<MainTabKind, FrameworkElement> _pages = new();
     private MainTabKind _currentKind = (MainTabKind)(-1);
@@ -62,6 +82,13 @@ public partial class MainWindow : Window
 
         _sidebarState.SwitchOwner(MainTabKind.Game);
         BuildSidebar(MainTabKind.Game);
+
+        // 四色索引贴入场动画在窗口 Loaded 后播一次（首次揭示效果，错峰滑入 + 淡入）
+        Loaded += (_, _) => PlayTabEntrance();
+        // bug #12：Win11 圆角
+        Loaded += (_, _) => EnableWin11Corners();
+        // bug #10：窗口就绪后尝试断点续播（MediaElement 此时已可播放）
+        Loaded += (_, _) => MusicPlayerViewModel.Instance.RestoreLastState();
 
         // 语言切换时刷新主标签与侧边栏标题
         LocaleManager.LocaleChanged += _ => Dispatcher.Invoke(() =>
@@ -203,7 +230,8 @@ public partial class MainWindow : Window
             {
                 Orientation = Orientation.Horizontal,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(12, 0, 14, 0)
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(10, 0, 10, 0)
             };
             var title = new TextBlock
             {
@@ -227,6 +255,15 @@ public partial class MainWindow : Window
             grid.Children.Add(inner);
             grid.Children.Add(underline);
 
+            // 四色索引贴变换：缩放 + 上浮，供悬浮弹跳 / 入场错峰使用（中心为锚点）
+            var scale = new ScaleTransform(1, 1);
+            var lift = new TranslateTransform(0, 0);
+            var tg = new TransformGroup();
+            tg.Children.Add(scale);
+            tg.Children.Add(lift);
+            grid.RenderTransform = tg;
+            grid.RenderTransformOrigin = new Point(0.5, 0.5);
+
             // bug #8：索引贴位于标题栏内，MouseLeftButtonDown 会冒泡触发 TitleBar 的 DragMove()，
             // 拖动模态循环吞掉后续 MouseLeftButtonUp，导致 SelectTab 永不执行（窗口未最大化时尤其明显）。
             // 这里在按下阶段截断冒泡，保证抬起事件能正常派发到索引贴。
@@ -240,7 +277,7 @@ public partial class MainWindow : Window
             TabPanel.Children.Add(grid);
             Panel.SetZIndex(grid, def.ZIndex);
 
-            _tabs[def.Kind] = new TabParts(grid, bg, title, underline);
+            _tabs[def.Kind] = new TabParts(grid, bg, title, underline, scale, lift);
         }
     }
 
@@ -263,19 +300,33 @@ public partial class MainWindow : Window
             var solid = TabColor($"Tab{def.Kind}Brush");
             p.Brush.Color = isSel ? TabColor($"Tab{def.Kind}ActiveBrush") : solid;
             p.BaseColor = p.Brush.Color;
-            p.HoverColor = BrightenColor(solid, 1.2);
+            // 悬浮/选中提亮到该色 Active 档（#4CAF50→#55C45A 等），与 HTML 的 brightness(1.12) 一致
+            p.HoverColor = TabColor($"Tab{def.Kind}ActiveBrush");
             p.Bg.Background = p.Brush;
 
             p.Title.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+            p.Title.Opacity = expanded ? 1 : 0;
 
             p.Underline.Visibility = isSel ? Visibility.Visible : Visibility.Collapsed;
             if (isSel)
+            {
                 p.Underline.Fill = Brush($"Tab{def.Kind}UnderlineBrush");
+                // 选中下划线：opacity 平滑渐显到 1（对齐 HTML 的 .tab.selected .underline{opacity:1}，无呼吸循环）
+                p.Underline.Opacity = 0;
+                if (AnimationsEnabled)
+                    p.Underline.BeginAnimation(Rectangle.OpacityProperty,
+                        new DoubleAnimation(1, TimeSpan.FromMilliseconds(MainTabs.TransitionMs)));
+                else
+                    p.Underline.Opacity = 1;
+            }
 
             // 重叠：左侧邻居展开则 10px，否则 20px
             var left = i == 0 ? 0 :
                 (NeighborExpanded(i, selected) ? -MainTabs.ExpandedOverlap : -MainTabs.CollapsedOverlap);
             AnimateMargin(p.Root, new Thickness(left, 0, 0, 0));
+
+            // 选中贴抬到最上层（ZIndex=20），避免被左侧未选中贴的圆角/色块遮住展开后的文字
+            Panel.SetZIndex(p.Root, isSel ? 20 : def.ZIndex);
         }
     }
 
@@ -308,29 +359,89 @@ public partial class MainWindow : Window
         return Color.FromArgb(c.A, S(c.R, f), S(c.G, f), S(c.B, f));
     }
 
-    /// <summary>索引贴悬浮反馈：进入提亮、移出还原；关闭动画开关时直接置色。</summary>
+    /// <summary>索引贴悬浮反馈（对齐 HTML 完美版：克制平稳 + 悬浮展开）。
+    /// 对齐 倒数第二代.html 的 <c>.tab:not(.expanded):hover{width:130px; filter:brightness(1.12)}</c>：
+    /// 悬浮到「未展开」的索引贴时，宽度平滑展开到 ExpandedWidth(130)、文字淡入、亮度提亮到 Active 档、并抬到邻贴之上；
+    /// 移出则收回到 CollapsedWidth(56)、文字淡出、还原实色。已选中的贴只做亮度过渡，不改宽度。</summary>
     private void OnTabHover(MainTabKind kind, bool enter)
     {
         if (!_tabs.TryGetValue(kind, out var p) || p.Brush is null) return;
+        var def = MainTabs.Get(kind);
+        var expandedNow = kind == _currentKind || def.AlwaysExpanded;
+
+        // 悬浮展开（仅对未展开的贴生效）：宽度过渡 width 0.25s ease + 文字淡入淡出
+        if (!expandedNow)
+        {
+            if (AnimationsEnabled)
+            {
+                p.Root.BeginAnimation(FrameworkElement.WidthProperty,
+                    new DoubleAnimation(enter ? MainTabs.ExpandedWidth : MainTabs.CollapsedWidth,
+                        TimeSpan.FromMilliseconds(250)));
+                RevealTitle(p, enter, true);
+            }
+            else
+            {
+                p.Root.Width = enter ? MainTabs.ExpandedWidth : MainTabs.CollapsedWidth;
+                RevealTitle(p, enter, false);
+            }
+            // 悬浮时抬到邻贴之上，保证展开后的文字完整可见（对齐 poker-card 悬浮置顶）；
+            // 移出时若仍是当前选中贴则保持置顶，否则回到层叠序
+            Panel.SetZIndex(p.Root, enter ? 20 : (def.Kind == _currentKind ? 20 : def.ZIndex));
+        }
+
+        // 亮度过渡（对一切贴生效）：进入提亮到 Active 档，移出还原实色
         var target = enter ? p.HoverColor : p.BaseColor;
         if (AnimationsEnabled)
-        {
             p.Brush.BeginAnimation(SolidColorBrush.ColorProperty,
                 new ColorAnimation(target, TimeSpan.FromMilliseconds(MainTabs.HoverMs)));
+        else
+            p.Brush.Color = target;
+    }
+
+    /// <summary>索引贴文字淡入/淡出（对齐 HTML 的 .tab-ico/.tab-txt opacity 过渡）：
+    /// 展开时 0→1 淡入，收起时 1→0 淡出后隐藏。关闭动画开关时直接置值。</summary>
+    private static void RevealTitle(TabParts p, bool show, bool animate)
+    {
+        if (show)
+        {
+            p.Title.Visibility = Visibility.Visible;
+            if (animate)
+            {
+                p.Title.Opacity = 0;
+                p.Title.BeginAnimation(UIElement.OpacityProperty,
+                    new DoubleAnimation(1, TimeSpan.FromMilliseconds(250)));
+            }
+            else
+            {
+                p.Title.Opacity = 1;
+            }
         }
         else
         {
-            p.Brush.Color = target;
+            if (animate)
+            {
+                var a = new DoubleAnimation(0, TimeSpan.FromMilliseconds(250));
+                a.Completed += (_, _) =>
+                {
+                    if (p.Title.Opacity <= 0.01) p.Title.Visibility = Visibility.Collapsed;
+                };
+                p.Title.BeginAnimation(UIElement.OpacityProperty, a);
+            }
+            else
+            {
+                p.Title.Opacity = 0;
+                p.Title.Visibility = Visibility.Collapsed;
+            }
         }
     }
 
-    /// <summary>索引贴圆角：最左贴左侧圆角、最右贴右侧圆角（外侧贴纸角），
-    /// 其余（相邻接缝）全部切直，避免圆角透明区透出下层邻贴造成漏白。</summary>
+    /// <summary>索引贴圆角：仅外侧（最左=左上、最右=右上）保留贴纸圆角，下端一律切直（直角），
+    /// 让四色贴像贴在标题栏底部的色块、底部齐平无毛边。</summary>
     private static CornerRadius TabCornerRadius(int index, int last)
     {
-        if (index == 0) return new CornerRadius(8, 0, 0, 8);       // 最左：左圆角外侧，右切直（压在下一张上）
-        if (index == last) return new CornerRadius(0, 8, 8, 0);   // 最右：右圆角外侧，左切直（被上一张压）
-        return new CornerRadius(0, 0, 0, 0);                      // 中间：两侧皆接缝，全切直
+        if (index == 0) return new CornerRadius(8, 0, 0, 0);       // 最左：仅左上圆角，下端直角
+        if (index == last) return new CornerRadius(0, 8, 0, 0);   // 最右：仅右上圆角，下端直角
+        return new CornerRadius(0, 0, 0, 0);                      // 中间：全切直
     }
 
     /// <summary>页面背景随当前主标签着色：顶部一段实色带与标题栏同色，向下渐隐到窗口底色，
@@ -410,6 +521,7 @@ public partial class MainWindow : Window
             row.Children.Add(inner);
 
             row.MouseLeftButtonUp += (_, _) => SelectSidebarItem(it.Id);
+            // 侧边栏项悬浮：仅背景高亮（对齐 HTML 的 .sitem:hover{background}，无缩放弹跳）
             row.MouseEnter += (_, _) => row.Background = (Brush)FindResource("ControlHoverBackground");
             row.MouseLeave += (_, _) => row.Background = Brushes.Transparent;
 
@@ -426,8 +538,20 @@ public partial class MainWindow : Window
         foreach (var (id, p) in _sidebarItems)
         {
             var active = id == sel;
-            p.Indicator.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
-            var fg = active ? Brushes.White : (Brush)FindResource("SecondaryForeground");
+            // 选中指示条：固定 3px 宽，opacity 平滑渐显/渐隐（对齐 HTML 的 .sitem.active .indicator{opacity:1}）
+            p.Indicator.Width = SidebarState.IndicatorWidth;
+            p.Indicator.Visibility = Visibility.Visible;
+            if (AnimationsEnabled)
+            {
+                p.Indicator.BeginAnimation(Rectangle.OpacityProperty,
+                    new DoubleAnimation(active ? 1 : 0, TimeSpan.FromMilliseconds(SidebarState.TransitionMs)));
+            }
+            else
+            {
+                p.Indicator.Opacity = active ? 1 : 0;
+            }
+            // 选中项用 PrimaryForeground（亮/暗主题均为强对比），避免亮底上白字不可见
+            var fg = active ? (Brush)FindResource("PrimaryForeground") : (Brush)FindResource("SecondaryForeground");
             p.Title.Foreground = fg;
             if (active) p.Row.Background = (Brush)FindResource("ControlHoverBackground");
         }
@@ -541,6 +665,29 @@ public partial class MainWindow : Window
         PageTransform.BeginAnimation(TranslateTransform.YProperty, slide);
     }
 
+    /// <summary>四色索引贴入场动画：首次加载时错峰滑入 + 淡入（每贴延迟 90ms，缓出），还原自 HTML 参考的贴纸揭示效果。</summary>
+    private void PlayTabEntrance()
+    {
+        if (!AnimationsEnabled) return;
+        var i = 0;
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        foreach (var p in _tabs.Values)
+        {
+            p.Root.Opacity = 0;
+            p.Lift.Y = 14;
+            var delay = TimeSpan.FromMilliseconds(90 * i);
+            var dur = TimeSpan.FromMilliseconds(380);
+            p.Root.BeginAnimation(UIElement.OpacityProperty,
+                new DoubleAnimation(1, dur) { BeginTime = delay, EasingFunction = ease });
+            p.Lift.BeginAnimation(TranslateTransform.YProperty,
+                new DoubleAnimation(0, dur) { BeginTime = delay, EasingFunction = ease });
+            i++;
+        }
+    }
+
+    // 注：下划线呼吸动画已移除 —— 对齐 HTML 完美版的克制平稳风
+    // （选中下划线 opacity 渐显后常驻，不循环呼吸）。
+
     // ===== 窗口控制 =====
 
     private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
@@ -647,6 +794,15 @@ public partial class MainWindow : Window
             return;
         }
 
+        // bug #17：命中工具箱面板（日志管理/音乐播放器/存档管理…）→ 跳转工具箱并预填搜索词
+        if (_pages[MainTabKind.Toolbox] is ToolboxView tbv && tbv.MatchPanelId(text) is { } panelId)
+        {
+            NavigateTo(MainTabKind.Toolbox);
+            tbv.ShowPanel(panelId);
+            tbv.SetSearchKeyword(text);
+            return;
+        }
+
         // 默认：跳转到下载页并设置搜索词
         NavigateTo(MainTabKind.Download);
         if (_pages[MainTabKind.Download] is DownloadPageView dpv)
@@ -695,9 +851,12 @@ public partial class MainWindow : Window
         public SolidColorBrush Brush = new SolidColorBrush(Colors.Transparent);
         public Color BaseColor;   // 静止色（选中=提亮色，未选中=实色）
         public Color HoverColor;  // 悬浮提亮色
-        public TabParts(Grid root, Border bg, TextBlock title, Rectangle underline)
+        public ScaleTransform Scale;        // 悬浮弹跳 / 入场缩放
+        public TranslateTransform Lift;     // 悬浮上浮 / 入场滑入
+        public TabParts(Grid root, Border bg, TextBlock title, Rectangle underline, ScaleTransform scale, TranslateTransform lift)
         {
             Root = root; Bg = bg; Title = title; Underline = underline;
+            Scale = scale; Lift = lift;
         }
     }
 
