@@ -12,6 +12,9 @@ public class PlayStats
     public int CrashCount { get; set; }
     public string? RecentVersion { get; set; }
     public string? LastPlayedUtc { get; set; }
+
+    /// <summary>首次通过启动器启动游戏的 UTC 时间（用于年度报告周年日入口）。</summary>
+    public string? FirstLaunchUtc { get; set; }
 }
 
 /// <summary>
@@ -42,6 +45,8 @@ public static class PlaytimeTracker
     {
         var s = Load(gameRoot);
         s.LaunchCount++;
+        if (string.IsNullOrWhiteSpace(s.FirstLaunchUtc))
+            s.FirstLaunchUtc = DateTime.UtcNow.ToString("o");
         s.RecentVersion = versionId;
         s.LastPlayedUtc = DateTime.UtcNow.ToString("o");
         EnsureWeek(ref s);

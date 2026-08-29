@@ -1,3 +1,5 @@
+using MCLCS.Core.Mvvm;
+
 namespace MCLCS.Core.Launcher;
 
 /// <summary>可被自动执行的修复策略类型。</summary>
@@ -35,13 +37,21 @@ public enum RepairStrategy
 }
 
 /// <summary>一个相互冲突的 Mod 条目（用于"保留哪一个"的选择）。</summary>
-public class ModConflictInfo
+public class ModConflictInfo : ObservableObject
 {
     /// <summary>Mod 文件名（含路径）。</summary>
     public string FilePath { get; set; } = "";
 
     /// <summary>展示名（优先用 Mod 显示名，否则文件名）。</summary>
     public string Name { get; set; } = "";
+
+    /// <summary>UI 单选：是否被保留（其余冲突 Mod 将被重命名为 .disabled）。</summary>
+    public bool IsKeepSelected
+    {
+        get => _isKeepSelected;
+        set => SetField(ref _isKeepSelected, value);
+    }
+    private bool _isKeepSelected;
 }
 
 /// <summary>

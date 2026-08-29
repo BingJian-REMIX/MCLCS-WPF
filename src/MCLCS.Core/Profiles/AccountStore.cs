@@ -104,4 +104,18 @@ public static class AccountStore
         if (removed) Save(gameRoot, accounts);
         return removed;
     }
+
+    /// <summary>
+    /// 解析「启动某版本时应使用的账号」：优先返回 <paramref name="boundAccountId"/> 对应的账号
+    /// （实现每版本独立账户绑定），找不到时回落到全局「最后使用」。
+    /// </summary>
+    public static AccountEntry? GetForVersion(string gameRoot, string? boundAccountId)
+    {
+        if (!string.IsNullOrWhiteSpace(boundAccountId))
+        {
+            var byId = Load(gameRoot).FirstOrDefault(a => a.Id == boundAccountId);
+            if (byId is not null) return byId;
+        }
+        return GetLastUsed(gameRoot);
+    }
 }

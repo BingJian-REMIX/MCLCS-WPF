@@ -198,4 +198,26 @@ public static class Assistant
             if (own) client?.Dispose();
         }
     }
+
+    /// <summary>通用多轮对话：将用户自由输入发给本地 Ollama 或外部 OpenAI 兼容 API。
+    /// 未启用或调用失败时回退到友好提示，保证聊天页始终有反馈。</summary>
+    public static async Task<string> ChatAsync(string prompt, HttpClient? client = null)
+    {
+        if (string.IsNullOrWhiteSpace(prompt)) return "";
+        if (Config.Enabled)
+        {
+            try
+            {
+                string? reply = Config.Mode == AiMode.External
+                    ? await CallExternalAsync(prompt, client)
+                    : await CallOllamaAsync(prompt, client);
+                if (!string.IsNullOrWhiteSpace(reply)) return reply;
+            }
+            catch
+            {
+                // 落到下方回退提示
+            }
+        }
+        return "AI 助手当前未启用或未连接。请在「设置 → AI 助手」中启用外部 API 或本地 Ollama 部署后重试。";
+    }
 }

@@ -1,3 +1,6 @@
+using System.Text.Json;
+using MCLCS.Core.Models;
+using MCLCS.Core.Utils;
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
@@ -174,5 +177,85 @@ public static class JavaDetector
         return all.Where(j => j.MajorVersion >= minMajor)
                   .OrderByDescending(j => j.MajorVersion)
                   .FirstOrDefault();
+    }
+
+    /// <summary>从版本 Id 中解析 MC 版本号（兼容 "1.20.4"、"fabric-1.20.4"、"1.20.4-forge-..." 等写法）。</summary>
+    public static string? ExtractMcVersion(string versionId)
+    {
+        if (string.IsNullOrWhiteSpace(versionId)) return null;
+        var m = Regex.Match(versionId, @"(\d+\.\d+(?:\.\d+)?)");
+        return m.Success ? m.Groups[1].Value : null;
+    }
+
+    /// <summary>
+    /// 根据 MC 版本号推断所需的最低 Java 主版本（用于自动切换，避免高版本 Java 启动低版本 MC 失败）。
+    /// <list type="bullet">
+    ///   <item>1.16 及以下 → Java 8；</item>
+    ///   <item>1.17 → Java 16；</item>
+    ///   <item>1.18 ~ 1.20.x → Java 17；</item>
+    ///   <item>1.21+ → Java 21。</item>
+    /// </list>
+    /// </summary>
+    public static int RequiredMajorForMcVersion(string mcVersion)
+    {
+        var m = Regex.Match(mcVersion ?? "", @"(\d+)\.(\d+)");
+        var major = m.Success ? int.Parse(m.Groups[1].Value) : 0;
+        var minor = m.Success ? int.Parse(m.Groups[2].Value) : 0;
+        if (major < 1) return 8;
+        if (major == 1 && minor < 17) return 8;   // 1.16.5 及以下
+        if (major == 1 && minor == 17) return 16; // 1.17 需 Java 16
+        if (major == 1 && minor < 21) return 17;  // 1.18 ~ 1.20.x 需 Java 17
+        return 21;                                // 1.21+ 需 Java 21
+    }
+
+    /// <summary>
+    /// 读取某版本所需 Java 主版本：优先用 version.json 声明的 <c>javaVersion</c>（沿 inheritsFrom 向上查找），
+    /// 无声明时回退到从版本 Id 字符串推断的规则。
+    /// </summary>
+    public static int RequiredMajorForVersionId(string gameRoot, string versionId)
+    {
+        try
+        {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var current = versionId;
+            for (var depth = 0; depth < 8 && !string.IsNullOrEmpty(current); depth++)
+            {
+                var json = PathEx.VersionJsonPath(gameRoot, current);
+                if (!File.Exists(json)) break;
+                var v = JsonSerializer.Deserialize<VersionJson>(File.ReadAllText(json));
+                if (v?.JavaVersion?.MajorVersion is > 0) return v.JavaVersion.MajorVersion;
+                if (v?.InheritsFrom is null) break;
+                current = v.InheritsFrom;
+                if (!seen.Add(current)) break;
+            }
+        }
+        catch { /* 解析失败则回退到字符串规则 */ }
+
+        var mc = ExtractMcVersion(versionId);
+        return mc is null ? 8 : RequiredMajorForMcVersion(mc);
+    }
+
+    /// <summary>
+    /// 为指定版本挑选最合适的 Java。选择规则：
+    /// 1. 显式指定路径优先（用户/每版本覆盖层已决定）；
+    /// 2. 否则按该版本所需 Java 主版本，挑「满足要求且尽可能低」的 Java（对老 Forge 最友好，避免高版本 Java 启动旧 MC 报错）；
+    /// 3. 若没有满足要求的，退而取满足要求的最高版本；若完全没有任何 Java，返回 null。
+    /// </summary>
+    public static JavaInfo? SelectForVersion(List<JavaInfo> detected, string gameRoot, string versionId, string? explicitPath = null)
+    {
+        if (detected.Count == 0) return null;
+        if (!string.IsNullOrWhiteSpace(explicitPath))
+        {
+            var match = detected.FirstOrDefault(j =>
+                string.Equals(j.JavaExe, explicitPath, StringComparison.OrdinalIgnoreCase));
+            if (match is not null) return match;
+        }
+
+        var required = RequiredMajorForVersionId(gameRoot, versionId);
+        var satisfying = detected.Where(j => j.MajorVersion >= required).ToList();
+        // 满足要求时优先选最低版本（老 MC/Forge 常不兼容过高 Java）
+        return satisfying.Count > 0
+            ? satisfying.OrderBy(j => j.MajorVersion).First()
+            : detected.OrderByDescending(j => j.MajorVersion).First();
     }
 }

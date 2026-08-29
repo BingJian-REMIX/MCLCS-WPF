@@ -138,6 +138,10 @@ public static class GameLauncher
             resolved.GameArgs.Add(parts[0].Trim());
             resolved.GameArgs.Add("--port");
             resolved.GameArgs.Add(parts.Length > 1 ? parts[1].Trim() : "25565");
+
+        // 全屏启动
+        if (options.Fullscreen)
+            resolved.GameArgs.Add("--fullscreen");
         }
 
         // 解压原生库
