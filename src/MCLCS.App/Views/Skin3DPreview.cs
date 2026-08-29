@@ -32,7 +32,9 @@ public class Skin3DPreview : UserControl
 
     public Skin3DPreview()
     {
-        _skinBrush = new ImageBrush { ViewportUnits = BrushMappingMode.Absolute };
+        // 纹理 UV 用 0–1 相对坐标（ToUv 已除以 64），故用默认 RelativeToBoundingBox，
+        // 不能再设 Absolute（否则 UV 像素坐标 0–64 落在默认 1×1 Viewport 之外，纹理错位/不显示）。
+        _skinBrush = new ImageBrush();
 
         _rotY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), 30);
         _rotX = new AxisAngleRotation3D(new Vector3D(1, 0, 0), -15);
@@ -169,14 +171,15 @@ public class Skin3DPreview : UserControl
 
     private static Point[] ToUv(int x1, int y1, int x2, int y2)
     {
-        // UV in 64x64 absolute pixel space (ImageBrush has ViewportUnits=Absolute)
+        // UV 转 0–1 相对坐标（纹理为 64×64，ImageBrush 用默认 RelativeToBoundingBox）。
         // Quad vertex order: tl, tr, br, bl
+        const double s = 1.0 / 64.0;
         return new[]
         {
-            new Point(x1, y1),   // tl → top-left
-            new Point(x2, y1),   // tr → top-right
-            new Point(x2, y2),   // br → bottom-right
-            new Point(x1, y2)    // bl → bottom-left
+            new Point(x1 * s, y1 * s),   // tl → top-left
+            new Point(x2 * s, y1 * s),   // tr → top-right
+            new Point(x2 * s, y2 * s),   // br → bottom-right
+            new Point(x1 * s, y2 * s)    // bl → bottom-left
         };
     }
 
