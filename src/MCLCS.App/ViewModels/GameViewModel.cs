@@ -31,11 +31,41 @@ public class GameViewModel : ObservableObject
 
     public VersionListViewModel Versions { get; } = new();
 
+    /// <summary>已保存的账号列表（mclcs_accounts.json）。</summary>
+    public ObservableCollection<AccountEntry> Accounts { get; private set; } = new();
+
+    private AccountEntry? _selectedAccount;
+    /// <summary>
+    /// 当前选中的账号。随所选版本自动跟随该版本的绑定账号（对齐 Linux 的 SyncAccountForVersion）。
+    /// 为 null 表示使用 <see cref="Username"/> 文本框里的离线昵称。
+    /// </summary>
+    public AccountEntry? SelectedAccount
+    {
+        get => _selectedAccount;
+        set
+        {
+            if (!SetField(ref _selectedAccount, value)) return;
+            OnPropertyChanged(nameof(HasAccount));
+        }
+    }
+
+    /// <summary>是否选中了已保存账号（决定用户名框是否作为「离线昵称」提示）。</summary>
+    public bool HasAccount => SelectedAccount is not null;
+
     private string _username;
+    /// <summary>
+    /// 用户名。选中账号时由账号名自动回填；<b>手动编辑则视为改用临时离线昵称</b>，
+    /// 会清空 <see cref="SelectedAccount"/>（下拉与文本框二选一）。
+    /// </summary>
     public string Username
     {
         get => _username;
-        set => SetField(ref _username, value);
+        set
+        {
+            if (!SetField(ref _username, value)) return;
+            if (SelectedAccount is not null && !string.Equals(SelectedAccount.Username, value, StringComparison.Ordinal))
+                SelectedAccount = null;
+        }
     }
 
     private int _memoryMb;
@@ -109,8 +139,19 @@ public class GameViewModel : ObservableObject
         DeleteServerCommand = new RelayCommand(p => DeleteServer(p as ServerEntry));
 
         Versions.Refresh();
+        LoadAccounts();
         LoadServers();
         _ = RefreshStatsAsync();
+
+        // 切换版本时账号下拉自动跟随该版本的绑定账号（每版本独立账号绑定）
+        Versions.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(VersionListViewModel.SelectedVersion))
+                SyncAccountForVersion();
+        };
+
+        // 在设置页增删账号后同步下拉（事件可能来自登录回调线程，统一切回 UI 线程）
+        AccountStore.Changed += OnAccountsChanged;
 
         LanServers.CollectionChanged += (_, _) => LanEmpty = LanServers.Count == 0;
         Servers.CollectionChanged += (_, _) => ServersEmpty = Servers.Count == 0;
@@ -120,12 +161,53 @@ public class GameViewModel : ObservableObject
     private string SelectedVersionId =>
         Versions.SelectedVersion?.Id ?? _profile.LastVersionId ?? "";
 
+    /// <summary>重新载入账号列表（外部新增/删除账号后调用）。</summary>
+    public void LoadAccounts()
+    {
+        Accounts = new ObservableCollection<AccountEntry>(AccountStore.Load(_gameRoot));
+        SyncAccountForVersion();
+    }
+
+    private void OnAccountsChanged(string gameRoot)
+    {
+        if (!string.Equals(gameRoot, _gameRoot, StringComparison.OrdinalIgnoreCase)) return;
+
+        var app = Application.Current;
+        if (app is null) return;
+        if (app.Dispatcher.CheckAccess()) LoadAccounts();
+        else app.Dispatcher.BeginInvoke(LoadAccounts);
+    }
+
+    /// <summary>
+    /// 依据当前所选版本解析应使用的账号：优先该版本绑定的账号，否则回落全局「最后使用」。
+    /// 实现「每版本独立账号绑定」——切换版本时账号下拉自动跟随（对齐 Linux GameHomeViewModel）。
+    /// </summary>
+    private void SyncAccountForVersion()
+    {
+        var id = Versions.SelectedVersion?.Id;
+        var bound = !string.IsNullOrWhiteSpace(id)
+            ? VersionProfileStore.Load(_gameRoot, id).BoundAccountId
+            : null;
+        var resolved = AccountStore.GetForVersion(_gameRoot, bound);
+        // 确保 ComboBox 的 SelectedItem 与 ItemsSource 中是同一实例，否则下拉不会正确回显
+        SelectedAccount = resolved is null ? null : Accounts.FirstOrDefault(a => a.Id == resolved.Id) ?? resolved;
+        if (SelectedAccount is not null) Username = SelectedAccount.Username;
+    }
+
+    /// <summary>构建本次启动的账号覆盖参数：选中账号时传 Id，否则走离线昵称。</summary>
+    private LaunchCliOverrides BuildOverrides(string? serverAddress = null) => new()
+    {
+        Username = SelectedAccount?.Username ?? Username,
+        AccountId = SelectedAccount?.Id,
+        MaxMemoryMb = MemoryMb,
+        ServerAddress = serverAddress
+    };
+
     private async Task LaunchAsync()
     {
         var id = SelectedVersionId;
         if (string.IsNullOrWhiteSpace(id)) return;
-        await LauncherService.Instance.LaunchAsync(id, null,
-            new LaunchCliOverrides { Username = Username, MaxMemoryMb = MemoryMb });
+        await LauncherService.Instance.LaunchAsync(id, null, BuildOverrides());
     }
 
     private async Task ScanLanAsync()
@@ -218,14 +300,14 @@ public class GameViewModel : ObservableObject
     {
         if (s is null) return;
         await LauncherService.Instance.LaunchAsync(_profile.LastVersionId ?? SelectedVersionId, null,
-            new LaunchCliOverrides { Username = Username, MaxMemoryMb = MemoryMb, ServerAddress = s.Endpoint });
+            BuildOverrides(s.Endpoint));
     }
 
     private async Task JoinServerAsync(ServerEntry? s)
     {
         if (s is null) return;
         await LauncherService.Instance.LaunchAsync(_profile.LastVersionId ?? SelectedVersionId, null,
-            new LaunchCliOverrides { Username = Username, MaxMemoryMb = MemoryMb, ServerAddress = s.Address });
+            BuildOverrides(s.Address));
     }
 
     /// <summary>打开年度报告独立窗口（规格 2.1 统计区入口）。</summary>

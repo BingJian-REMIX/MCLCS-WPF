@@ -22,6 +22,8 @@
             <conv:StringToBrushConverter x:Key="StrToBrush"/>
             <!-- 布尔 → 可见性（全局共用，避免各页重复声明） -->
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <!-- 布尔取反 → 可见性（BooleanToVisibilityConverter 不认 ConverterParameter，需独立实例） -->
+            <conv:InverseBoolToVisibilityConverter x:Key="BoolToVisInvert"/>
             <!-- 非空字符串 → 可见（详情文本、空状态提示） -->
             <conv:NonEmptyToVisibilityConverter x:Key="NonEmptyToVis"/>
         </ResourceDictionary>

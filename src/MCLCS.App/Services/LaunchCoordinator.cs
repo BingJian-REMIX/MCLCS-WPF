@@ -92,7 +92,11 @@ public static class LaunchCoordinator
         try
         {
             var gameRoot = LauncherService.Instance.GameRoot;
-            var diff = await Task.Run(() => FileChangeDetector.DetectAndUpdate(gameRoot));
+
+            // 两段式检测（对齐 MCLCS-Linux FileWatchService）：
+            // ① 先比大小/修改时间，无变化直接返回（跳过昂贵的全量哈希）；
+            // ② 仅对疑似变更的文件算 SHA-256 按内容确认，剔除 mtime 抖动误报。
+            var diff = await Task.Run(() => FileChangeDetector.DetectTwoStage(gameRoot));
             var added = FileChangeDetector.NewFilesOnly(diff);
             if (added.Count == 0) return;
 

@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using MCLCS.Core.Auth;
 using MCLCS.Core.Download;
 using MCLCS.Core.Installers;
@@ -38,6 +39,15 @@ internal static class Program
         else { _failed++; Console.WriteLine($"  FAIL  {name}"); }
     }
 
+    private static int _skipped;
+    private static void Skip(string name)
+    {
+        _skipped++; Console.WriteLine($"  SKIP  {name}");
+    }
+
+    // 平台守卫：部分断言仅在 Linux 运行时成立（参数解析/natives 按当前 OS 过滤）。
+    private static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
     private static async Task Main()
     {
         Console.WriteLine("=== MCLCS Core 自检 ===\n");
@@ -70,7 +80,7 @@ internal static class Program
         await AiV2Tests();
         await V2Tests();
 
-        Console.WriteLine($"\n=== 结果：{_passed} 通过, {_failed} 失败 ===");
+        Console.WriteLine($"\n=== 结果：{_passed} 通过, {_failed} 失败, {_skipped} 跳过 ===");
         Environment.Exit(_failed == 0 ? 0 : 1);
     }
 
@@ -132,8 +142,16 @@ internal static class Program
         var resolved = ArgumentProcessor.Process(version, vars, options, "/tmp/natives");
 
         Check("保留 -XX:+UseG1GC", resolved.JvmArgs.Contains("-XX:+UseG1GC"));
-        Check("包含 linux 标记", resolved.JvmArgs.Contains("-DLINUX_MARKER=1"));
-        Check("排除 windows 标记", !resolved.JvmArgs.Contains("-DWINDOWS_MARKER=1"));
+        if (IsLinux)
+        {
+            Check("包含 linux 标记", resolved.JvmArgs.Contains("-DLINUX_MARKER=1"));
+            Check("排除 windows 标记", !resolved.JvmArgs.Contains("-DWINDOWS_MARKER=1"));
+        }
+        else
+        {
+            Skip("包含 linux 标记（仅 linux 运行时校验）");
+            Skip("排除 windows 标记（仅 linux 运行时校验）");
+        }
         Check("注入 -Xmx4096M", resolved.JvmArgs.Any(a => a == "-Xmx4096M"));
         Check("注入 java.library.path", resolved.JvmArgs.Any(a => a.StartsWith("-Djava.library.path=")));
         Check("注入 org.lwjgl.librarypath", resolved.JvmArgs.Any(a => a.StartsWith("-Dorg.lwjgl.librarypath=")));
@@ -186,8 +204,16 @@ internal static class Program
             Check("classpath 含库 jar", cp.Contains("log4j-2.19.1.jar"));
 
             var natives = ClasspathBuilder.GetNativeEntries(root, version, Path.Combine(root, "natives"));
-            Check("识别 1 个 natives 条目", natives.Count == 1);
-            Check("natives 路径含 natives-linux", natives.Count == 1 && natives[0].JarPath.Contains("natives-linux"));
+            if (IsLinux)
+            {
+                Check("识别 1 个 natives 条目", natives.Count == 1);
+                Check("natives 路径含 natives-linux", natives.Count == 1 && natives[0].JarPath.Contains("natives-linux"));
+            }
+            else
+            {
+                Skip("识别 1 个 natives 条目（仅 linux 运行时校验）");
+                Skip("natives 路径含 natives-linux（仅 linux 运行时校验）");
+            }
         }
         finally
         {
@@ -453,7 +479,9 @@ internal static class Program
     {
         Console.WriteLine("[主题管理]");
         var initial = ThemeManager.Current;
-        Check("默认暗色", initial == ThemeType.Dark);
+        // WPF 与 Linux 两端 ThemeManager 默认均为 Light（Core/Theme/ThemeManager.cs:16），
+        // 两版本就对齐；此前探针误假设默认暗色，在此纠正为默认亮色。
+        Check("默认亮色", initial == ThemeType.Light);
 
         ThemeManager.Current = ThemeType.Light;
         Check("切换亮色", ThemeManager.Current == ThemeType.Light);
@@ -1386,7 +1414,8 @@ side=""BOTH""
         // Sidebar（按主标签分组）
         Console.WriteLine("[UI 框架 - 分组侧边栏]");
         Check("下载页副标签 6 项", Sidebar.Download.Count == 6);
-        Check("工具箱页副标签 20 项", Sidebar.Toolbox.Count == 20);
+        // 2026-08-29：对齐 MCLCS-Linux 补齐 Map 安装页，工具箱新增 "map" 副标签（命令/Mod 开发此前已在列表但无实现）。
+        Check("工具箱页副标签 21 项", Sidebar.Toolbox.Count == 21);
         Check("设置页副标签 8 项", Sidebar.Settings.Count == 8);
         Check("游戏页无侧边栏", Sidebar.Game.Count == 0);
         Check("Has: 游戏页无侧边栏", !Sidebar.Has(MainTabKind.Game));
@@ -2253,6 +2282,6 @@ side=""BOTH""
         Check("AfkWorkflows Count=1", profile.AfkWorkflows!.Count == 1);
         Check("ShaderTokens Count=1", profile.ShaderTokens!.Count == 1);
 
-        Check("LauncherVersion=2.5.3", GameConstants.LauncherVersion == "2.5.3");
+        Check("LauncherVersion=2.5.4", GameConstants.LauncherVersion == "2.5.4");
     }
 }

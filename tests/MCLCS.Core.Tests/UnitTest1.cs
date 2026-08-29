@@ -3,6 +3,7 @@ using MCLCS.Core.Auth;
 using MCLCS.Core.Launcher;
 using MCLCS.Core.Models;
 using MCLCS.Core.Utils;
+using System.Runtime.InteropServices;
 using Xunit;
 
 namespace MCLCS.Core.Tests;
@@ -56,8 +57,17 @@ public class CoreTests
         var resolved = ArgumentProcessor.Process(version, vars, new LaunchOptions { MaxMemoryMb = 4096 }, "/tmp/n");
 
         Assert.Contains("-XX:+UseG1GC", resolved.JvmArgs);
-        Assert.Contains("-DLINUX_MARKER=1", resolved.JvmArgs);
-        Assert.DoesNotContain("-DWINDOWS_MARKER=1", resolved.JvmArgs);
+        // 平台守卫：OS 规则仅放行当前平台的标记（Linux 注入 -DLINUX_MARKER，Windows 注入 -DWINDOWS_MARKER）。
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            Assert.Contains("-DLINUX_MARKER=1", resolved.JvmArgs);
+            Assert.DoesNotContain("-DWINDOWS_MARKER=1", resolved.JvmArgs);
+        }
+        else
+        {
+            Assert.Contains("-DWINDOWS_MARKER=1", resolved.JvmArgs);
+            Assert.DoesNotContain("-DLINUX_MARKER=1", resolved.JvmArgs);
+        }
         Assert.Contains("-Xmx4096M", resolved.JvmArgs);
         Assert.Contains("Steve", resolved.GameArgs);
     }
@@ -100,8 +110,8 @@ public class CoreTests
                     new() { Name = "com.mojang:log4j:2.19.1",
                             Downloads = new LibraryDownloads { Artifact = new DownloadInfo { Path = "com/mojang/log4j/2.19.1/log4j-2.19.1.jar" } } },
                     new() { Name = "org.lwjgl:lwjgl:3.3.1",
-                            Natives = new Dictionary<string, string> { { "linux", "natives-linux" } },
-                            Downloads = new LibraryDownloads { Classifiers = new() { ["natives-linux"] = new DownloadInfo { Path = "org/lwjgl/lwjgl/3.3.1/lwjgl-3.3.1-natives-linux.jar" } } } }
+                            Natives = new Dictionary<string, string> { { "linux", "natives-linux" }, { "windows", "natives-windows" } },
+                            Downloads = new LibraryDownloads { Classifiers = new() { ["natives-linux"] = new DownloadInfo { Path = "org/lwjgl/lwjgl/3.3.1/lwjgl-3.3.1-natives-linux.jar" }, ["natives-windows"] = new DownloadInfo { Path = "org/lwjgl/lwjgl/3.3.1/lwjgl-3.3.1-natives-windows.jar" } } } }
                 }
             };
 

@@ -75,7 +75,8 @@ public class FileWatchViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            // 只看不更新基线：面板可反复刷新而不清掉「待确认」的列表
+            // 只看不更新基线：面板可反复刷新而不清掉「待确认」的列表。
+            // （对齐 MCLCS-Linux：两段式 DetectTwoStage 用于启动前的后台检测，见 LaunchCoordinator）
             var diff = await Task.Run(() => FileChangeDetector.PreviewChanges(GameRoot));
             Changes = new ObservableCollection<FileChange>(diff.Changes);
             Summary = diff.HasChanges ? diff.Summary : "与基线一致，没有未确认的变更";

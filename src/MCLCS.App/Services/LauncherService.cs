@@ -254,28 +254,52 @@ public class LauncherService : ILogger
 
     // ---- 启动 ----
 
-    /// <summary>使用指定认证方式启动游戏。authenticator 为 null 时默认离线。cliOverrides 可覆盖内存/用户名/Java。</summary>
+    /// <summary>
+    /// 使用指定认证方式启动游戏。authenticator 为 null 时默认离线。cliOverrides 可覆盖内存/用户名/Java。
+    /// <para>
+    /// 会叠加「每版本覆盖层」<c>versions/&lt;id&gt;/profile.json</c>（对齐 MCLCS-Linux）：
+    /// 每版本 Java / 内存 / 分辨率 / 全屏 / 额外 JVM 参数 / 工作目录 / 绑定账号，未设置则回落全局。
+    /// </para>
+    /// </summary>
     public async Task<LaunchResult> LaunchAsync(string versionId,
         IAuthenticator? authenticator = null,
         LaunchCliOverrides? cliOverrides = null,
         CancellationToken ct = default)
     {
         var profile = ProfileStore.Load(GameRoot);
-        var java = await ResolveJavaAsync(profile, cliOverrides, ct);
+        var vp = VersionProfileStore.Load(GameRoot, versionId);
+        var java = await ResolveJavaAsync(profile, vp, cliOverrides, versionId, ct);
 
-        // 解析账号
+        // 解析账号优先级：UI 显式选择 > 该版本绑定账号 > 全局「最后使用」
+        var account = ResolveAccount(cliOverrides?.AccountId, vp.BoundAccountId);
         AuthSession session;
         if (authenticator is not null)
         {
-            var account = AccountStore.GetLastUsed(GameRoot);
             var username = cliOverrides?.Username ?? account?.Username ?? profile.DefaultUsername;
             session = await authenticator.AuthenticateAsync(username, ct);
         }
+        else if (account is { } bound && !string.IsNullOrWhiteSpace(bound.Uuid)
+                 && !string.IsNullOrWhiteSpace(bound.AccessToken))
+        {
+            // 已保存的账号会话（含每版本绑定）：直接复用，无需重新认证
+            session = new AuthSession
+            {
+                Username = bound.Username,
+                Uuid = bound.Uuid,
+                AccessToken = bound.AccessToken,
+                UserType = bound.AuthType == "microsoft" ? "msa" : bound.AuthType
+            };
+        }
         else
         {
-            var username = cliOverrides?.Username ?? profile.DefaultUsername;
+            var username = cliOverrides?.Username ?? account?.Username ?? profile.DefaultUsername;
             session = await new OfflineAuthenticator().AuthenticateAsync(username, ct);
         }
+
+        // 额外 JVM 参数：全局额外参数在前，每版本追加在后（可被其覆盖语义）
+        var extraJvm = new List<string>(profile.ExtraJvmArgs);
+        extraJvm.AddRange(vp.ExtraJvmArgs);
+        if (cliOverrides?.ExtraJvmArgs is { Count: > 0 } cliJvm) extraJvm.AddRange(cliJvm);
 
         var options = new LaunchOptions
         {
@@ -283,13 +307,18 @@ public class LauncherService : ILogger
             Uuid = session.Uuid,
             AccessToken = session.AccessToken,
             UserType = session.UserType,
-            MaxMemoryMb = cliOverrides?.MaxMemoryMb ?? profile.MaxMemoryMb,
-            MinMemoryMb = cliOverrides?.MinMemoryMb ?? profile.MinMemoryMb,
-            ExtraJvmArgs = profile.ExtraJvmArgs,
-            ServerAddress = cliOverrides?.ServerAddress
+            MaxMemoryMb = cliOverrides?.MaxMemoryMb ?? vp.MaxMemoryMb ?? profile.MaxMemoryMb,
+            MinMemoryMb = cliOverrides?.MinMemoryMb ?? vp.MinMemoryMb ?? profile.MinMemoryMb,
+            ExtraJvmArgs = extraJvm,
+            ServerAddress = cliOverrides?.ServerAddress,
+            Fullscreen = vp.Fullscreen,
+            GameDir = ResolveGameDir(GameRoot, versionId, vp)
         };
 
-        if (profile.ResolutionWidth.HasValue && profile.ResolutionHeight.HasValue)
+        // 分辨率：每版本覆盖优先，否则用全局
+        if (vp.ResolutionWidth is > 0 && vp.ResolutionHeight is > 0)
+            options.Resolution = (vp.ResolutionWidth.Value, vp.ResolutionHeight.Value);
+        else if (profile.ResolutionWidth.HasValue && profile.ResolutionHeight.HasValue)
             options.Resolution = (profile.ResolutionWidth.Value, profile.ResolutionHeight.Value);
 
         // 记住最后使用的版本
@@ -297,6 +326,29 @@ public class LauncherService : ILogger
         ProfileStore.Save(profile);
 
         return await GameLauncher.LaunchAsync(GameRoot, versionId, java, options, this, ct);
+    }
+
+    /// <summary>
+    /// 解析该版本的有效工作目录。仅当用户<b>已显式保存过</b>版本设置时才用覆盖层，
+    /// 否则沿用 <see cref="VersionIsolation"/> 既有标记行为（返回 null 交给底层判定）。
+    /// </summary>
+    private static string? ResolveGameDir(string gameRoot, string versionId, VersionProfile vp) =>
+        VersionProfileStore.HasProfile(gameRoot, versionId)
+            ? VersionProfileStore.EffectiveGameDir(gameRoot, versionId, vp)
+            : null;
+
+    /// <summary>
+    /// 解析启动应使用的账号：UI 显式选择 &gt; 每版本绑定 &gt; 全局「最后使用」。
+    /// 显式选择的账号若已被删除（Id 找不到），静默回落到每版本绑定逻辑。
+    /// </summary>
+    private AccountEntry? ResolveAccount(string? explicitAccountId, string? boundAccountId)
+    {
+        if (!string.IsNullOrWhiteSpace(explicitAccountId))
+        {
+            var picked = AccountStore.Load(GameRoot).FirstOrDefault(a => a.Id == explicitAccountId);
+            if (picked is not null) return picked;
+        }
+        return AccountStore.GetForVersion(GameRoot, boundAccountId);
     }
 
     /// <summary>
@@ -323,7 +375,11 @@ public class LauncherService : ILogger
 
             case RepairStrategy.SwitchJava:
             {
-                var required = plan.RequiredJavaMajor ?? GameConstants.MinimumJavaMajorVersion;
+                // 优先用崩溃方案给出的要求；否则按该版本自身的 Java 需求推断（1.16-→8，1.21+→21）
+                var required = plan.RequiredJavaMajor
+                    ?? (string.IsNullOrEmpty(plan.VersionId)
+                        ? GameConstants.MinimumJavaMajorVersion
+                        : JavaDetector.RequiredMajorForVersionId(GameRoot, plan.VersionId));
                 var java = await JavaDetector.FindBestAsync(required);
                 if (java is null)
                 {
@@ -570,29 +626,37 @@ public class LauncherService : ILogger
         return m.Success ? m.Value : null;
     }
 
-    private async Task<JavaInfo> ResolveJavaAsync(LauncherProfile profile, LaunchCliOverrides? cliOverrides, CancellationToken ct)
+    /// <summary>
+    /// 解析启动该版本应使用的 Java（对齐 MCLCS-Linux 的按版本智能选版）：
+    /// 1. 显式路径优先（CLI &gt; 每版本覆盖 &gt; 全局），但必须满足该版本所需主版本；
+    /// 2. 否则在已检测的 Java 里挑「满足要求且尽可能低」的（老 MC/Forge 常不兼容过高 Java）；
+    /// 3. 本地没有满足要求的才尝试下载安装，仍失败则用最高版本兜底。
+    /// </summary>
+    private async Task<JavaInfo> ResolveJavaAsync(LauncherProfile profile, VersionProfile vp,
+        LaunchCliOverrides? cliOverrides, string versionId, CancellationToken ct)
     {
-        // CLI 指定的 Java 路径优先
-        if (!string.IsNullOrEmpty(cliOverrides?.JavaPath) && File.Exists(cliOverrides.JavaPath))
+        var required = JavaDetector.RequiredMajorForVersionId(GameRoot, versionId);
+        var explicitPath = cliOverrides?.JavaPath ?? vp.JavaPath ?? profile.JavaPath;
+
+        if (!string.IsNullOrEmpty(explicitPath) && File.Exists(explicitPath))
         {
-            var (major, raw) = await JavaDetector.QueryVersionAsync(cliOverrides.JavaPath);
-            if (major >= GameConstants.MinimumJavaMajorVersion)
-                return new JavaInfo { JavaExe = cliOverrides.JavaPath, MajorVersion = major, RawVersion = raw };
+            var (major, raw) = await JavaDetector.QueryVersionAsync(explicitPath);
+            if (major >= required)
+                return new JavaInfo { JavaExe = explicitPath, MajorVersion = major, RawVersion = raw };
         }
 
-        JavaInfo? java = null;
-        if (!string.IsNullOrEmpty(profile.JavaPath) && File.Exists(profile.JavaPath))
+        var detected = await JavaDetector.DetectAsync();
+        if (detected.Count > 0)
         {
-            var (major, raw) = await JavaDetector.QueryVersionAsync(profile.JavaPath);
-            if (major >= GameConstants.MinimumJavaMajorVersion)
-                java = new JavaInfo { JavaExe = profile.JavaPath, MajorVersion = major, RawVersion = raw };
+            var picked = JavaDetector.SelectForVersion(detected, GameRoot, versionId, explicitPath);
+            if (picked is not null && picked.MajorVersion >= required) return picked;
         }
 
-        java ??= await JavaDetector.FindBestAsync(GameConstants.MinimumJavaMajorVersion);
-        if (java is null)
-            java = await JavaInstaller.EnsureJavaAsync(GameConstants.MinimumJavaMajorVersion, GameRoot, _downloader, this, ct);
-
-        return java ?? throw new InvalidOperationException("未找到可用的 Java 运行环境");
+        // 本地没有满足要求的 Java：尝试下载安装该版本所需主版本
+        var java = await JavaInstaller.EnsureJavaAsync(required, GameRoot, _downloader, profile.PreferredJavaVendor, this, ct);
+        return java
+            ?? (detected.Count > 0 ? detected.OrderByDescending(j => j.MajorVersion).First() : null)
+            ?? throw new InvalidOperationException("未找到可用的 Java 运行环境");
     }
 
     // ---- 下载中心（Modrinth）----
@@ -686,6 +750,11 @@ public class LaunchCliOverrides
     public int? MinMemoryMb { get; set; }
     public string? JavaPath { get; set; }
     public List<string>? ExtraJvmArgs { get; set; }
+    /// <summary>
+    /// 显式指定使用的账号 Id（用户在游戏页下拉里手动选择时传入）。
+    /// 优先级高于「每版本绑定账号」与「全局最后使用」；为空时回落到每版本绑定逻辑。
+    /// </summary>
+    public string? AccountId { get; set; }
     /// <summary>直接连入服务器地址（host:port），启动后跳过主菜单自动加入。</summary>
     public string? ServerAddress { get; set; }
 }
