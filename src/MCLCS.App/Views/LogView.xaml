@@ -60,11 +60,8 @@
                      ScrollViewer.VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap">
-                                <TextBlock.Foreground>
-                                    <SolidColorBrush Color="{Binding Severity, Converter={x:Static conv:LogSeverityToColor.Instance}}"/>
-                                </TextBlock.Foreground>
-                        </TextBlock>
+                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap"
+                                   Foreground="{Binding Severity, Converter={x:Static conv:LogSeverityToColor.Instance}}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

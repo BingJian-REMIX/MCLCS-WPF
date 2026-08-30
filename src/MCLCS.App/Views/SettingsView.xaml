@@ -268,6 +268,9 @@
                     </StackPanel>
                     <StackPanel Grid.Row="4" Margin="0,6">
                         <TextBlock Text="Authlib-Injector 账号" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <TextBlock TextWrapping="Wrap" MaxWidth="640" Margin="0,0,0,6" Opacity="0.8" FontSize="12"
+                                   Foreground="{DynamicResource SecondaryForeground}"
+                                   Text="外置登录：填入第三方 Authlib-Injector 服务器地址，使用该系统账号（邮箱+密码）登录，可绕过微软官方验证。仅在你信任的私有/社区服务器下使用。微软登录失败多为 Azure 应用 client_id 未配置或被拒，需检查凭据。"/>
                         <StackPanel Orientation="Horizontal" Margin="0,2">
                             <TextBox Text="{Binding AuthlibServerUrl, UpdateSourceTrigger=PropertyChanged}" Width="220" Tag="服务器地址"
                                      Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}" VerticalContentAlignment="Center"/>
