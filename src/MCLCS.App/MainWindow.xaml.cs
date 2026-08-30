@@ -165,7 +165,8 @@ public partial class MainWindow : Window
         if (WindowState == WindowState.Minimized &&
             ProfileStore.Load(GameConstants.DefaultGameRoot).MinimizeToTray)
         {
-            // 最小化到托盘：隐藏主窗口（任务栏按钮随之消失，仅留托盘图标）。
+            // 最小化到托盘：先移除任务栏按钮再隐藏窗口，避免任务栏残留空白占位。
+            ShowInTaskbar = false;
             Visibility = Visibility.Hidden;
         }
     }
@@ -173,10 +174,11 @@ public partial class MainWindow : Window
     /// <summary>从托盘恢复主窗口（双击托盘图标 / 右键「打开主界面」）。</summary>
     private void RestoreFromTray()
     {
-        if (WindowState == WindowState.Minimized)
-            WindowState = WindowState.Normal;
+        // 先恢复可见性和任务栏按钮，再解除最小化，避免 DWM 残留最小化状态。
         Visibility = Visibility.Visible;
         ShowInTaskbar = true;
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
         Activate();
     }
 

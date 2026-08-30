@@ -105,11 +105,10 @@ public class SavesViewModel : ObservableObject
     private void RefreshVersions()
     {
         var gameRoot = LauncherService.Instance.GameRoot;
-        var installed = LauncherService.Instance.ListInstalledVersions().Select(v => v.Id);
-        var known = DataVersionMap.KnownVersions();
-        AvailableVersions = new ObservableCollection<string>(
-            installed.Concat(known).Distinct().OrderBy(v => v).ToList());
-        TargetVersion = installed.FirstOrDefault() ?? known.LastOrDefault() ?? "";
+        // 存档管理目标版本只应列出已安装版本，避免显示用户未安装的版本
+        var installed = LauncherService.Instance.ListInstalledVersions().Select(v => v.Id).ToList();
+        AvailableVersions = new ObservableCollection<string>(installed);
+        TargetVersion = installed.FirstOrDefault() ?? "";
     }
 
     private async Task ScanAsync()

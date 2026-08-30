@@ -242,21 +242,23 @@ public class SkinEditorViewModel : ObservableObject
             var decoder = new PngBitmapDecoder(
                 new Uri(path), BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
             var frame = decoder.Frames[0];
-            if (frame.PixelWidth != 64 || frame.PixelHeight != 64 && frame.PixelHeight != 32)
+            if (frame.PixelWidth != 64 || (frame.PixelHeight != 64 && frame.PixelHeight != 32))
             {
                 StatusMessage = "皮肤必须为 64x64（新版）或 64x32（旧版）像素";
                 return;
             }
             SaveUndo();
-            var src = new byte[frame.PixelWidth * frame.PixelHeight * 4];
-            frame.CopyPixels(src, frame.PixelWidth * 4, 0);
+            // 统一转换为 Bgra32，避免灰度/索引 PNG 导致像素对齐错误（表现为条纹/压缩错乱）
+            var converted = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
+            var src = new byte[converted.PixelWidth * converted.PixelHeight * 4];
+            converted.CopyPixels(src, converted.PixelWidth * 4, 0);
             Array.Clear(_pixels);
             // 复制像素；旧版 64x32 只填上半部分
-            var copyH = Math.Min(64, frame.PixelHeight);
+            var copyH = Math.Min(64, converted.PixelHeight);
             for (var y = 0; y < copyH; y++)
-                Array.Copy(src, y * frame.PixelWidth * 4,
+                Array.Copy(src, y * converted.PixelWidth * 4,
                            _pixels, y * 64 * 4,
-                           frame.PixelWidth * 4);
+                           converted.PixelWidth * 4);
             FlushFull(); UpdateFacePreview();
             StatusMessage = $"已导入 {Path.GetFileName(path)}";
         }

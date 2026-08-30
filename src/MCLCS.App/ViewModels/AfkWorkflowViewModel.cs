@@ -54,7 +54,19 @@ public class AfkWorkflowViewModel : ObservableObject
     private string _statusMessage = "";
 
     public ObservableCollection<AfkActionItem> Actions { get => _actions; set => SetField(ref _actions, value); }
-    public AfkActionItem? SelectedAction { get => _selectedAction; set => SetField(ref _selectedAction, value); }
+    public AfkActionItem? SelectedAction
+    {
+        get => _selectedAction;
+        set
+        {
+            if (SetField(ref _selectedAction, value))
+            {
+                (RemoveActionCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (MoveUpCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (MoveDownCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+    }
     public string WorkflowName { get => _workflowName; set => SetField(ref _workflowName, value); }
     public ObservableCollection<string> SavedNames { get => _savedNames; set => SetField(ref _savedNames, value); }
 
@@ -101,7 +113,11 @@ public class AfkWorkflowViewModel : ObservableObject
         var item = new AfkActionItem();
         item.Changed += () => OnPropertyChanged(nameof(TokenText));
         Actions.Add(item);
+        SelectedAction = item;
         OnPropertyChanged(nameof(TokenText));
+        (RemoveActionCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (MoveUpCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (MoveDownCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
 
     private void RemoveAction()

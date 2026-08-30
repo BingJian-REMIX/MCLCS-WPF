@@ -62,7 +62,7 @@
                                    Foreground="{DynamicResource SecondaryForeground}"/>
                         <!-- bug #13：此前用 SelectedItem 绑定，选中值被赋成 ComboBoxItem 本身而非 Tag，
                              导致无论选哪种动作类型，生成/保存的都还是默认的帧率限制 (F)。 -->
-                        <ComboBox SelectedValue="{Binding SelectedAction.ActionType}" SelectedValuePath="Tag" Width="140">
+                        <ComboBox SelectedValue="{Binding SelectedAction.ActionType, Mode=TwoWay}" SelectedValuePath="Tag" Width="140">
                             <ComboBoxItem Content="帧率限制 (F)" Tag="F"/>
                             <ComboBoxItem Content="渲染距离 (D)" Tag="D"/>
                             <ComboBoxItem Content="音量 (V)" Tag="V"/>

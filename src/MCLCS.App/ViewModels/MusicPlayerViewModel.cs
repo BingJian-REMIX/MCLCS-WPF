@@ -238,6 +238,7 @@ public class MusicPlayerViewModel : ObservableObject
             if (SetField(ref _currentTrack, value))
             {
                 OnPropertyChanged(nameof(CurrentTrackDisplay));
+                OnPropertyChanged(nameof(CurrentTrackMetaText));
                 OnPropertyChanged(nameof(HasTrack));
             }
         }
@@ -364,6 +365,9 @@ public class MusicPlayerViewModel : ObservableObject
     }
 
     public string CurrentTrackDisplay => CurrentTrack?.Display ?? "未选择曲目";
+
+    /// <summary>当前曲目副标题（歌手 · 专辑），避免 Run 内多段绑定在部分主题下不刷新。</summary>
+    public string CurrentTrackMetaText => CurrentTrack?.MetaText ?? "";
 
     // ---- 命令实现 ----
 

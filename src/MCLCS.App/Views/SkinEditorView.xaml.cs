@@ -57,7 +57,8 @@ public partial class SkinEditorView : UserControl
 
     private void Mode_Changed(object sender, RoutedEventArgs e)
     {
-        var is2D = Mode2D.IsChecked == true;
+        var is2D = sender == Mode2D;
+        Mode2D.IsChecked = is2D;
         Mode3D.IsChecked = !is2D;
         Editor2D.Visibility = is2D ? Visibility.Visible : Visibility.Collapsed;
         Preview3D.Visibility = is2D ? Visibility.Collapsed : Visibility.Visible;

@@ -123,7 +123,8 @@
             </ListBox>
 
             <!-- MC 原声：按分类分组 -->
-            <ScrollViewer Visibility="{Binding IsMcOst, Converter={StaticResource BoolToVisibility}}">
+            <ScrollViewer Visibility="{Binding IsMcOst, Converter={StaticResource BoolToVisibility}}"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl ItemsSource="{Binding McOstGroups}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -132,10 +133,10 @@
                                 <ItemsControl ItemsSource="{Binding Tracks}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Button Content="{Binding Title}"
-                                                    Command="{Binding DataContext.PlayTrackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                    CommandParameter="{Binding}" HorizontalContentAlignment="Left" Padding="6,4"
-                                                    Background="Transparent" BorderThickness="0" Foreground="{DynamicResource InputForeground}"/>
+                                        <Button Content="{Binding Title}"
+                                                Command="{Binding DataContext.PlayTrackCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" HorizontalContentAlignment="Left" Padding="6,4"
+                                                Background="Transparent" BorderThickness="0" Foreground="{DynamicResource InputForeground}"/>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

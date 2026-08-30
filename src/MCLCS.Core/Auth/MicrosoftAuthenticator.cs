@@ -24,6 +24,7 @@ public class MicrosoftAuthenticator : IAuthenticator
     public MicrosoftAuthenticator(HttpClient client, Action<string>? onUserCode = null)
     {
         _client = client;
+        _client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "MCLCS/2.5");
         _onUserCode = onUserCode;
     }
 
@@ -72,9 +73,12 @@ public class MicrosoftAuthenticator : IAuthenticator
     {
         using var content = new FormUrlEncodedContent(data);
         using var resp = await _client.PostAsync(url, content, ct);
-        resp.EnsureSuccessStatusCode();
-        var json = await resp.Content.ReadAsStringAsync(ct);
-        return JsonSerializer.Deserialize<JsonElement>(json);
+        var body = await resp.Content.ReadAsStringAsync(ct);
+        if (!resp.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"HTTP {(int)resp.StatusCode} ({resp.StatusCode}): {body}");
+        }
+        return JsonSerializer.Deserialize<JsonElement>(body);
     }
 
     private async Task<string> PollForTokenAsync(string deviceCode, int interval, CancellationToken ct)

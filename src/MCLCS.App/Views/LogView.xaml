@@ -57,6 +57,7 @@
             </StackPanel>
             <ListBox Grid.Row="1" ItemsSource="{Binding Lines}"
                      Background="{DynamicResource InputBackground}" BorderBrush="{DynamicResource InputBorder}"
+                     Foreground="{DynamicResource PrimaryForeground}"
                      ScrollViewer.VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12">
                 <ListBox.ItemTemplate>
                     <DataTemplate>

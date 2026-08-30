@@ -317,19 +317,17 @@
                             Command="{Binding NextCommand, Source={x:Static vm:MusicPlayerViewModel.Instance}}"
                             ToolTip="下一首" VerticalAlignment="Center" Content="⏭" FontSize="11"/>
                     <StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="8,0,0,0">
-                        <TextBlock Text="{Binding CurrentTrackDisplay, Source={x:Static vm:MusicPlayerViewModel.Instance}}"
+                        <TextBlock Text="{Binding CurrentTrackDisplay, Source={x:Static vm:MusicPlayerViewModel.Instance}, Mode=OneWay, FallbackValue='未选择曲目'}"
                                    MaxWidth="200" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource StatusForeground}"/>
                         <TextBlock FontSize="10" Opacity="0.65" MaxWidth="200" TextTrimming="CharacterEllipsis"
-                                   Foreground="{DynamicResource StatusForeground}">
-                            <Run Text="{Binding CurrentTrack.Artist, Source={x:Static vm:MusicPlayerViewModel.Instance}, Mode=OneWay}"/>
-                            <Run Text=" · "/>
-                            <Run Text="{Binding CurrentTrack.Album, Source={x:Static vm:MusicPlayerViewModel.Instance}, Mode=OneWay}"/>
-                        </TextBlock>
+                                   Foreground="{DynamicResource StatusForeground}"
+                                   Text="{Binding CurrentTrackMetaText, Source={x:Static vm:MusicPlayerViewModel.Instance}, Mode=OneWay, FallbackValue=''}"/>
                     </StackPanel>
-                    <!-- bug #10/#12：微条细长进度条（仅时长已知时显示） -->
+                    <!-- bug #10/#12：微条细长进度条（有曲目即显示；时长未知时禁用） -->
                     <Slider Minimum="0" Maximum="100" Width="80" VerticalAlignment="Center" Margin="10,0,0,0"
                             Value="{Binding ProgressRatio, Source={x:Static vm:MusicPlayerViewModel.Instance}, Mode=OneWay}"
-                            Visibility="{Binding HasProgress, Source={x:Static vm:MusicPlayerViewModel.Instance}, Converter={StaticResource BoolToVisibility}}"/>
+                            Visibility="{Binding HasTrack, Source={x:Static vm:MusicPlayerViewModel.Instance}, Converter={StaticResource BoolToVisibility}}"
+                            IsEnabled="{Binding HasProgress, Source={x:Static vm:MusicPlayerViewModel.Instance}, Mode=OneWay}"/>
                     <Button x:Name="MusicExpandBtn" Width="24" Height="22" BorderThickness="0" Background="Transparent"
                             Command="{Binding ExpandCommand, Source={x:Static vm:MusicPlayerViewModel.Instance}}"
                             ToolTip="展开 / 收起播放列表" VerticalAlignment="Center" Content="▤" FontSize="11"/>

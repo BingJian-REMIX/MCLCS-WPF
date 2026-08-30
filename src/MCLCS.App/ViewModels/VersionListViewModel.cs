@@ -52,6 +52,8 @@ public class VersionEntry : ObservableObject
     public string IsolationText => IsIsolated ? "隔离" : "共享";
 
     public string DisplayName => string.IsNullOrEmpty(Type) ? Id : $"{Id} ({Type})";
+
+    public override string ToString() => DisplayName;
 }
 
 /// <summary>

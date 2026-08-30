@@ -154,6 +154,9 @@ public class DownloadPageViewModel : ObservableObject
         set => SetField(ref _currentSubTab, value);
     }
 
+    /// <summary>当前是否为 Mod 副标签（仅 Mod 需要加载器筛选，资源包/光影不需要）。</summary>
+    public bool IsMod => _currentSubTab == "mod";
+
     /// <summary>当前是否为地图副标签（驱动筛选行显隐）。</summary>
     public bool IsMap
     {
@@ -648,6 +651,7 @@ public class DownloadPageViewModel : ObservableObject
         if (id is not ("minecraft" or "mod" or "shader" or "resourcepack" or "modpack" or "map")) id = "minecraft";
 
         CurrentSubTab = id;
+        OnPropertyChanged(nameof(IsMod));
         IsMap = id == "map";
         IsMinecraft = id == "minecraft";
         IsModpack = id == "modpack";
