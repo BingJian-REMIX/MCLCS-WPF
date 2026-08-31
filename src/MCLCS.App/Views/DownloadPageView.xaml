@@ -150,7 +150,7 @@
                       ItemsSource="{Binding ModpackSources}" SelectedValue="{Binding SelectedModpackSource}" SelectedValuePath="Id"
                       ToolTip="整合包来源">
                 <ComboBox.ItemContainerStyle>
-                    <Style TargetType="ComboBoxItem">
+                    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
                         <Setter Property="IsEnabled" Value="{Binding IsAvailable}"/>
                         <Setter Property="ToolTip" Value="{Binding UnavailableReason}"/>
                     </Style>

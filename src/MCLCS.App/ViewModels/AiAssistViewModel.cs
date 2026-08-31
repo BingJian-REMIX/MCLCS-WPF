@@ -66,8 +66,47 @@ public class AiAssistViewModel : ObservableObject
     public bool HasLogo
     {
         get => _hasLogo;
-        private set => SetField(ref _hasLogo, value);
+        private set
+        {
+            if (SetField(ref _hasLogo, value))
+                UpdateRobotFallback();
+        }
     }
+
+    /// <summary>品牌首字徽章（favicon 失败时兜底）。</summary>
+    private string _assistantInitial = "AI";
+    public string AssistantInitial
+    {
+        get => _assistantInitial;
+        private set => SetField(ref _assistantInitial, value);
+    }
+
+    private Brush _assistantBrandBrush = Brushes.Gray;
+    public Brush AssistantBrandBrush
+    {
+        get => _assistantBrandBrush;
+        private set => SetField(ref _assistantBrandBrush, value);
+    }
+
+    private bool _hasBrand;
+    public bool HasBrand
+    {
+        get => _hasBrand;
+        private set
+        {
+            if (SetField(ref _hasBrand, value))
+                UpdateRobotFallback();
+        }
+    }
+
+    private bool _showRobotFallback = true;
+    public bool ShowRobotFallback
+    {
+        get => _showRobotFallback;
+        private set => SetField(ref _showRobotFallback, value);
+    }
+
+    private void UpdateRobotFallback() => ShowRobotFallback = !HasLogo && !HasBrand;
 
     private readonly ICommand _sendCommand;
     private readonly ICommand _crashCommand;
@@ -94,15 +133,16 @@ public class AiAssistViewModel : ObservableObject
             "你好！我是 MCLCS AI 助手。可直接输入问题，支持崩溃分析、Mod 推荐、翻译等。"));
         Messages.CollectionChanged += (_, _) => OnPropertyChanged(nameof(ShowWelcome));
 
-        _ = LoadAssistantLogoAsync();   // 异步拉取部署 AI 的 logo，失败则保持 null → emoji 兜底
+        ResolveBrand();                  // 同步推断品牌：设置首字/底色徽章
+        _ = LoadAssistantLogoAsync();    // 异步尝试拉 favicon，成功则覆盖徽章
     }
 
-    // ---- 助手头像：按后端品牌拉取 favicon，失败回退 emoji ----
+    // ---- 助手头像：按后端品牌显示首字徽章，并异步拉取 favicon 覆盖 ----
     private async Task LoadAssistantLogoAsync()
     {
         try
         {
-            var domain = ResolveProviderDomain();
+            var domain = _brandDomain;
             if (string.IsNullOrEmpty(domain)) return;
 
             var cacheDir = Path.Combine(Path.GetTempPath(), "MCLCS");
@@ -117,6 +157,7 @@ public class AiAssistViewModel : ObservableObject
             else
             {
                 using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MCLCS");
                 var url = $"https://www.google.com/s2/favicons?domain={domain}&sz=128";
                 data = await client.GetByteArrayAsync(url);
                 try { await File.WriteAllBytesAsync(cacheFile, data); } catch { /* 缓存写入失败忽略 */ }
@@ -134,33 +175,124 @@ public class AiAssistViewModel : ObservableObject
         }
         catch
         {
-            // 离线/超时/解码失败：保持 AssistantLogo=null、HasLogo=false → XAML 显示 🤖
+            // 离线/超时/解码失败：保持首字徽章兜底
         }
     }
 
-    /// <summary>根据当前 AI 后端配置推断品牌域名，用于拉取 favicon。</summary>
-    private static string ResolveProviderDomain()
+    private string? _brandDomain;
+
+    /// <summary>同步推断当前部署品牌：设置首字、品牌色、域名；未配置则保持机器人兜底。</summary>
+    private void ResolveBrand()
     {
-        if (Assistant.Config.Mode == AiMode.Local)
-            return "ollama.com";
+        try
+        {
+            if (Assistant.Config is null || !Assistant.Config.Enabled)
+            {
+                HasBrand = false;
+                return;
+            }
 
-        var ep = Assistant.Config.Endpoint ?? "";
-        if (string.IsNullOrWhiteSpace(ep)) return "";
-        string host;
-        try { host = new Uri(ep).Host; }
-        catch { return ""; }
-        if (string.IsNullOrWhiteSpace(host)) return "";
-        var h = host.ToLowerInvariant();
+            if (Assistant.Config.Mode == AiMode.Local)
+            {
+                _brandDomain = "ollama.com";
+                AssistantInitial = "O";
+                AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+                HasBrand = true;
+                return;
+            }
 
-        if (h.Contains("openai.com")) return "openai.com";
-        if (h.Contains("deepseek.com")) return "deepseek.com";
-        if (h.Contains("anthropic.com")) return "anthropic.com";
-        if (h.Contains("moonshot.cn")) return "moonshot.cn";          // Kimi
-        if (h.Contains("aliyun.com") || h.Contains("dashscope")) return "aliyun.com"; // 通义 / qwen
-        if (h.Contains("mistral.ai")) return "mistral.ai";
-        if (h.Contains("groq.com")) return "groq.com";
-        if (h.Contains("googleapis.com")) return "google.com";
-        return GetRegistrableDomain(host);
+            var ep = Assistant.Config.Endpoint ?? "";
+            if (string.IsNullOrWhiteSpace(ep))
+            {
+                HasBrand = false;
+                return;
+            }
+
+            string host;
+            try { host = new Uri(ep).Host; }
+            catch { HasBrand = false; return; }
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                HasBrand = false;
+                return;
+            }
+
+            var h = host.ToLowerInvariant();
+
+            if (h.Contains("openai.com") || h.Contains("api.openai.com"))
+            {
+                _brandDomain = "openai.com";
+                AssistantInitial = "O";
+                AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(16, 163, 127));
+                HasBrand = true;
+                return;
+            }
+            if (h.Contains("deepseek.com"))
+            {
+                _brandDomain = "deepseek.com";
+                AssistantInitial = "D";
+                AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(76, 154, 255));
+                HasBrand = true;
+                return;
+            }
+            if (h.Contains("anthropic.com"))
+            {
+                _brandDomain = "anthropic.com";
+                AssistantInitial = "A";
+                AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(207, 90, 85));
+                HasBrand = true;
+                return;
+            }
+            if (h.Contains("moonshot.cn"))
+            {
+                _brandDomain = "moonshot.cn";
+                AssistantInitial = "K";
+                AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(255, 102, 0));
+                HasBrand = true;
+                return;
+            }
+            if (h.Contains("aliyun.com") || h.Contains("dashscope"))
+            {
+                _brandDomain = "aliyun.com";
+                AssistantInitial = "通";
+                AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(109, 40, 217));
+                HasBrand = true;
+                return;
+            }
+            if (h.Contains("mistral.ai"))
+            {
+                _brandDomain = "mistral.ai";
+                AssistantInitial = "M";
+                AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(255, 0, 106));
+                HasBrand = true;
+                return;
+            }
+            if (h.Contains("groq.com"))
+            {
+                _brandDomain = "groq.com";
+                AssistantInitial = "G";
+                AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(250, 0, 80));
+                HasBrand = true;
+                return;
+            }
+            if (h.Contains("googleapis.com"))
+            {
+                _brandDomain = "google.com";
+                AssistantInitial = "G";
+                AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(66, 133, 244));
+                HasBrand = true;
+                return;
+            }
+
+            _brandDomain = GetRegistrableDomain(host);
+            AssistantInitial = char.ToUpperInvariant(host[0]).ToString();
+            AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(59, 130, 246));
+            HasBrand = true;
+        }
+        catch
+        {
+            HasBrand = false;
+        }
     }
 
     /// <summary>简化版注册域名提取（无额外依赖；未知品牌取二级域名，常见二级公共后缀单独处理）。</summary>

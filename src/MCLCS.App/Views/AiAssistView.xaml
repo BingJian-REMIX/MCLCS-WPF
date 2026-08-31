@@ -57,8 +57,13 @@
                         <Grid>
                             <Image Source="{Binding AssistantLogo}" Stretch="Uniform" Margin="9"
                                    Visibility="{Binding HasLogo, Converter={StaticResource BoolToVis}}"/>
+                            <Border Background="{Binding AssistantBrandBrush}" CornerRadius="32"
+                                    Visibility="{Binding HasBrand, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="{Binding AssistantInitial}" FontSize="26" FontWeight="Bold"
+                                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
                             <TextBlock Text="🤖" FontSize="34" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Visibility="{Binding HasLogo, Converter={StaticResource BoolToVisInvert}}"/>
+                                   Visibility="{Binding ShowRobotFallback, Converter={StaticResource BoolToVis}}"/>
                         </Grid>
                     </Border>
                     <TextBlock Text="MCLCS AI 助手" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,14,0,6"/>
@@ -114,8 +119,15 @@
                                             <Image Source="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.AssistantLogo}"
                                                    Stretch="Uniform" Margin="3"
                                                    Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.HasLogo, Converter={StaticResource BoolToVis}}"/>
+                                            <Border Background="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.AssistantBrandBrush}"
+                                                    CornerRadius="15"
+                                                    Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.HasBrand, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.AssistantInitial}"
+                                                           FontSize="12" FontWeight="Bold" Foreground="White"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
                                             <TextBlock Text="🤖" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                   Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.HasLogo, Converter={StaticResource BoolToVisInvert}}"/>
+                                                   Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.ShowRobotFallback, Converter={StaticResource BoolToVis}}"/>
                                         </Grid>
                                     </Border>
                                     <Border Background="{DynamicResource ControlBackground}" CornerRadius="14,14,14,4"
@@ -138,8 +150,15 @@
                                 <Image Source="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.AssistantLogo}"
                                        Stretch="Uniform" Margin="3"
                                        Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.HasLogo, Converter={StaticResource BoolToVis}}"/>
+                                <Border Background="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.AssistantBrandBrush}"
+                                        CornerRadius="15"
+                                        Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.HasBrand, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.AssistantInitial}"
+                                               FontSize="12" FontWeight="Bold" Foreground="White"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
                                 <TextBlock Text="🤖" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.HasLogo, Converter={StaticResource BoolToVisInvert}}"/>
+                                       Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.ShowRobotFallback, Converter={StaticResource BoolToVis}}"/>
                             </Grid>
                         </Border>
                         <Border Background="{DynamicResource ControlBackground}" CornerRadius="14,14,14,4" Padding="14,12"
