@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -137,51 +140,65 @@ public class AiAssistViewModel : ObservableObject
         _ = LoadAssistantLogoAsync();    // 异步尝试拉 favicon，成功则覆盖徽章
     }
 
-    // ---- 助手头像：按后端品牌显示首字徽章，并异步拉取 favicon 覆盖 ----
+    // ---- 助手头像：按后端品牌显示首字徽章，并异步拉取官方商标覆盖 ----
     private async Task LoadAssistantLogoAsync()
     {
-        try
+        // 拉取候选：优先品牌官方图标（国内可直连），失败回退国内 iowen 聚合服务；
+        // 仍失败则保留同步算出的品牌首字徽章（HasBrand 兜底）。
+        var candidates = new List<string>(2);
+        if (!string.IsNullOrEmpty(_brandLogoUrl)) candidates.Add(_brandLogoUrl!);
+        if (!string.IsNullOrEmpty(_brandDomain)) candidates.Add($"https://api.iowen.cn/favicon/{_brandDomain}.png");
+        if (candidates.Count == 0) return;
+
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MCLCS");
+
+        foreach (var url in candidates)
         {
-            var domain = _brandDomain;
-            if (string.IsNullOrEmpty(domain)) return;
-
-            var cacheDir = Path.Combine(Path.GetTempPath(), "MCLCS");
-            Directory.CreateDirectory(cacheDir);
-            var cacheFile = Path.Combine(cacheDir, domain + ".png");
-
-            byte[] data;
-            if (File.Exists(cacheFile))
+            try
             {
-                data = await File.ReadAllBytesAsync(cacheFile);
-            }
-            else
-            {
-                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MCLCS");
-                var url = $"https://www.google.com/s2/favicons?domain={domain}&sz=128";
-                data = await client.GetByteArrayAsync(url);
-                try { await File.WriteAllBytesAsync(cacheFile, data); } catch { /* 缓存写入失败忽略 */ }
-            }
+                var data = await DownloadWithCacheAsync(client, url);
+                if (data is null || data.Length == 0) continue;
 
-            // WPF：从字节流解码 BitmapImage（OnLoad 立即解码，流可释放）
-            using var ms = new MemoryStream(data);
-            var bmp = new BitmapImage();
-            bmp.BeginInit();
-            bmp.CacheOption = BitmapCacheOption.OnLoad;
-            bmp.StreamSource = ms;
-            bmp.EndInit();
-            AssistantLogo = bmp;
-            HasLogo = true;
+                // WPF：从字节流解码 BitmapImage（OnLoad 立即解码，流可释放）
+                var bmp = new BitmapImage();
+                using (var ms = new MemoryStream(data))
+                {
+                    bmp.BeginInit();
+                    bmp.CacheOption = BitmapCacheOption.OnLoad;
+                    bmp.StreamSource = ms;
+                    bmp.EndInit();
+                }
+                AssistantLogo = bmp;
+                HasLogo = true;
+                return; // 任一来源成功即用
+            }
+            catch
+            {
+                // 该来源失败，尝试下一个候选
+            }
         }
-        catch
-        {
-            // 离线/超时/解码失败：保持首字徽章兜底
-        }
+        // 全部失败：保持品牌首字徽章兜底
+    }
+
+    private static async Task<byte[]?> DownloadWithCacheAsync(HttpClient client, string url)
+    {
+        var cacheDir = Path.Combine(Path.GetTempPath(), "MCLCS");
+        Directory.CreateDirectory(cacheDir);
+        var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(url)))[..16];
+        var cacheFile = Path.Combine(cacheDir, "logo_" + key + ".png");
+        if (File.Exists(cacheFile)) return await File.ReadAllBytesAsync(cacheFile);
+        var data = await client.GetByteArrayAsync(url);
+        try { await File.WriteAllBytesAsync(cacheFile, data); } catch { /* 缓存写入失败忽略 */ }
+        return data;
     }
 
     private string? _brandDomain;
 
-    /// <summary>同步推断当前部署品牌：设置首字、品牌色、域名；未配置则保持机器人兜底。</summary>
+    /// <summary>品牌官方图标 URL（尽量 .ico/.png，避开 .svg；为 null 时仅回退 iowen）。</summary>
+    private string? _brandLogoUrl;
+
+    /// <summary>同步推断当前部署品牌：设置首字、品牌色、官方图标 URL 与回退域名；未配置则保持机器人兜底。</summary>
     private void ResolveBrand()
     {
         try
@@ -195,6 +212,7 @@ public class AiAssistViewModel : ObservableObject
             if (Assistant.Config.Mode == AiMode.Local)
             {
                 _brandDomain = "ollama.com";
+                _brandLogoUrl = "https://ollama.com/favicon.ico";
                 AssistantInitial = "O";
                 AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(0, 0, 0));
                 HasBrand = true;
@@ -222,6 +240,7 @@ public class AiAssistViewModel : ObservableObject
             if (h.Contains("openai.com") || h.Contains("api.openai.com"))
             {
                 _brandDomain = "openai.com";
+                _brandLogoUrl = "https://openai.com/favicon.ico";
                 AssistantInitial = "O";
                 AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(16, 163, 127));
                 HasBrand = true;
@@ -230,6 +249,7 @@ public class AiAssistViewModel : ObservableObject
             if (h.Contains("deepseek.com"))
             {
                 _brandDomain = "deepseek.com";
+                _brandLogoUrl = "https://www.deepseek.com/favicon.ico";
                 AssistantInitial = "D";
                 AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(76, 154, 255));
                 HasBrand = true;
@@ -238,6 +258,7 @@ public class AiAssistViewModel : ObservableObject
             if (h.Contains("anthropic.com"))
             {
                 _brandDomain = "anthropic.com";
+                _brandLogoUrl = "https://claude.ai/images/claude_app_icon.png";
                 AssistantInitial = "A";
                 AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(207, 90, 85));
                 HasBrand = true;
@@ -246,6 +267,7 @@ public class AiAssistViewModel : ObservableObject
             if (h.Contains("moonshot.cn"))
             {
                 _brandDomain = "moonshot.cn";
+                _brandLogoUrl = "https://statics.moonshot.cn/kimi-web-seo/favicon.ico";
                 AssistantInitial = "K";
                 AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(255, 102, 0));
                 HasBrand = true;
@@ -254,6 +276,7 @@ public class AiAssistViewModel : ObservableObject
             if (h.Contains("aliyun.com") || h.Contains("dashscope"))
             {
                 _brandDomain = "aliyun.com";
+                _brandLogoUrl = "https://g.alicdn.com/qwenweb/qwen-ai-fe/0.0.4/favicon.ico";
                 AssistantInitial = "通";
                 AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(109, 40, 217));
                 HasBrand = true;
@@ -262,6 +285,7 @@ public class AiAssistViewModel : ObservableObject
             if (h.Contains("mistral.ai"))
             {
                 _brandDomain = "mistral.ai";
+                _brandLogoUrl = "https://mistral.ai/favicon.ico";
                 AssistantInitial = "M";
                 AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(255, 0, 106));
                 HasBrand = true;
@@ -270,6 +294,7 @@ public class AiAssistViewModel : ObservableObject
             if (h.Contains("groq.com"))
             {
                 _brandDomain = "groq.com";
+                _brandLogoUrl = "https://groq.com/favicon.ico";
                 AssistantInitial = "G";
                 AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(250, 0, 80));
                 HasBrand = true;
@@ -278,6 +303,7 @@ public class AiAssistViewModel : ObservableObject
             if (h.Contains("googleapis.com"))
             {
                 _brandDomain = "google.com";
+                _brandLogoUrl = null; // Gemini 官方图标在海外 gstatic，国内不稳，仅走 iowen 回退
                 AssistantInitial = "G";
                 AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(66, 133, 244));
                 HasBrand = true;
@@ -285,6 +311,7 @@ public class AiAssistViewModel : ObservableObject
             }
 
             _brandDomain = GetRegistrableDomain(host);
+            _brandLogoUrl = null; // 未知品牌：仅走 iowen 回退
             AssistantInitial = char.ToUpperInvariant(host[0]).ToString();
             AssistantBrandBrush = new SolidColorBrush(Color.FromRgb(59, 130, 246));
             HasBrand = true;
