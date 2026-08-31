@@ -6,100 +6,76 @@
         <vm:AiAssistViewModel/>
     </UserControl.DataContext>
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="140"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+    <DockPanel Margin="18" LastChildFill="True">
 
-        <!-- ===== 左侧功能列表 ===== -->
-        <ListBox Grid.Column="0" ItemsSource="{Binding Functions}"
-                 SelectedItem="{Binding SelectedFunction}"
-                 Background="{DynamicResource ControlBackground}"
-                 BorderBrush="{DynamicResource ControlBorder}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid Height="40" Cursor="Hand">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="28"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{Binding Emoji}" FontSize="14"
-                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="12"
-                                   VerticalAlignment="Center" Margin="4,0,0,0"
-                                   Foreground="{DynamicResource PrimaryForeground}"/>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <!-- 标题 -->
+        <TextBlock DockPanel.Dock="Top" Text="AI 助手" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
 
-        <!-- ===== 右侧内容区（按功能切换） ===== -->
-        <ScrollViewer Grid.Column="1" Margin="12,0,0,0" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-
-                <!-- 崩溃解读 -->
-                <StackPanel Visibility="{Binding ShowCrash, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="崩溃解读" FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
-                    <TextBox Text="{Binding CrashText, UpdateSourceTrigger=PropertyChanged}" Height="180"
-                             AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                             Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
-                             BorderBrush="{DynamicResource InputBorder}"/>
-                    <Button Content="解读" Command="{Binding InterpretCommand}" Width="80"
-                            Style="{StaticResource PrimaryButtonStyle}" Padding="0,4" Margin="0,8,0,0"/>
-                    <Border Background="{DynamicResource ControlBackground}" CornerRadius="6" Padding="10" Margin="0,8,0,0">
-                        <TextBlock Text="{Binding Interpretation}" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource PrimaryForeground}"/>
-                    </Border>
-                </StackPanel>
-
-                <!-- 推荐理由 -->
-                <StackPanel Visibility="{Binding ShowRecommend, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="配装推荐 / 推荐理由" FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
-                    <TextBox Text="{Binding RecommendInput, UpdateSourceTrigger=PropertyChanged}" Height="100"
-                             AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                             Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
-                             BorderBrush="{DynamicResource InputBorder}"
-                             ToolTip="描述你的玩法偏好，AI 会推荐适合的 Mod"/>
-                    <Button Content="推荐" Command="{Binding RecommendCommand}" Width="80"
-                            Style="{StaticResource PrimaryButtonStyle}" Padding="0,4" Margin="0,8,0,0"/>
-                    <Border Background="{DynamicResource ControlBackground}" CornerRadius="6" Padding="10" Margin="0,8,0,0">
-                        <TextBlock Text="{Binding RecommendOutput}" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource PrimaryForeground}"/>
-                    </Border>
-                </StackPanel>
-
-                <!-- Mod 翻译 -->
-                <StackPanel Visibility="{Binding ShowTranslate, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Mod 描述翻译" FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
-                    <TextBox Text="{Binding ModText, UpdateSourceTrigger=PropertyChanged}" Height="180"
-                             AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                             Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
-                             BorderBrush="{DynamicResource InputBorder}"/>
-                    <Button Content="翻译" Command="{Binding TranslateCommand}" Width="80"
-                            Style="{StaticResource PrimaryButtonStyle}" Padding="0,4" Margin="0,8,0,0"/>
-                    <Border Background="{DynamicResource ControlBackground}" CornerRadius="6" Padding="10" Margin="0,8,0,0">
-                        <TextBlock Text="{Binding Translated}" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource PrimaryForeground}"/>
-                    </Border>
-                </StackPanel>
-
-                <!-- 年度总结 -->
-                <StackPanel Visibility="{Binding ShowSummary, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="年度总结" FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
-                    <TextBlock Text="根据你的游玩记录，AI 生成一段年度总结。" Margin="0,0,0,8"
-                               Foreground="{DynamicResource SecondaryForeground}"/>
-                    <Button Content="生成总结" Command="{Binding SummaryCommand}" Width="100"
-                            Style="{StaticResource PrimaryButtonStyle}" Padding="0,4"/>
-                    <Border Background="{DynamicResource ControlBackground}" CornerRadius="6" Padding="10" Margin="0,8,0,0">
-                        <TextBlock Text="{Binding AnnualSummary}" TextWrapping="Wrap"
-                                   Foreground="{DynamicResource PrimaryForeground}"/>
-                    </Border>
-                </StackPanel>
-
-                <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource StatusForeground}"
-                           Margin="0,8,0,0"/>
+        <!-- 底部：快捷操作 + 输入 + 发送 -->
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Button Style="{StaticResource GhostButtonStyle}" Content="崩溃分析" Command="{Binding CrashCommand}" Margin="0,0,6,0"/>
+                <Button Style="{StaticResource GhostButtonStyle}" Content="Mod 翻译" Command="{Binding TranslateCommand}" Margin="0,0,6,0"/>
+                <Button Style="{StaticResource GhostButtonStyle}" Content="配装推荐" Command="{Binding RecommendCommand}" Margin="0,0,6,0"/>
+                <Button Style="{StaticResource GhostButtonStyle}" Content="年度总结" Command="{Binding SummaryCommand}"/>
             </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                         MinHeight="44" MaxHeight="120" TextWrapping="Wrap" VerticalContentAlignment="Top" Margin="0,0,8,0"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="{DynamicResource InputBackground}" Foreground="{DynamicResource PrimaryForeground}" BorderBrush="{DynamicResource InputBorder}"/>
+                <Button Grid.Column="1" Style="{StaticResource PrimaryButtonStyle}" Content="发送" MinWidth="72" Height="44"
+                        Command="{Binding SendCommand}" VerticalAlignment="Bottom"/>
+            </Grid>
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource StatusForeground}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- 对话区 -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Messages}" Margin="0,0,4,4">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,6,0,0">
+
+                            <!-- 用户气泡（右对齐）-->
+                            <Border Visibility="{Binding IsUser, Converter={StaticResource BoolToVis}}"
+                                    Background="{DynamicResource AccentBrush}" CornerRadius="12,12,4,12"
+                                    Padding="10,8" MaxWidth="560" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding Content}" Foreground="White" TextWrapping="Wrap" FontSize="13"/>
+                            </Border>
+
+                            <!-- 助手气泡（左对齐 + 头像）-->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left"
+                                        Visibility="{Binding IsUser, Converter={StaticResource BoolToVisInvert}}">
+                                <Border Width="30" Height="30" CornerRadius="15"
+                                        Background="{DynamicResource ControlBackground}"
+                                        BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1" Margin="0,0,8,0">
+                                    <Grid>
+                                        <!-- 品牌 logo：白色圆形衬底确保在暗色主题下也能看清深色 favicon -->
+                                        <Border Width="22" Height="22" CornerRadius="11" Background="White"
+                                                Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.HasLogo, Converter={StaticResource BoolToVis}}">
+                                            <Image Source="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.AssistantLogo}"
+                                                   Stretch="Uniform" Margin="2"/>
+                                        </Border>
+                                        <TextBlock Text="🤖" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Visibility="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=UserControl}, Path=DataContext.HasLogo, Converter={StaticResource BoolToVisInvert}}"/>
+                                    </Grid>
+                                </Border>
+                                <Border Background="{DynamicResource ControlBackground}" CornerRadius="12,12,12,4"
+                                        Padding="10,8" BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1" MaxWidth="640">
+                                    <TextBlock Text="{Binding Content}" Foreground="{DynamicResource PrimaryForeground}" TextWrapping="Wrap" FontSize="13"/>
+                                </Border>
+                            </StackPanel>
+
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </ScrollViewer>
-    </Grid>
+
+    </DockPanel>
 </UserControl>
