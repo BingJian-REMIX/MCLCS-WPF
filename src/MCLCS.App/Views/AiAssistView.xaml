@@ -54,7 +54,12 @@
                             HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,36,0,16" MaxWidth="640">
                     <Border Width="64" Height="64" CornerRadius="32" HorizontalAlignment="Center"
                             Background="{DynamicResource ControlBackground}" BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1">
-                        <TextBlock Text="🤖" FontSize="34" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Grid>
+                            <Image Source="{Binding AssistantLogo}" Stretch="Uniform" Margin="9"
+                                   Visibility="{Binding HasLogo, Converter={StaticResource BoolToVis}}"/>
+                            <TextBlock Text="🤖" FontSize="34" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Visibility="{Binding HasLogo, Converter={StaticResource BoolToVisInvert}}"/>
+                        </Grid>
                     </Border>
                     <TextBlock Text="MCLCS AI 助手" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,14,0,6"/>
                     <TextBlock Text="我可以帮你分析崩溃日志、推荐 Mod、翻译描述、生成年度总结，也可以直接聊天。"
@@ -62,25 +67,25 @@
                     <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,18,0,0">
                         <Button Style="{StaticResource SuggestionCardStyle}" Command="{Binding CrashCommand}">
                             <StackPanel>
-                                <TextBlock Text="💥 崩溃分析" FontWeight="Bold"/>
+                                <TextBlock Text="崩溃分析" FontWeight="Bold"/>
                                 <TextBlock Text="自动分析最近一次崩溃日志" Foreground="{DynamicResource SecondaryForeground}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Button>
                         <Button Style="{StaticResource SuggestionCardStyle}" Command="{Binding TranslateCommand}">
                             <StackPanel>
-                                <TextBlock Text="🌐 Mod 翻译" FontWeight="Bold"/>
+                                <TextBlock Text="Mod 翻译" FontWeight="Bold"/>
                                 <TextBlock Text="把英文 Mod 描述译为中文" Foreground="{DynamicResource SecondaryForeground}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Button>
                         <Button Style="{StaticResource SuggestionCardStyle}" Command="{Binding RecommendCommand}">
                             <StackPanel>
-                                <TextBlock Text="🎒 配装推荐" FontWeight="Bold"/>
+                                <TextBlock Text="配装推荐" FontWeight="Bold"/>
                                 <TextBlock Text="按你的玩法偏好推荐 Mod" Foreground="{DynamicResource SecondaryForeground}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Button>
                         <Button Style="{StaticResource SuggestionCardStyle}" Command="{Binding SummaryCommand}">
                             <StackPanel>
-                                <TextBlock Text="📊 年度总结" FontWeight="Bold"/>
+                                <TextBlock Text="年度总结" FontWeight="Bold"/>
                                 <TextBlock Text="汇总你这一年的游玩记录" Foreground="{DynamicResource SecondaryForeground}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Button>
@@ -162,17 +167,17 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- 输入栏 -->
+        <!-- 输入栏（钉在底部，输入框多行自适应增高） -->
         <Border Grid.Row="1" Background="{DynamicResource ControlBackground}" BorderBrush="{DynamicResource ControlBorder}" BorderThickness="0,1,0,0" Padding="16,12">
             <StackPanel MaxWidth="820">
-                <!-- 快捷功能 chips -->
+                <!-- 快捷功能 chips（纯文字） -->
                 <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Button Style="{StaticResource GhostButtonStyle}" Content="💥 崩溃分析" Command="{Binding CrashCommand}" Margin="0,0,6,0"/>
-                    <Button Style="{StaticResource GhostButtonStyle}" Content="🌐 Mod 翻译" Command="{Binding TranslateCommand}" Margin="0,0,6,0"/>
-                    <Button Style="{StaticResource GhostButtonStyle}" Content="🎒 配装推荐" Command="{Binding RecommendCommand}" Margin="0,0,6,0"/>
-                    <Button Style="{StaticResource GhostButtonStyle}" Content="📊 年度总结" Command="{Binding SummaryCommand}"/>
+                    <Button Style="{StaticResource GhostButtonStyle}" Content="崩溃分析" Command="{Binding CrashCommand}" Margin="0,0,6,0"/>
+                    <Button Style="{StaticResource GhostButtonStyle}" Content="Mod 翻译" Command="{Binding TranslateCommand}" Margin="0,0,6,0"/>
+                    <Button Style="{StaticResource GhostButtonStyle}" Content="配装推荐" Command="{Binding RecommendCommand}" Margin="0,0,6,0"/>
+                    <Button Style="{StaticResource GhostButtonStyle}" Content="年度总结" Command="{Binding SummaryCommand}"/>
                 </WrapPanel>
-                <Grid>
+                <Grid VerticalAlignment="Bottom">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -183,7 +188,7 @@
                                        Foreground="{DynamicResource SecondaryForeground}" Margin="8,8,8,8"
                                        IsHitTestVisible="False" VerticalAlignment="Top"/>
                             <TextBox x:Name="InputBox" Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
-                                     MinHeight="42" MaxHeight="120" TextWrapping="Wrap" VerticalContentAlignment="Top"
+                                     MinHeight="42" MaxHeight="160" TextWrapping="Wrap" VerticalContentAlignment="Top"
                                      Background="Transparent" BorderThickness="0" Foreground="{DynamicResource PrimaryForeground}"
                                      VerticalScrollBarVisibility="Auto" Padding="4"
                                      TextChanged="InputBox_TextChanged" GotFocus="InputBox_GotFocus" LostFocus="InputBox_LostFocus"/>
