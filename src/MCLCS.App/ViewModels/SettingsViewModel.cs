@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
+using Microsoft.VisualBasic;
 using MCLCS.Core.Ai;
 using MCLCS.Core.Auth;
 using MCLCS.Core.Hud;
@@ -539,7 +540,8 @@ public class SettingsViewModel : ObservableObject
         try
         {
             var auth = new MicrosoftAuthenticator(new HttpClient(),
-                code => UIService.ShowMessage(code, "微软登录"));
+                msg => UIService.ShowMessage(msg, "微软登录"),
+                prompt => Task.FromResult(Interaction.InputBox(prompt, "微软登录", "")));
             var session = await auth.AuthenticateAsync(null);
             AccountStore.Upsert(GameConstants.DefaultGameRoot, new AccountEntry
             {
