@@ -27,14 +27,22 @@ public class ChatMessage : ObservableObject
     }
 }
 
-/// <summary>AI 助手面板（工具箱 aichat）：单页聊天界面，对齐 Linux AiAssistView。
+/// <summary>AI 助手面板（工具箱 aichat）：单页聊天界面，对齐网页 AI 对话（DeepSeek/Kimi）结构。
 /// 自由输入走 Assistant.ChatAsync；另保留崩溃解读 / Mod 翻译 / 配装推荐 / 年度总结 快捷操作，避免功能回退。</summary>
 public class AiAssistViewModel : ObservableObject
 {
     public ObservableCollection<ChatMessage> Messages { get; } = new();
 
     private string _inputText = "";
-    public string InputText { get => _inputText; set => SetField(ref _inputText, value); }
+    public string InputText
+    {
+        get => _inputText;
+        set
+        {
+            if (SetField(ref _inputText, value))
+                (_sendCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        }
+    }
 
     private bool _isBusy;
     public bool IsBusy { get => _isBusy; set => SetField(ref _isBusy, value); }
@@ -43,6 +51,9 @@ public class AiAssistViewModel : ObservableObject
     public string StatusMessage { get => _statusMessage; set => SetField(ref _statusMessage, value); }
 
     public bool AiEnabled => Assistant.Config.Enabled;
+
+    /// <summary>对话区是否仍处于欢迎态（仅有首条问候，未产生任何真实对话）。</summary>
+    public bool ShowWelcome => Messages.Count <= 1;
 
     private ImageSource? _assistantLogo;
     public ImageSource? AssistantLogo
@@ -58,17 +69,31 @@ public class AiAssistViewModel : ObservableObject
         private set => SetField(ref _hasLogo, value);
     }
 
-    public ICommand SendCommand => new AsyncRelayCommand(_ => SendAsync(), _ => !IsBusy);
-    public ICommand CrashCommand => new AsyncRelayCommand(_ => CrashAnalyzeAsync(), _ => !IsBusy);
-    public ICommand TranslateCommand => new AsyncRelayCommand(_ => TranslateAsync(), _ => !IsBusy);
-    public ICommand RecommendCommand => new AsyncRelayCommand(_ => RecommendAsync(), _ => !IsBusy);
-    public ICommand SummaryCommand => new AsyncRelayCommand(_ => SummaryAsync(), _ => !IsBusy);
+    private readonly ICommand _sendCommand;
+    private readonly ICommand _crashCommand;
+    private readonly ICommand _translateCommand;
+    private readonly ICommand _recommendCommand;
+    private readonly ICommand _summaryCommand;
+
+    public ICommand SendCommand => _sendCommand;
+    public ICommand CrashCommand => _crashCommand;
+    public ICommand TranslateCommand => _translateCommand;
+    public ICommand RecommendCommand => _recommendCommand;
+    public ICommand SummaryCommand => _summaryCommand;
 
     public AiAssistViewModel()
     {
+        _sendCommand = new AsyncRelayCommand(_ => SendAsync(), _ => !IsBusy && !string.IsNullOrWhiteSpace(InputText));
+        _crashCommand = new AsyncRelayCommand(_ => CrashAnalyzeAsync(), _ => !IsBusy);
+        _translateCommand = new AsyncRelayCommand(_ => TranslateAsync(), _ => !IsBusy);
+        _recommendCommand = new AsyncRelayCommand(_ => RecommendAsync(), _ => !IsBusy);
+        _summaryCommand = new AsyncRelayCommand(_ => SummaryAsync(), _ => !IsBusy);
+
         // 设计稿问候语（首条助手气泡）
         Messages.Add(new ChatMessage("assistant",
             "你好！我是 MCLCS AI 助手。可直接输入问题，支持崩溃分析、Mod 推荐、翻译等。"));
+        Messages.CollectionChanged += (_, _) => OnPropertyChanged(nameof(ShowWelcome));
+
         _ = LoadAssistantLogoAsync();   // 异步拉取部署 AI 的 logo，失败则保持 null → emoji 兜底
     }
 
