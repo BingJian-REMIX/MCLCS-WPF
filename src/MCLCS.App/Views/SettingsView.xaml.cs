@@ -14,14 +14,6 @@ public partial class SettingsView : UserControl
         InitializeComponent();
         CategoryList.SelectedIndex = 0;
         ShowCategory("General");
-        // 回填 API Key 密文（PasswordBox 不参与 TwoWay 绑定）
-        Loaded += (_, _) =>
-        {
-            if (Vm is not null)
-            {
-                AiKeyPw.Password = Vm.AiApiKey;
-            }
-        };
     }
 
     private void CategoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -38,7 +30,7 @@ public partial class SettingsView : UserControl
         GridDownload.Visibility = tag == "Download" ? Visibility.Visible : Visibility.Collapsed;
         GridRecommend.Visibility = tag == "Recommend" ? Visibility.Visible : Visibility.Collapsed;
         GridAccounts.Visibility = tag == "Accounts" ? Visibility.Visible : Visibility.Collapsed;
-        GridAi.Visibility = tag == "Ai" ? Visibility.Visible : Visibility.Collapsed;
+        AiSettingsHost.Visibility = tag == "Ai" ? Visibility.Visible : Visibility.Collapsed;
         GridAppearance.Visibility = tag == "Appearance" ? Visibility.Visible : Visibility.Collapsed;
         GridAbout.Visibility = tag == "About" ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -61,19 +53,6 @@ public partial class SettingsView : UserControl
     {
         if (DataContext is SettingsViewModel vm)
             await vm.AddAuthlibAccount(vm.AuthlibServerUrl, vm.AuthlibEmail, AuthlibPw.Password);
-    }
-
-    // AI 助手：本地模型切换（未下载时按规格弹确认窗，取消则回退）
-    private async void LocalModelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (LocalModelCombo.SelectedValue is string name && Vm is not null)
-            await Vm.TrySelectLocalModelAsync(name);
-    }
-
-    // AI 助手：API Key 密文实时同步到配置
-    private void AiKeyPw_PasswordChanged(object sender, RoutedEventArgs e)
-    {
-        if (Vm is not null) Vm.AiApiKey = AiKeyPw.Password;
     }
 
     private void OpenUrl_Click(object sender, RoutedEventArgs e)
