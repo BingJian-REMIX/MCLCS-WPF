@@ -62,10 +62,12 @@ public partial class App : Application
         _crashHandling = true;
         try
         {
-            // 崩溃日志路径跟随 exe 实际文件名（不再硬编码 MCLCS.App.exe，改名后兜底依然有效）
+            // 崩溃日志路径跟随 exe 实际文件名：GUI 启动器输出 MCLCS.exe（AssemblyName 仍保留 MCLCS.App，
+            // 仅用 TargetName 改写输出文件名），CLI 工具输出 mclcs.exe。优先用 Environment.ProcessPath 取真实路径，
+            // 兜底取当前进程主模块路径，确保无论改名与否都能定位到真正的 exe 同目录。
             var exePath = Environment.ProcessPath
-                          ?? Path.Combine(AppContext.BaseDirectory,
-                              (System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name ?? "MCLCS") + ".exe");
+                          ?? (System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName)
+                          ?? Path.Combine(AppContext.BaseDirectory, "MCLCS.exe");
             var dir = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory;
             var logPath = Path.Combine(dir, "mclcs_crash.log");
             var sb = new StringBuilder();

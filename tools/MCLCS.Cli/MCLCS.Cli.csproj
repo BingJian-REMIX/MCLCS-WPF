@@ -5,7 +5,9 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>MCLCS.Cli</AssemblyName>
+    <!-- CLI 输出 exe 直接命名为 mclcs（AssemblyName=mclcs）。启动器内部 AssemblyName 为 MCLCS.App（非 MCLCS），
+         与 mclcs 大小写不敏感不撞名，且 CLI 输出目录里 mclcs.exe 与拷入的 MCLCS.App.exe 也不冲突，故无需改名目标。 -->
+    <AssemblyName>mclcs</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

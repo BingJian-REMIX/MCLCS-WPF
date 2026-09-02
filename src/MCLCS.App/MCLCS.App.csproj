@@ -15,7 +15,11 @@
     <!-- 仅保留简体中文框架资源（zh-Hans），剔除其余语言卫星程序集，缩小发布体积 -->
     <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
     <RootNamespace>MCLCS.App</RootNamespace>
-    <AssemblyName>MCLCS</AssemblyName>
+    <!-- AssemblyName 保持 MCLCS.App：若改成 MCLCS 会与 CLI 工具的 mclcs 在 Windows 大小写不敏感下等同，
+         既触发 NuGet restore 的 Ambiguous project name，又会让二者 exe 在 CLI 输出目录同名互相覆盖。
+         故启动器内部名为 MCLCS.App，下面 RenameLauncherToMCLCS 目标把输出 exe 额外复制为用户友好的 MCLCS.exe
+         （同时复制 runtimeconfig/deps/pdb）；原 MCLCS.App.exe 保留，供 CLI 工程经 ProjectReference 拷贝其类型。 -->
+    <AssemblyName>MCLCS.App</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- 应用图标（Windows 多分辨率 ico）：在资源管理器/任务栏显示，并随打包进 exe。
          托盘图标同样取自该文件（见 Services/TrayIconService.cs）。 -->
@@ -39,5 +43,28 @@
   <ItemGroup>
     <None Include="Resources\MCLCS.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!-- 构建后把 MCLCS.App.exe 额外复制为用户友好的 MCLCS.exe（同时复制 runtimeconfig/deps/pdb）。
+       原 MCLCS.App.exe 保留，供 CLI 工程通过 ProjectReference 拷贝其 MCLCS.App 命名空间类型使用。 -->
+  <Target Name="RenameLauncherToMCLCS" AfterTargets="Build"
+          Inputs="$(OutDir)$(TargetName).exe"
+          Outputs="$(OutDir)MCLCS.exe">
+    <PropertyGroup>
+      <_LauncherSrcBase>$(OutDir)$(TargetName)</_LauncherSrcBase>
+      <_LauncherDstBase>$(OutDir)MCLCS</_LauncherDstBase>
+    </PropertyGroup>
+    <Copy SourceFiles="$(_LauncherSrcBase).exe"
+          DestinationFiles="$(_LauncherDstBase).exe"
+          Condition="Exists('$(_LauncherSrcBase).exe')" />
+    <Copy SourceFiles="$(_LauncherSrcBase).runtimeconfig.json"
+          DestinationFiles="$(_LauncherDstBase).runtimeconfig.json"
+          Condition="Exists('$(_LauncherSrcBase).runtimeconfig.json')" />
+    <Copy SourceFiles="$(_LauncherSrcBase).deps.json"
+          DestinationFiles="$(_LauncherDstBase).deps.json"
+          Condition="Exists('$(_LauncherSrcBase).deps.json')" />
+    <Copy SourceFiles="$(_LauncherSrcBase).pdb"
+          DestinationFiles="$(_LauncherDstBase).pdb"
+          Condition="Exists('$(_LauncherSrcBase).pdb')" />
+  </Target>
 
 </Project>
