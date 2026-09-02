@@ -62,8 +62,10 @@ public partial class App : Application
         _crashHandling = true;
         try
         {
-            var exePath = Environment.ProcessPath ?? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar)
-                          + (Environment.ProcessPath is null ? "MCLCS.App.exe" : "");
+            // 崩溃日志路径跟随 exe 实际文件名（不再硬编码 MCLCS.App.exe，改名后兜底依然有效）
+            var exePath = Environment.ProcessPath
+                          ?? Path.Combine(AppContext.BaseDirectory,
+                              (System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name ?? "MCLCS") + ".exe");
             var dir = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory;
             var logPath = Path.Combine(dir, "mclcs_crash.log");
             var sb = new StringBuilder();

@@ -38,7 +38,7 @@ internal static class Program
 
     private static int UnknownCommand(string cmd)
     {
-        Console.Error.WriteLine($"未知命令: {cmd}。运行 mclcs help 查看帮助。");
+        Console.Error.WriteLine($"未知命令: {cmd}。运行 MCLCS.Cli help 查看帮助。");
         return 1;
     }
 
@@ -68,7 +68,7 @@ internal static class Program
 
         if (string.IsNullOrEmpty(versionId))
         {
-            Console.Error.WriteLine("用法: mclcs launch <versionId> [--username name] [--memory MB] [--java path] [--game-dir path]");
+            Console.Error.WriteLine("用法: MCLCS.Cli launch <versionId> [--username name] [--memory MB] [--java path] [--game-dir path]");
             return 1;
         }
 
@@ -103,7 +103,7 @@ internal static class Program
 
         if (versions.Count == 0)
         {
-            Console.WriteLine("暂无已安装版本。使用 mclcs install <vanilla|fabric|forge> <version> 安装。");
+            Console.WriteLine("暂无已安装版本。使用 MCLCS.Cli install <vanilla|fabric|forge> <version> 安装。");
             return 0;
         }
 
@@ -117,7 +117,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("用法: mclcs install <vanilla|fabric|forge> <versionId> [--game-dir path]");
+            Console.Error.WriteLine("用法: MCLCS.Cli install <vanilla|fabric|forge> <versionId> [--game-dir path]");
             return 1;
         }
 
@@ -153,7 +153,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("用法: mclcs modpack <modrinth> <文件路径> [--game-dir path]");
+            Console.Error.WriteLine("用法: MCLCS.Cli modpack <modrinth> <文件路径> [--game-dir path]");
             return 1;
         }
 
@@ -255,7 +255,7 @@ internal static class Program
                 return 0;
             }
             default:
-                Console.Error.WriteLine("用法: mclcs mods <list|check|updates> [--game-dir path]");
+                Console.Error.WriteLine("用法: MCLCS.Cli mods <list|check|updates> [--game-dir path]");
                 return 1;
         }
     }
@@ -264,7 +264,7 @@ internal static class Program
     {
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("用法: mclcs skin <username>");
+            Console.Error.WriteLine("用法: MCLCS.Cli skin <username>");
             return 1;
         }
 
