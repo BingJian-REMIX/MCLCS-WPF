@@ -92,6 +92,7 @@ public class SettingsViewModel : ObservableObject
     private string _authlibServerUrl = "";
     private string _authlibEmail = "";
     private string _authlibPassword = "";
+    private string _microsoftOAuthClientId = "";
 
     private string _statusMessage = "";
 
@@ -259,6 +260,7 @@ public class SettingsViewModel : ObservableObject
     public string AuthlibServerUrl { get => _authlibServerUrl; set => SetField(ref _authlibServerUrl, value); }
     public string AuthlibEmail { get => _authlibEmail; set => SetField(ref _authlibEmail, value); }
     public string AuthlibPassword { get => _authlibPassword; set => SetField(ref _authlibPassword, value); }
+    public string MicrosoftOAuthClientId { get => _microsoftOAuthClientId; set => SetField(ref _microsoftOAuthClientId, value); }
 
     public string StatusMessage { get => _statusMessage; set => SetField(ref _statusMessage, value); }
 
@@ -351,6 +353,9 @@ public class SettingsViewModel : ObservableObject
 
         // 关于
         AutoUpdateCheck = profile.AutoUpdateCheck;
+
+        // 账号
+        MicrosoftOAuthClientId = profile.MicrosoftOAuthClientId ?? "";
     }
 
     private void LoadCategoryPreferences(LauncherProfile profile)
@@ -433,6 +438,9 @@ public class SettingsViewModel : ObservableObject
 
             // 关于 / 更新
             AutoUpdateCheck = AutoUpdateCheck,
+
+            // 账号
+            MicrosoftOAuthClientId = MicrosoftOAuthClientId?.Trim() ?? "",
 
         };
         _aiVm.ApplyTo(profile);
@@ -539,7 +547,14 @@ public class SettingsViewModel : ObservableObject
     {
         try
         {
-            var auth = new MicrosoftAuthenticator(new HttpClient(),
+            var clientId = MicrosoftOAuthClientId?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(clientId))
+            {
+                StatusMessage = "微软登录失败：请先在下方填写 Microsoft OAuth client_id 并保存设置。";
+                return;
+            }
+
+            var auth = new MicrosoftAuthenticator(new HttpClient(), clientId,
                 msg => UIService.ShowMessage(msg, "微软登录"),
                 prompt => Task.FromResult(Interaction.InputBox(prompt, "微软登录", "")));
             var session = await auth.AuthenticateAsync(null);

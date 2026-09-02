@@ -7,13 +7,12 @@ namespace MCLCS.Core.Auth;
 
 /// <summary>
 /// Microsoft 账号认证：OAuth2 授权码流（PKCE）→ Xbox Live → XSTS → Minecraft 令牌。
-/// 使用 Minecraft Launcher 官方 client_id（00000000402b5328，已在 XboxLive 白名单中）。
-/// 由于该 client_id 注册的回跳地址固定为 https://login.live.com/oauth20_desktop.srf，无法使用 localhost loopback，
-/// 因此打开系统浏览器后需要用户将回跳地址粘贴回来（后续可替换为内嵌 WebView2 自动捕获）。
+/// client_id 由用户在设置中提供，对应 Azure 应用必须注册回跳地址 https://login.live.com/oauth20_desktop.srf。
+/// 由于该回跳地址固定，无法使用 localhost loopback，因此打开系统浏览器后需要用户将回跳地址粘贴回来
+/// （后续可替换为内嵌 WebView2 自动捕获）。
 /// </summary>
 public class MicrosoftAuthenticator : IAuthenticator
 {
-    private const string ClientId = "00000000402b5328"; // Minecraft Launcher 官方 client_id
     private const string AuthorizeUrl = "https://login.live.com/oauth20_authorize.srf";
     private const string TokenUrl = "https://login.live.com/oauth20_token.srf";
     private const string DeviceCodeUrl = "https://login.live.com/oauth20_token.srf";
@@ -25,18 +24,22 @@ public class MicrosoftAuthenticator : IAuthenticator
     private const string Scope = "service::user.auth.xboxlive.com::MBI_SSL";
 
     private readonly HttpClient _client;
+    private readonly string _clientId;
     private readonly Action<string>? _onUserCode;
     private readonly Func<string, Task<string>>? _onPromptUrl;
 
     /// <param name="client">HttpClient 实例</param>
+    /// <param name="clientId">Azure 应用的 OAuth client_id</param>
     /// <param name="onUserCode">提示回调（显示登录链接或状态）</param>
     /// <param name="onPromptUrl">请求用户粘贴浏览器回跳地址的回调</param>
     public MicrosoftAuthenticator(HttpClient client,
+        string clientId,
         Action<string>? onUserCode = null,
         Func<string, Task<string>>? onPromptUrl = null)
     {
         _client = client;
         _client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "MCLCS/2.5");
+        _clientId = clientId;
         _onUserCode = onUserCode;
         _onPromptUrl = onPromptUrl;
     }
@@ -64,11 +67,14 @@ public class MicrosoftAuthenticator : IAuthenticator
     // ---- 授权码流（PKCE + 系统浏览器 + 粘贴回跳 URL）----
     private async Task<string> AuthorizationCodeLoginAsync(CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(_clientId))
+            throw new InvalidOperationException("未配置 Microsoft OAuth client_id，请先在设置 → 账号中填写。");
+
         var verifier = GenerateCodeVerifier();
         var challenge = ComputeChallenge(verifier);
 
         var authUrl = AuthorizeUrl +
-                      $"?client_id={ClientId}" +
+                      $"?client_id={_clientId}" +
                       "&response_type=code" +
                       $"&scope={Uri.EscapeDataString(Scope)}" +
                       $"&redirect_uri={Uri.EscapeDataString(RedirectUri)}" +
@@ -116,7 +122,7 @@ public class MicrosoftAuthenticator : IAuthenticator
         var resp = await PostFormAsync(TokenUrl, new()
         {
             ["grant_type"] = "authorization_code",
-            ["client_id"] = ClientId,
+            ["client_id"] = _clientId,
             ["code"] = code,
             ["code_verifier"] = verifier,
             ["redirect_uri"] = RedirectUri,

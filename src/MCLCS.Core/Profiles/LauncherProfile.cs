@@ -129,6 +129,12 @@ public class LauncherProfile
     [JsonPropertyName("ai")]
     public AiConfig Ai { get; set; } = new();
 
+    // ---- 账号（设置 → 账号）----
+
+    /// <summary>Microsoft OAuth 应用的 client_id。留空时使用设备码流/默认行为；填写后使用授权码流（PKCE + 粘贴 URL）。</summary>
+    [JsonPropertyName("microsoftOAuthClientId")]
+    public string MicrosoftOAuthClientId { get; set; } = "";
+
     // ---- v2.0 新增 ----
 
     /// <summary>index 四色主标签的配色（可自定义）。</summary>
