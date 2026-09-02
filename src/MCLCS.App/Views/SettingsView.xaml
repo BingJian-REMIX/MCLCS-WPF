@@ -251,10 +251,10 @@
                         <TextBlock Text="Microsoft client_id：" VerticalAlignment="Center" Width="120" Foreground="{DynamicResource PrimaryForeground}"/>
                         <TextBox Text="{Binding MicrosoftOAuthClientId, UpdateSourceTrigger=PropertyChanged}" Width="300"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}" VerticalContentAlignment="Center"
-                                 ToolTip="填写你的 Azure 应用 client_id，必须注册回跳地址 https://login.live.com/oauth20_desktop.srf"/>
-                        <TextBlock Text="（留空则禁用微软登录）" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11" Foreground="{DynamicResource SecondaryForeground}"/>
+                                 ToolTip="填写你的 Azure 应用 client_id（可选）；留空则使用内置默认 client_id。设备代码流无需配置任何回跳地址。"/>
+                        <TextBlock Text="（留空使用内置默认 client_id）" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11" Foreground="{DynamicResource SecondaryForeground}"/>
                     </StackPanel>
-                    <TextBlock Grid.Row="2" Text="微软登录需要自行提供 client_id，并在 Azure 门户中将回跳地址设为 https://login.live.com/oauth20_desktop.srf。保存设置后点击「登录微软」开始授权。"
+                    <TextBlock Grid.Row="2" Text="微软登录采用设备代码流（device code flow），无需配置任何回跳地址（redirect_uri），兼容性最好。可留空使用内置默认 client_id；如需使用自己的 Azure 应用，填入对应 client_id 即可。保存设置后点击「登录微软」，按弹窗提示在浏览器输入设备代码完成登录。"
                                TextWrapping="Wrap" MaxWidth="640" Margin="0,0,0,8" FontSize="11" Foreground="{DynamicResource SecondaryForeground}"/>
                     <ListBox Grid.Row="2" ItemsSource="{Binding Accounts}" SelectedItem="{Binding SelectedAccount, Mode=TwoWay}"
                              Height="140" Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}" Margin="0,32,0,0">

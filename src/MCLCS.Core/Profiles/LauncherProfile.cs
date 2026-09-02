@@ -131,7 +131,7 @@ public class LauncherProfile
 
     // ---- 账号（设置 → 账号）----
 
-    /// <summary>Microsoft OAuth 应用的 client_id。留空时使用设备码流/默认行为；填写后使用授权码流（PKCE + 粘贴 URL）。</summary>
+    /// <summary>Microsoft OAuth 应用的 client_id（可选）。留空时使用内置默认 client_id；设备代码流无需配置任何回跳地址。</summary>
     [JsonPropertyName("microsoftOAuthClientId")]
     public string MicrosoftOAuthClientId { get; set; } = "";
 

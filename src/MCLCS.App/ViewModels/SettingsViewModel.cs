@@ -4,7 +4,6 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.VisualBasic;
 using MCLCS.Core.Ai;
 using MCLCS.Core.Auth;
 using MCLCS.Core.Hud;
@@ -547,16 +546,12 @@ public class SettingsViewModel : ObservableObject
     {
         try
         {
-            var clientId = MicrosoftOAuthClientId?.Trim() ?? "";
-            if (string.IsNullOrWhiteSpace(clientId))
-            {
-                StatusMessage = "微软登录失败：请先在下方填写 Microsoft OAuth client_id 并保存设置。";
-                return;
-            }
-
+            // 设备代码流无需用户手动粘贴：启动器申请设备码 → 弹窗展示验证码 → 打开浏览器 → 后台轮询换取令牌。
+            // client_id 留空则使用内置默认（官方启动器 client_id）。
+            var clientId = MicrosoftOAuthClientId?.Trim();
+            StatusMessage = "正在发起微软登录…请按弹窗提示在浏览器输入设备代码。";
             var auth = new MicrosoftAuthenticator(new HttpClient(), clientId,
-                msg => UIService.ShowMessage(msg, "微软登录"),
-                prompt => Task.FromResult(Interaction.InputBox(prompt, "微软登录", "")));
+                msg => UIService.ShowMessage(msg, "微软登录"));
             var session = await auth.AuthenticateAsync(null);
             AccountStore.Upsert(GameConstants.DefaultGameRoot, new AccountEntry
             {
