@@ -83,6 +83,8 @@ public class DownloadPageViewModel : ObservableObject
     private string _selectedLoader = "Any";
     private string _statusMessage = "";
     private bool _isBusy;
+    private bool _isSearching;
+    private int _searchSeq;
     private DownloadCardItem? _selectedCard;
 
     // 地图专属
@@ -372,6 +374,13 @@ public class DownloadPageViewModel : ObservableObject
     {
         get => _isBusy;
         set => SetField(ref _isBusy, value);
+    }
+
+    /// <summary>是否正在执行搜索（驱动卡片区加载遮罩，与 IsBusy 区分以免影响下载队列等其他忙碌态）。</summary>
+    public bool IsSearching
+    {
+        get => _isSearching;
+        set => SetField(ref _isSearching, value);
     }
 
     public PixelMapDetail? CurrentMapDetail
@@ -737,6 +746,17 @@ public class DownloadPageViewModel : ObservableObject
         }
     }
 
+    /// <summary>搜索进行中的状态栏提示（按副标签区分，避免 Modrinth 慢响应时卡片区空白被误判为无结果）。</summary>
+    private string LoadingHint() => CurrentSubTab switch
+    {
+        "mod" => "正在加载 Mod…",
+        "shader" => "正在加载光影…",
+        "resourcepack" => "正在加载资源包…",
+        "modpack" => "正在加载整合包…",
+        "map" => "正在加载地图…",
+        _ => "正在加载版本列表…"
+    };
+
     /// <summary>执行搜索。<paramref name="resetPage"/> 为 false 时保留当前页码（翻页场景）。</summary>
     private async Task SearchAsync(bool resetPage = true)
     {
@@ -750,6 +770,9 @@ public class DownloadPageViewModel : ObservableObject
         var tabAtStart = CurrentSubTab;
 
         IsBusy = true;
+        var mySeq = ++_searchSeq;
+        IsSearching = true;
+        StatusMessage = LoadingHint();
         try
         {
             Cards.Clear();
@@ -788,6 +811,7 @@ public class DownloadPageViewModel : ObservableObject
                 _searchCts = null;
                 cts.Dispose();
             }
+            if (mySeq == _searchSeq) IsSearching = false;
             IsBusy = false;
             OnPropertyChanged(nameof(HasPaging));
         }
