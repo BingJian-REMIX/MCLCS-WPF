@@ -425,10 +425,14 @@ public class GameViewModel : ObservableObject
             {
                 Title = name is null ? "添加服务器" : "编辑服务器",
                 Content = view,
+                WindowStyle = WindowStyle.None,
+                AllowsTransparency = true,
+                Background = null,
                 SizeToContent = SizeToContent.WidthAndHeight,
                 Owner = Application.Current.MainWindow,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                ResizeMode = ResizeMode.NoResize
+                ResizeMode = ResizeMode.NoResize,
+                ShowInTaskbar = false
             };
             win.ShowDialog();
             if (view.VM.Confirmed)

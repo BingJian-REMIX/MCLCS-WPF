@@ -155,17 +155,18 @@ public static class Sidebar
         new("crash",      "tool.crash",      "bug",       1, "tool.group.diag"),
         new("perf",       "tool.perf",       "perf",      2, "tool.group.diag"),
         new("network",    "tool.network",    "net",       3, "tool.group.diag"),
-        new("filewatch",  "tool.filewatch",  "fcd",       4, "tool.group.diag"),
         new("datapack",   "tool.datapack",   "dp",        5, "tool.group.diag"),
 
         // 资源与内容
-        new("saves",      "tool.saves",      "save",      6, "tool.group.resource"),
-        new("backup",     "tool.backup",     "backup",    7, "tool.group.resource"),
-        new("screenshot", "tool.screenshot", "shot",      8, "tool.group.resource"),
-        new("clean",      "tool.clean",      "clean",     9, "tool.group.resource"),
-        new("modpackio",  "tool.modpackio",  "modpack",  10, "tool.group.resource"),
-        new("music",      "tool.music",      "music",    11, "tool.group.resource"),
-        new("map",        "tool.map",        "map",      12, "tool.group.resource"),
+        new("versionlist", "tool.versionlist", "pack",        6, "tool.group.resource"),
+        new("versionsettings", "version.settings.title", "general", 7, "tool.group.resource"),
+        new("saves",      "tool.saves",      "save",      8, "tool.group.resource"),
+        new("backup",     "tool.backup",     "backup",    9, "tool.group.resource"),
+        new("screenshot", "tool.screenshot", "shot",     10, "tool.group.resource"),
+        new("clean",      "tool.clean",      "clean",    11, "tool.group.resource"),
+        new("modpackio",  "tool.modpackio",  "modpack",  12, "tool.group.resource"),
+        new("music",      "tool.music",      "music",    13, "tool.group.resource"),
+        new("map",        "tool.map",        "map",      14, "tool.group.resource"),
 
         // 开发工具
         new("moddev",     "tool.moddev",     "dev",      12, "tool.group.dev"),

@@ -55,7 +55,6 @@ public static class ToolboxCatalog
         new("crash",      "崩溃分析",     "解析崩溃报告并给出修复建议",             ToolboxGroup.Diagnostics, "bug",        1),
         new("network",    "网络诊断",     "测试各下载源连通性与延迟",               ToolboxGroup.Diagnostics, "activity",   2),
         new("perf",       "性能监控",     "监控 CPU / 内存 / FPS，可投送到 HUD",    ToolboxGroup.Diagnostics, "gauge",      3),
-        new("filewatch",  "文件变更检测", "对比目录快照，找出被改动的文件",         ToolboxGroup.Diagnostics, "search",     4, since2: true),
 
         // 资源与内容
         new("saves",      "存档管理",     "存档兼容性检测、降级与备份回滚",         ToolboxGroup.Content,     "database",   5),

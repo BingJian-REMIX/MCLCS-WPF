@@ -157,10 +157,20 @@ public class SavesViewModel : ObservableObject
                 }
                 else
                 {
-                    row.CompatText = string.IsNullOrEmpty(target)
-                        ? "选择目标游戏版本后可检测兼容性。"
-                        : "兼容。";
-                    row.SeverityColor = "#5BBF6A";
+                    var lvlPath = SaveCompatibilityDetector.LevelDatPath(dir);
+                    if (!File.Exists(lvlPath))
+                    {
+                        // 无 level.dat：不是有效存档，标记警告而非误报为「兼容」
+                        row.CompatText = "缺少 level.dat，可能不是有效的 Minecraft 存档。";
+                        row.SeverityColor = "#E0A040";
+                    }
+                    else
+                    {
+                        row.CompatText = string.IsNullOrEmpty(target)
+                            ? "选择目标游戏版本后可检测兼容性。"
+                            : "兼容。";
+                        row.SeverityColor = "#5BBF6A";
+                    }
                 }
 
                 var backups = SaveCompatibilityDetector.FindBackups(savesDir, name);

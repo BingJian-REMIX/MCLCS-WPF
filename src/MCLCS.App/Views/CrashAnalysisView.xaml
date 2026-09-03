@@ -17,9 +17,12 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="最近的崩溃报告" FontWeight="Bold" Margin="0,0,0,6"/>
+            <TextBlock Grid.Row="0" Text="最近的崩溃报告" FontWeight="Bold" Margin="0,0,0,6"
+                       Foreground="{DynamicResource PrimaryForeground}"/>
             <ListBox Grid.Row="1" ItemsSource="{Binding Reports}" SelectedItem="{Binding SelectedReport}"
-                     DisplayMemberPath="DisplayName"/>
+                     DisplayMemberPath="DisplayName"
+                     Background="{DynamicResource ListViewBackground}" Foreground="{DynamicResource PrimaryForeground}"
+                     BorderBrush="{DynamicResource ListViewBorder}"/>
             <Button Grid.Row="2" Content="刷新" Command="{Binding RefreshCommand}" Width="100"
                     HorizontalAlignment="Left" Margin="0,8,0,0" Padding="0,4"/>
         </Grid>
@@ -30,10 +33,13 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="分析与建议" FontWeight="Bold" Margin="0,0,0,6"/>
+            <TextBlock Grid.Row="0" Text="分析与建议" FontWeight="Bold" Margin="0,0,0,6"
+                       Foreground="{DynamicResource PrimaryForeground}"/>
             <TextBox Grid.Row="1" Text="{Binding Summary, Mode=OneWay}" IsReadOnly="True"
                      VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"
-                     FontFamily="Consolas" FontSize="12"/>
+                     FontFamily="Consolas" FontSize="12"
+                     Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
+                     BorderBrush="{DynamicResource InputBorder}"/>
             <Button Grid.Row="2" Content="打开完整分析报告" Command="{Binding OpenDetailCommand}"
                     Width="180" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="0,4"/>
         </Grid>
