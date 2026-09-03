@@ -110,7 +110,6 @@ public class ToolboxViewModel : ObservableObject
             ("nbt",        "\U0001F527", "NBT 编辑器",   () => new NbtView()),
             ("datapack",   "\u26A0",     "数据包冲突检测", () => new DataPackView()),
             ("serverpack", "\U0001F5C4", "资源包缓存",   () => new ServerPackView()),
-            ("filewatch",  "\U0001F50D", "文件变更检测", () => new FileWatchView()),
             ("annual",     "\U0001F4CA", "年度报告",     () => new AnnualReportView()),
             ("aichat",     "\U0001F916", "AI 助手",      () => new AiAssistView()),
             ("music",      "\U0001F3B5", "音乐播放器",   () => new MusicPlayerView()),

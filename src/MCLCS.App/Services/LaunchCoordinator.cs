@@ -80,9 +80,9 @@ public static class LaunchCoordinator
     }
 
     /// <summary>
-    /// 规格 2.3-16 / 3.13：检测手动丢入 mods/resourcepacks/shaderpacks 的新文件。
-    /// 启动前（或启动器焦点回归时）调用；发现新增文件则弹右下角非阻塞 Toast，
-    /// 点「查看详情」打开文件变更面板。无变更则不打扰。
+    /// 规格 2.3-16 / 3.13：后台自动检测手动丢入 mods/resourcepacks/shaderpacks 的新文件。
+    /// 启动前（或启动器焦点回归时）调用；发现新增文件则弹右下角非阻塞 Toast 提示。
+    /// 文件变更检测页已移除，此功能 purely 后台自动任务，开关保留在设置 → 通用。
     /// </summary>
     public static async Task CheckFileChangesAsync(Action<string>? status = null)
     {
@@ -105,32 +105,12 @@ public static class LaunchCoordinator
             ToastService.Show(
                 "文件变更检测",
                 $"检测到新增：{preview}{more}",
-                ToastKind.Info,
-                actionText: "查看详情",
-                action: OpenFileWatchWindow);
+                ToastKind.Info);
         }
         catch (Exception ex)
         {
             status?.Invoke($"文件变更检测失败：{ex.Message}");
         }
-    }
-
-    private static void OpenFileWatchWindow()
-    {
-        Application.Current.Dispatcher.Invoke(() =>
-        {
-            var win = new Window
-            {
-                Title = "文件变更检测",
-                Content = new FileWatchView(),
-                Width = 780,
-                Height = 540,
-                Owner = Application.Current.MainWindow,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Background = System.Windows.Media.Brushes.Transparent
-            };
-            win.Show();
-        });
     }
 
     private static async Task CheckLaunchDependenciesAsync(string versionId, Action<string>? status)

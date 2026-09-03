@@ -61,10 +61,14 @@ public class HomeViewModel : ObservableObject
 
     public void Refresh()
     {
+        var gameRoot = LauncherService.Instance.GameRoot;
         Versions = new ObservableCollection<VersionEntry>(
             LauncherService.Instance.ListInstalledVersions()
                 .Select(t => new VersionEntry { Id = t.Id, Type = t.Type }));
-        SelectedVersion = Versions.FirstOrDefault();
+        // 同步加载统计，首页快速启动默认选中上次启动的版本（RecentVersion）
+        Stats = PlaytimeTracker.Load(gameRoot);
+        var recent = Stats.RecentVersion;
+        SelectedVersion = Versions.FirstOrDefault(v => v.Id == recent) ?? Versions.FirstOrDefault();
         StatusBarViewModel.Current.RefreshAsync();
     }
 
@@ -79,15 +83,14 @@ public class HomeViewModel : ObservableObject
         try
         {
             var gameRoot = LauncherService.Instance.GameRoot;
-            Stats = PlaytimeTracker.Load(gameRoot);
-
+            // Stats 已在 Refresh() 同步加载（用于首页默认选中上次启动版本），这里只加载推荐
             var profile = ProfileStore.Load(gameRoot);
             var list = await RecommendationEngine.BuildAsync(gameRoot, profile, new HttpClient(), null);
             Recommendations = new ObservableCollection<RecommendationItem>(list.Take(4).ToList());
         }
         catch
         {
-            /* 推荐/统计加载失败时忽略，页面其余部分仍可用 */
+            /* 推荐加载失败时忽略，页面其余部分仍可用 */
         }
     }
 }

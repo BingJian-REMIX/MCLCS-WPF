@@ -716,6 +716,19 @@ public class DownloadPageViewModel : ObservableObject
             GameVersions.Clear();
             GameVersions.Add("");
             foreach (var v in versions) GameVersions.Add(v);
+
+            // 首次加载且未手动选择时，默认选中最新游戏版本（列表中第一个非空项）
+            if (string.IsNullOrWhiteSpace(_selectedGameVersion))
+            {
+                var first = GameVersions.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+                if (first is not null)
+                {
+                    _selectedGameVersion = first;
+                    OnPropertyChanged(nameof(SelectedGameVersion));
+                    if (!IsMap && !IsMinecraft)
+                        _ = SearchAsync();
+                }
+            }
         }
         catch
         {
@@ -737,6 +750,17 @@ public class DownloadPageViewModel : ObservableObject
             MapVersions.Clear();
             MapVersions.Add("");
             foreach (var v in vers) MapVersions.Add(v);
+
+            // 地图版本首次加载后，默认选中第一个非空版本
+            if (string.IsNullOrWhiteSpace(_selectedMapVersion))
+            {
+                var first = MapVersions.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+                if (first is not null)
+                {
+                    _selectedMapVersion = first;
+                    OnPropertyChanged(nameof(SelectedMapVersion));
+                }
+            }
 
             _mapFacetsLoaded = true;
         }
