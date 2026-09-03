@@ -15,4 +15,28 @@
     <ProjectReference Include="..\..\src\MCLCS.App\MCLCS.App.csproj" />
   </ItemGroup>
 
+  <!-- 构建后把 mclcs.exe（及 pdb/dll）复制到 GUI 启动器输出目录，
+       让“MCLCS Launcher.exe”与“mclcs.exe”同目录，方便用户直接找到/调用 CLI。
+       路径相对本工程文件：tools/MCLCS.Cli -> src/MCLCS.App/bin/<config>/<tf>/ -->
+  <Target Name="CopyCliToLauncherOutput" AfterTargets="Build">
+    <PropertyGroup>
+      <_LauncherOutDir>$(MSBuildThisFileDirectory)..\..\src\MCLCS.App\bin\$(Configuration)\$(TargetFramework)\</_LauncherOutDir>
+    </PropertyGroup>
+    <Copy SourceFiles="$(OutDir)$(TargetName).exe"
+          DestinationFiles="$(_LauncherOutDir)$(TargetName).exe"
+          Condition="Exists('$(OutDir)$(TargetName).exe')" />
+    <Copy SourceFiles="$(OutDir)$(TargetName).dll"
+          DestinationFiles="$(_LauncherOutDir)$(TargetName).dll"
+          Condition="Exists('$(OutDir)$(TargetName).dll')" />
+    <Copy SourceFiles="$(OutDir)$(TargetName).pdb"
+          DestinationFiles="$(_LauncherOutDir)$(TargetName).pdb"
+          Condition="Exists('$(OutDir)$(TargetName).pdb')" />
+    <Copy SourceFiles="$(OutDir)$(TargetName).runtimeconfig.json"
+          DestinationFiles="$(_LauncherOutDir)$(TargetName).runtimeconfig.json"
+          Condition="Exists('$(OutDir)$(TargetName).runtimeconfig.json')" />
+    <Copy SourceFiles="$(OutDir)$(TargetName).deps.json"
+          DestinationFiles="$(_LauncherOutDir)$(TargetName).deps.json"
+          Condition="Exists('$(OutDir)$(TargetName).deps.json')" />
+  </Target>
+
 </Project>

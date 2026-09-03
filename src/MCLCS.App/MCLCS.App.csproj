@@ -44,14 +44,16 @@
     <None Include="Resources\MCLCS.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- 构建后把 MCLCS.App.exe 额外复制为用户友好的 MCLCS.exe（同时复制 runtimeconfig/deps/pdb）。
-       原 MCLCS.App.exe 保留，供 CLI 工程通过 ProjectReference 拷贝其 MCLCS.App 命名空间类型使用。 -->
+    <!-- 构建后把 MCLCS.App.exe 额外复制为用户友好的“MCLCS Launcher.exe”（同时复制 runtimeconfig/deps/pdb）。
+       原 MCLCS.App.exe 保留，供 CLI 工程通过 ProjectReference 拷贝其 MCLCS.App 命名空间类型使用。
+       说明：AssemblyName 必须保持 MCLCS.App（图标 PackUri 与 CLI 类型引用都依赖它），故只能以“复制”方式给出带空格的产品名 exe，
+       而非直接改 AssemblyName（那会复现之前图标全丢 + NuGet 撞名的问题）。 -->
   <Target Name="RenameLauncherToMCLCS" AfterTargets="Build"
           Inputs="$(OutDir)$(TargetName).exe"
-          Outputs="$(OutDir)MCLCS.exe">
+          Outputs="$(OutDir)MCLCS Launcher.exe">
     <PropertyGroup>
       <_LauncherSrcBase>$(OutDir)$(TargetName)</_LauncherSrcBase>
-      <_LauncherDstBase>$(OutDir)MCLCS</_LauncherDstBase>
+      <_LauncherDstBase>$(OutDir)MCLCS Launcher</_LauncherDstBase>
     </PropertyGroup>
     <Copy SourceFiles="$(_LauncherSrcBase).exe"
           DestinationFiles="$(_LauncherDstBase).exe"
@@ -65,6 +67,13 @@
     <Copy SourceFiles="$(_LauncherSrcBase).pdb"
           DestinationFiles="$(_LauncherDstBase).pdb"
           Condition="Exists('$(_LauncherSrcBase).pdb')" />
+    <!-- 清理上一版复制目标产出的旧名 MCLCS.exe（及配套文件），避免与新的“MCLCS Launcher.exe”并存造成混淆。
+         注意：Windows 文件系统大小写不敏感，MCLCS.exe 与 mclcs.exe 视为同一文件；CLI 会把 mclcs.exe 复制到本目录，
+         故删除旧名时必须先确认 mclcs.* 不存在，否则会误删 CLI 的 mclcs.exe。 -->
+    <Delete Files="$(OutDir)MCLCS.exe" Condition="Exists('$(OutDir)MCLCS.exe') And !Exists('$(OutDir)mclcs.exe')" />
+    <Delete Files="$(OutDir)MCLCS.pdb" Condition="Exists('$(OutDir)MCLCS.pdb') And !Exists('$(OutDir)mclcs.pdb')" />
+    <Delete Files="$(OutDir)MCLCS.runtimeconfig.json" Condition="Exists('$(OutDir)MCLCS.runtimeconfig.json') And !Exists('$(OutDir)mclcs.runtimeconfig.json')" />
+    <Delete Files="$(OutDir)MCLCS.deps.json" Condition="Exists('$(OutDir)MCLCS.deps.json') And !Exists('$(OutDir)mclcs.deps.json')" />
   </Target>
 
 </Project>
