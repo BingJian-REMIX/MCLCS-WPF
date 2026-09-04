@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows.Input;
+using System.Windows.Threading;
 using MCLCS.Core.MultiInstance;
 using MCLCS.Core.Mvvm;
 using MCLCS.Core.Statistics;
@@ -8,14 +12,35 @@ using MCLCS.App.Services;
 
 namespace MCLCS.App.ViewModels;
 
-/// <summary>性能/实例监控面板：展示正在运行的游戏实例与游玩统计。</summary>
-public class PerfViewModel : ObservableObject
+/// <summary>单个运行实例的实时资源占用（taskmgr 式逐进程行）。</summary>
+public class InstancePerf : ObservableObject
 {
-    private ObservableCollection<RunningInstance> _instances = new();
+    public int Pid { get; set; }
+    public string VersionId { get; set; } = "";
+    public DateTime StartedUtc { get; set; }
+    public double CpuPercent { get; set; }
+    public double MemoryMb { get; set; }
+    public string CpuText => $"{CpuPercent:F0}%";
+    public string MemoryText => $"{MemoryMb:F0} MB";
+}
+
+/// <summary>
+/// 性能/实例监控面板（bug2.txt #7）：改用系统接口（Process / PerformanceCounter）逐进程采样，
+/// 实时刷新，呈现类似任务管理器的实例资源表格 + 系统级 CPU/内存摘要。
+/// </summary>
+public class PerfViewModel : ObservableObject, IDisposable
+{
+    private ObservableCollection<InstancePerf> _instances = new();
     private PlayStats _stats = new();
     private string _statusMessage = "";
+    private double _systemCpu;
+    private double _memAvail;
+    private readonly Dictionary<int, (TimeSpan Cpu, DateTime Ts)> _cpuSamples = new();
+    private readonly PerformanceCounter? _cpuCounter;
+    private readonly PerformanceCounter? _memCounter;
+    private readonly DispatcherTimer _timer;
 
-    public ObservableCollection<RunningInstance> Instances
+    public ObservableCollection<InstancePerf> Instances
     {
         get => _instances;
         set => SetField(ref _instances, value);
@@ -34,36 +59,102 @@ public class PerfViewModel : ObservableObject
     }
 
     public int ProcessorCount => Environment.ProcessorCount;
-    public string MemoryUsageText => $"{(GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / 1024 / 1024):N0} MB 可用";
-    public string CpuUsageText
+
+    public double SystemCpu
     {
-        get
-        {
-            try
-            {
-                using var cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total", true);
-                cpuCounter.NextValue();
-                System.Threading.Thread.Sleep(100);
-                return $"{cpuCounter.NextValue():F0}%";
-            }
-            catch { return "—"; }
-        }
+        get => _systemCpu;
+        set => SetField(ref _systemCpu, value);
     }
+
+    public double MemoryAvailableMb
+    {
+        get => _memAvail;
+        set => SetField(ref _memAvail, value);
+    }
+
+    public string CpuUsageText => $"{SystemCpu:F0}%";
+    public string MemoryUsageText => $"{MemoryAvailableMb:F0} MB 可用";
 
     public ICommand RefreshCommand { get; }
 
     public PerfViewModel()
     {
-        RefreshCommand = new RelayCommand(_ => Refresh());
-        Refresh();
+        RefreshCommand = new RelayCommand(_ => Sample());
+        try
+        {
+            _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total", true);
+            _cpuCounter.NextValue();
+        }
+        catch { _cpuCounter = null; }
+        try
+        {
+            _memCounter = new PerformanceCounter("Memory", "Available MBytes");
+            _memCounter.NextValue();
+        }
+        catch { _memCounter = null; }
+
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
+        _timer.Tick += (_, _) => Sample();
+        _timer.Start();
+        Sample();
     }
 
-    public void Refresh()
+    private void Sample()
     {
-        Instances = new ObservableCollection<RunningInstance>(InstanceTracker.ListActive());
+        var list = InstanceTracker.ListActive();
+        var now = DateTime.Now;
+        var rows = new List<InstancePerf>();
+        foreach (var inst in list)
+        {
+            double cpu = 0, mem = 0;
+            try
+            {
+                using var p = Process.GetProcessById(inst.Pid);
+                if (!p.HasExited)
+                {
+                    mem = p.WorkingSet64 / 1048576.0;
+                    var cpuTime = p.TotalProcessorTime;
+                    if (_cpuSamples.TryGetValue(inst.Pid, out var prev))
+                    {
+                        var dt = (now - prev.Ts).TotalSeconds;
+                        if (dt > 0.01)
+                            cpu = Math.Min(100, Math.Max(0,
+                                (cpuTime.TotalSeconds - prev.Cpu.TotalSeconds) / dt / ProcessorCount * 100));
+                    }
+                    _cpuSamples[inst.Pid] = (cpuTime, now);
+                }
+            }
+            catch { _cpuSamples.Remove(inst.Pid); }
+
+            rows.Add(new InstancePerf
+            {
+                Pid = inst.Pid,
+                VersionId = inst.VersionId,
+                StartedUtc = inst.StartedUtc,
+                CpuPercent = cpu,
+                MemoryMb = mem
+            });
+        }
+
+        // 清理已退出进程的采样基线
+        foreach (var pid in _cpuSamples.Keys.ToList())
+            if (!list.Any(i => i.Pid == pid)) _cpuSamples.Remove(pid);
+
+        Instances = new ObservableCollection<InstancePerf>(rows);
+
+        try { if (_cpuCounter != null) SystemCpu = _cpuCounter.NextValue(); } catch { }
+        try { if (_memCounter != null) MemoryAvailableMb = _memCounter.NextValue(); } catch { }
+
         Stats = PlaytimeTracker.Load(LauncherService.Instance.GameRoot);
-        StatusMessage = Instances.Count > 0
-            ? $"当前运行 {Instances.Count} 个游戏实例"
+        StatusMessage = list.Count > 0
+            ? $"当前运行 {list.Count} 个游戏实例"
             : "没有正在运行的游戏实例";
+    }
+
+    public void Dispose()
+    {
+        _timer.Stop();
+        _cpuCounter?.Dispose();
+        _memCounter?.Dispose();
     }
 }

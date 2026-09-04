@@ -50,22 +50,26 @@
             </Border>
         </UniformGrid>
 
-        <ListBox Grid.Row="2" ItemsSource="{Binding Instances}"
-                 Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
-                 BorderBrush="{DynamicResource InputBorder}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Margin="2">
-                        <TextBlock FontWeight="Bold" Text="{Binding VersionId}"/>
-                        <TextBlock FontSize="11" Foreground="{DynamicResource SecondaryForeground}">
-                            <Run Text="PID "/>
-                            <Run Text="{Binding Pid}"/>
-                            <Run Text=" · 启动于 "/>
-                            <Run Text="{Binding StartedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}"/>
-                        </TextBlock>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <!-- bug2.txt #7：taskmgr 式逐实例实时资源表（版本/PID/CPU/内存/启动时间），由 VM 定时器刷新 -->
+        <ListView Grid.Row="2" ItemsSource="{Binding Instances}"
+                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
+                  BorderBrush="{DynamicResource InputBorder}">
+            <ListView.Resources>
+                <Style TargetType="GridViewColumnHeader">
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
+                    <Setter Property="Background" Value="{DynamicResource ControlBackground}"/>
+                    <Setter Property="Padding" Value="6,3"/>
+                </Style>
+            </ListView.Resources>
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="版本" Width="170" DisplayMemberBinding="{Binding VersionId}"/>
+                    <GridViewColumn Header="PID" Width="70" DisplayMemberBinding="{Binding Pid}"/>
+                    <GridViewColumn Header="CPU" Width="70" DisplayMemberBinding="{Binding CpuText}"/>
+                    <GridViewColumn Header="内存" Width="100" DisplayMemberBinding="{Binding MemoryText}"/>
+                    <GridViewColumn Header="启动时间" Width="170" DisplayMemberBinding="{Binding StartedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
     </Grid>
 </UserControl>
