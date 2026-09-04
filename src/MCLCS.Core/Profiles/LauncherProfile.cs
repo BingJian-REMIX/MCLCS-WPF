@@ -200,6 +200,10 @@ public class LauncherProfile
     /// <summary>断点续播：上次停下的位置（秒）。</summary>
     [JsonPropertyName("musicLastPosition")]
     public double MusicLastPosition { get; set; }
+
+    /// <summary>新建版本的默认隔离模式（通用设置「版本隔离」默认项，bug2.txt #9）。</summary>
+    [JsonPropertyName("defaultVersionIsolation")]
+    public IsolationMode DefaultVersionIsolation { get; set; } = IsolationMode.Auto;
 }
 
 /// <summary>缺失 Mod 前置依赖的自动安装策略。</summary>

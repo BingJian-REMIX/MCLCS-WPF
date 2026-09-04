@@ -21,7 +21,13 @@ public static class VersionProfileStore
     public static VersionProfile Load(string gameRoot, string id)
     {
         var path = ProfilePath(gameRoot, id);
-        if (!File.Exists(path)) return new VersionProfile();
+        if (!File.Exists(path))
+        {
+            // bug2.txt #9：新建版本（尚无 profile.json）默认套用全局「新建版本默认隔离」设置
+            var def = new VersionProfile();
+            try { def.Isolation = ProfileStore.Load(GameConstants.DefaultGameRoot).DefaultVersionIsolation; } catch { }
+            return def;
+        }
         try
         {
             var json = File.ReadAllText(path);

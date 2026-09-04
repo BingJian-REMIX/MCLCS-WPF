@@ -216,6 +216,14 @@ public class SettingsViewModel : ObservableObject
 
     // ===== 外观 =====
     public string SelectedTheme { get => _selectedTheme; set => SetField(ref _selectedTheme, value); }
+
+    /// <summary>新建版本默认隔离模式（bug2.txt #9，绑定通用设置 ComboBox）。</summary>
+    private IsolationMode _defaultVersionIsolation = IsolationMode.Auto;
+    public IsolationMode DefaultVersionIsolation
+    {
+        get => _defaultVersionIsolation;
+        set => SetField(ref _defaultVersionIsolation, value);
+    }
     public string ThemeColor
     {
         get => _themeColor;
@@ -331,6 +339,7 @@ public class SettingsViewModel : ObservableObject
         MinimizeToTray = profile.MinimizeToTray;
         AnimationsEnabled = profile.AnimationsEnabled;
         FileWatchEnabled = profile.FileWatchEnabled;
+        DefaultVersionIsolation = profile.DefaultVersionIsolation;
 
         // 启动补充
         PrewarmEnabled = profile.Prewarm.Mode != PrewarmMode.Off;
@@ -417,6 +426,7 @@ public class SettingsViewModel : ObservableObject
             MinimizeToTray = MinimizeToTray,
             AnimationsEnabled = AnimationsEnabled,
             FileWatchEnabled = FileWatchEnabled,
+            DefaultVersionIsolation = DefaultVersionIsolation,
 
             // 启动补充（规格 2.4）
             Prewarm = new PrewarmConfig { Mode = PrewarmEnabled ? PrewarmMode.Light : PrewarmMode.Off },
