@@ -40,10 +40,10 @@
 
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Grid Height="42" Cursor="Hand"
+                    <Grid Height="38" Cursor="Hand"
                           ToolTip="{Binding Title}">
                         <!-- 图标块 -->
-                        <Border Width="32" Height="32" CornerRadius="6"
+                        <Border Width="30" Height="30" CornerRadius="6"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Background="{DynamicResource ButtonBackground}">
                             <Border.Style>

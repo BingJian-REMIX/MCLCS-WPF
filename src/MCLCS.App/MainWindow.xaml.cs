@@ -489,7 +489,7 @@ public partial class MainWindow : Window
         {
             var row = new Grid
             {
-                Height = 40,
+                Height = 36,
                 Margin = new Thickness(0, 2, 0, 2),
                 Cursor = Cursors.Hand,
                 Tag = it.Id,

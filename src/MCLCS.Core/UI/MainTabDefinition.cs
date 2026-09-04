@@ -104,7 +104,7 @@ public static class MainTabs
     public const double ExpandedOverlap = 10;
 
     /// <summary>标签高度（px）。</summary>
-    public const double TabHeight = 34;
+    public const double TabHeight = 30;
 
     /// <summary>选中指示细线高度（px）。</summary>
     public const double UnderlineHeight = 3;
