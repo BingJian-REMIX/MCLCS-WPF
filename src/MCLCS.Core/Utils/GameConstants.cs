@@ -125,26 +125,23 @@ public static class GameConstants
 
     public const string AdoptiumApiBase = "https://api.adoptium.net/v3";
 
-    /// <summary>本项目在 CNB 的仓库地址（关于页链接、地图站 User-Agent 均指向此处）。</summary>
-    public const string CnbRepoUrl = "https://cnb.cool/RLRS-Studio/MCLCS-WPF";
-
-    /// <summary>CNB 仓库地址（Uri 类型），供 XAML 的 Hyperlink.NavigateUri 使用。
-    /// NavigateUri 是 Uri 依赖属性，x:Static 返回的字符串不会自动做 string→Uri 转换，
-    /// 直接赋值会在启动时抛 XamlParseException 导致启动器崩溃；因此单独提供 Uri 版本。</summary>
-    public static readonly Uri CnbRepoUri = new Uri(CnbRepoUrl);
-
-    /// <summary>CNB 仓库 git 地址（发布页链接、singlefile 包按 v{版本} 格式发布）。</summary>
-    public const string CnbRepoGitUrl = CnbRepoUrl + ".git";
-
-    /// <summary>本项目在 GitHub 的镜像仓库地址（cnb.cool/RLRS-Studio/MCLCS-WPF 的代码镜像，仅作源码备份，不参与更新下载）。</summary>
+    /// <summary>本项目在 GitHub 的仓库地址（关于页链接、地图站 User-Agent、发布页均指向此处）。</summary>
     public const string GitHubRepoUrl = "https://github.com/BingJian-REMIX/MCLCS-WPF";
 
+    /// <summary>GitHub 仓库地址（Uri 类型），供 XAML 的 Hyperlink.NavigateUri 使用。
+    /// NavigateUri 是 Uri 依赖属性，x:Static 返回的字符串不会自动做 string→Uri 转换，
+    /// 直接赋值会在启动时抛 XamlParseException 导致启动器崩溃；因此单独提供 Uri 版本。</summary>
+    public static readonly Uri GitHubRepoUri = new Uri(GitHubRepoUrl);
+
+    /// <summary>更新包（single-file zip）托管在 CNB Release；latest.json 的 downloadUrl 优先，
+    /// 仅当 downloadUrl 缺失时由 LauncherUpdater 兜底构造此处地址。最新版本信息（latest.json）本身托管在 GitHub Pages，不再依赖 CNB。</summary>
+    public const string CnbReleaseBase = "https://cnb.cool/RLRS-Studio/MCLCS-WPF";
+
     /// <summary>
-    /// 更新信息静态地址：CNB Pages 托管的 <c>latest.json</c>（cnb.cool 官方静态页，国内直连、稳定、免代理）。
-    /// ⚠️ 需在本仓库「Pages」设置中启用静态页（指向 main 分支根目录）后该地址才生效；
-    ///    若启用后的实际子域名与此不同，请改为对应地址（路径 <c>/updates/latest.json</c> 保持不变）。
+    /// 更新信息（latest.json）静态地址：GitHub Pages 托管的 <c>latest.json</c>
+    /// （<c>remix-laser-raising-studio.github.io/MCLCS-upgrade</c>，GitHub Pages 走独立 CDN，通常不受 github.com 故障影响）。
     /// 普通 HTTPS GET 即可读取，终端用户零 git 依赖；网络超时/失败即视为「已是最新」，绝不误报。
     /// 字段与解析逻辑见 <see cref="MCLCS.Core.Update.LauncherUpdater"/>。
     /// </summary>
-    public const string UpdateInfoUrl = "https://RLRS-Studio-MCLCS-WPF.pages.cnb.cool/updates/latest.json";
+    public const string UpdateInfoUrl = "https://remix-laser-raising-studio.github.io/MCLCS-upgrade/latest.json";
 }

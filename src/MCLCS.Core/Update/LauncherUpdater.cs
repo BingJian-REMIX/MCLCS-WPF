@@ -14,9 +14,9 @@ public class UpdateCheckResult
     public string? LatestVersion { get; set; }
     /// <summary>新版本更新日志（发布说明），来自 latest.json 的 changelog 字段；为空时弹窗回退为「前往发布页」。</summary>
     public string? Changelog { get; set; }
-    /// <summary>下载入口（latest.json 的 downloadUrl，缺省按 CNB 发布页 v{版本} 格式构造）。</summary>
+    /// <summary>下载入口（latest.json 的 downloadUrl，缺省按 CNB Release v{版本} 格式构造）。</summary>
     public string? DownloadUrl { get; set; }
-    /// <summary>singlefile 包是否已在 CNB 发布（latest.json 的 singleFileAvailable 字段）。</summary>
+    /// <summary>singlefile 包是否已在 CNB Release 发布（latest.json 的 singleFileAvailable 字段）。</summary>
     public bool SingleFileAvailable { get; set; }
     public bool Mandatory { get; set; }
     public string? Error { get; set; }
@@ -24,10 +24,10 @@ public class UpdateCheckResult
 
 /// <summary>
 /// 启动器自动更新（全局功能 13）。
-/// 更新源为 CNB Pages 托管的静态 <c>latest.json</c>（<see cref="GameConstants.UpdateInfoUrl"/>，cnb.cool 官方静态页、国内直连）：
+/// 更新源为 GitHub Pages 托管的静态 <c>latest.json</c>（<see cref="GameConstants.UpdateInfoUrl"/>，GitHub Pages 走独立 CDN、通常不受 github.com 故障影响）：
 /// 普通 HTTPS GET 即可读取，终端用户零 git 依赖、不写临时仓库、无头客户端可达。
 /// 网络不可用 / JSON 解析失败时安全返回「无更新」（带 Error），绝不误报。
-/// 下载由 UI 层调用内置 <c>HttpDownloader</c> 直接拉取 latest.json 中的 cnb 发布直链，不依赖 winget / 浏览器。
+/// 下载由 UI 层调用内置 <c>HttpDownloader</c> 直接拉取 latest.json 中的 CNB Release 下载直链，不依赖 winget / 浏览器。
 /// </summary>
 public static class LauncherUpdater
 {
@@ -89,7 +89,7 @@ public static class LauncherUpdater
             {
                 result.Changelog = info.Changelog;
                 result.DownloadUrl = info.DownloadUrl
-                    ?? $"{GameConstants.CnbRepoUrl}/-/releases/download/v{info.Version}/MCLCS-{info.Version}-win-x64.zip";
+                    ?? $"{GameConstants.CnbReleaseBase}/-/releases/download/v{info.Version}/MCLCS-{info.Version}-win-x64.zip";
                 result.SingleFileAvailable = info.SingleFileAvailable;
                 result.Mandatory = info.Mandatory;
             }
@@ -105,7 +105,7 @@ public static class LauncherUpdater
         return result;
     }
 
-    /// <summary>EdgeOne Pages 上 latest.json 的字段映射（大小写不敏感）。</summary>
+    /// <summary>GitHub Pages 上 latest.json 的字段映射（大小写不敏感）。</summary>
     private sealed class UpdateInfo
     {
         [JsonPropertyName("version")] public string? Version { get; set; }

@@ -8,8 +8,8 @@ using MCLCS.Core.Utils;
 namespace MCLCS.App.Views;
 
 /// <summary>
-/// 更新可用时的模态弹窗：展示新版本号与更新日志（来自 CNB Pages latest.json 的 changelog 字段），
-/// 提供「下载更新」（调用启动器内置下载器拉取 cnb 发布直链，下载完成后生成 PowerShell 更新脚本，
+/// 更新可用时的模态弹窗：展示新版本号与更新日志（来自 GitHub Pages latest.json 的 changelog 字段），
+/// 提供「下载更新」（调用启动器内置下载器拉取 CNB Release 下载直链，下载完成后生成 PowerShell 更新脚本，
 /// 由脚本在退出旧进程后解压覆盖、删除压缩包并重启启动器）与「稍后」按钮。
 /// 半透明遮罩覆盖整个主窗口，卡片居中（规格 1.4：弹窗模态居中、半透明遮罩、主操作按钮右置）。
 /// </summary>
@@ -43,14 +43,14 @@ public partial class UpdateDialog : Window
         };
     }
 
-    /// <summary>点击「下载更新」：用启动器内置下载器拉取 cnb 发布直链，下载完成后生成 PowerShell 更新脚本并启动它，
+    /// <summary>点击「下载更新」：用启动器内置下载器拉取 CNB Release 下载直链，下载完成后生成 PowerShell 更新脚本并启动它，
     /// 随后退出当前进程；脚本在旧进程退出后解压覆盖安装目录、删除压缩包并重启启动器。</summary>
     private async void Download_Click(object sender, RoutedEventArgs e)
     {
         var url = _result.DownloadUrl;
         if (string.IsNullOrWhiteSpace(url))
         {
-            TryOpenBrowser(GameConstants.CnbRepoUrl + "/-/releases");
+            TryOpenBrowser(GameConstants.GitHubRepoUrl + "/releases");
             Close();
             return;
         }

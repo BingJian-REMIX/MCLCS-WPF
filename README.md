@@ -5,9 +5,9 @@
 
 MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft 启动器，覆盖版本安装、启动、崩溃修复、下载、Mod 管理与工具箱等。本项目与 [MCLCS-Linux](https://cnb.cool/RLRS-Studio/MCLCS-Linux) 共享核心（`MCLCS.Core`），两端功能持续对齐。
 
-- 主仓库（CNB）：<https://cnb.cool/RLRS-Studio/MCLCS-WPF>
-- 镜像仓库（GitHub）：<https://github.com/BingJian-REMIX/MCLCS-WPF>
-- Releases：<https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases>
+- 主仓库（GitHub）：<https://github.com/BingJian-REMIX/MCLCS-WPF>
+- 更新信息源（GitHub Pages）：<https://remix-laser-raising-studio.github.io/MCLCS-upgrade/latest.json>
+- 下载包（CNB Release）：<https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases>
 
 ## 产物命名
 
@@ -37,7 +37,7 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 ## 更新日志
 
 - **v2.5.5**（当前）：对齐 MCLCS-Linux 的收官修复批次——工具箱全局侧边栏移除已废弃的「文件变更检测」，新增「版本列表」与「版本设置」入口；添加服务器弹窗复用全局模态样式（暗色下不再呈黑块）；崩溃分析页补充主题画笔修复暗色配色；存档扫描对缺失 `level.dat` 的目录标记为警告而非误报兼容；GUI 产物定名为 `MCLCS Launcher.exe`、CLI 为 `mclcs.exe`。
-- **v2.5.4**：更新源迁移至 CNB Pages（`cnb.cool`）托管的 `latest.json`，国内直连、稳定、免代理；自更新改为「下载 → 解压 → 原地替换安装目录并接力启动新版本」；发布物改为单个 `MCLCS-WPF-2.5.4-win-x64.zip`；GitHub 仓库仅作代码镜像。
+- **v2.5.4**：更新源迁移至 GitHub Pages 托管的 `latest.json`，稳定、免代理；自更新改为「下载 → 解压 → 原地替换安装目录并接力启动新版本」；发布物改为单个 `MCLCS-2.5.4-win-x64.zip`；GitHub 仓库为主仓库。
 - **v2.5.3**：启动器自身崩溃捕获与日志（`mclcs_crash.log`）；崩溃自动修复新增资源包/光影类别；新增存档损坏检测（只读，三色分级）；Mod 冲突禁用在「始终」策略下先弹窗确认。
 - **v2.5.2**：修复开发工具，离线自检 SelfCheck 程序 52 项断言全部 PASS。
 - **v2.5.1**：接入多分辨率应用图标与托盘图标；修正下载队列按钮置灰反馈。
@@ -58,7 +58,7 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
 | **v2.5.5（最新）** | [CNB Releases](https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases) | 自包含免运行时，解压即用 |
 | 全部历史版本 | [CNB Releases](https://cnb.cool/RLRS-Studio/MCLCS-WPF/-/releases) | 各版本发布直链 |
 
-下载后直接解压，运行 `MCLCS Launcher.exe` 即可。启动器内置**自动更新器**：启动时读取 CNB Pages 上的 `latest.json`，发现新版本后直接下载发布直链、解压并原地替换安装目录、接力启动新版本，全程无需手动下载或 winget。
+下载后直接解压，运行 `MCLCS Launcher.exe` 即可。启动器内置**自动更新器**：启动时读取 GitHub Pages 上的 `latest.json`，发现新版本后直接下载 CNB Release 直链、解压并原地替换安装目录、接力启动新版本，全程无需手动下载或 winget。
 
 ## 编译与发布
 

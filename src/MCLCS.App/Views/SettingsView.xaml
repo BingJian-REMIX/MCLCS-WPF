@@ -361,8 +361,8 @@
                     <Button Grid.Row="3" Content="{theme:Loc about.check_update}" Command="{Binding CheckUpdateCommand}" Width="100" HorizontalAlignment="Left" Padding="0,4" Margin="0,4"/>
                     <TextBlock Grid.Row="4" Text="{Binding UpdateMessage}" Foreground="{DynamicResource StatusForeground}" Margin="0,2,0,0"/>
                     <TextBlock Grid.Row="5" Margin="0,8,0,0" Foreground="{DynamicResource SecondaryForeground}" FontSize="11">
-                        <Hyperlink NavigateUri="{x:Static core:GameConstants.CnbRepoUri}" RequestNavigate="OpenUrl_Click">
-                            开源许可 · CNB 仓库
+                        <Hyperlink NavigateUri="{x:Static core:GameConstants.GitHubRepoUri}" RequestNavigate="OpenUrl_Click">
+                            开源许可 · GitHub 仓库
                         </Hyperlink>
                     </TextBlock>
                 </Grid>
