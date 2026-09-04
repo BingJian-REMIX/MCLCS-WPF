@@ -144,4 +144,9 @@ public static class GameConstants
     /// 字段与解析逻辑见 <see cref="MCLCS.Core.Update.LauncherUpdater"/>。
     /// </summary>
     public const string UpdateInfoUrl = "https://remix-laser-raising-studio.github.io/MCLCS-upgrade/latest.json";
+
+    /// <summary>本启动器平台标识，对应 MCLCS-upgrade/latest.json 中各自的平台小节键名（wpf / linux / android）。
+    /// 升级站点为 WPF / Linux / Android 三端共用，latest.json 根对象包含 <c>wpf</c>/<c>linux</c>/<c>android</c> 三个小节，
+    /// 本启动器仅读取与 PlatformId 同名的 <c>wpf</c> 小节；若根对象即单平台结构（旧格式）则整体解析。</summary>
+    public const string PlatformId = "wpf";
 }

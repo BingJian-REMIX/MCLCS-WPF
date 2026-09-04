@@ -24,7 +24,8 @@ public class UpdateCheckResult
 
 /// <summary>
 /// 启动器自动更新（全局功能 13）。
-/// 更新源为 GitHub Pages 托管的静态 <c>latest.json</c>（<see cref="GameConstants.UpdateInfoUrl"/>，GitHub Pages 走独立 CDN、通常不受 github.com 故障影响）：
+/// 更新源为 GitHub Pages 托管的静态 <c>latest.json</c>（<see cref="GameConstants.UpdateInfoUrl"/>，GitHub Pages 走独立 CDN、通常不受 github.com 故障影响）。
+/// latest.json 为 WPF / Linux / Android 三端共用的多平台结构（根为 <c>wpf</c>/<c>linux</c>/<c>android</c> 小节），本启动器仅读取与 <see cref="GameConstants.PlatformId"/> 同名的 <c>wpf</c> 小节：
 /// 普通 HTTPS GET 即可读取，终端用户零 git 依赖、不写临时仓库、无头客户端可达。
 /// 网络不可用 / JSON 解析失败时安全返回「无更新」（带 Error），绝不误报。
 /// 下载由 UI 层调用内置 <c>HttpDownloader</c> 直接拉取 latest.json 中的 CNB Release 下载直链，不依赖 winget / 浏览器。
@@ -67,7 +68,15 @@ public static class LauncherUpdater
             UpdateInfo? info;
             try
             {
-                info = JsonSerializer.Deserialize<UpdateInfo>(json,
+                using var doc = JsonDocument.Parse(json);
+                // MCLCS-upgrade/latest.json 为三端共用的多平台结构：根为 { wpf:{...}, linux:{...}, android:{...} }。
+                // 本启动器只读取与 PlatformId 同名的平台小节；若根为旧的单平台对象则整体解析（向后兼容）。
+                var root = doc.RootElement;
+                var section = root.ValueKind == JsonValueKind.Object
+                    && root.TryGetProperty(GameConstants.PlatformId, out var s)
+                    && s.ValueKind == JsonValueKind.Object
+                        ? s : root;
+                info = section.Deserialize<UpdateInfo>(
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch (JsonException ex)
