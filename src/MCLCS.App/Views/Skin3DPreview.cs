@@ -9,6 +9,7 @@ namespace MCLCS.App.Views;
 /// <summary>
 /// 皮肤 3D 预览（WPF Viewport3D）：6 部位人体模型 + 皮肤纹理 + 鼠标旋转。
 /// Viewport3D 构建 MeshGeometry3D 时用三角面片定义立方体并映射 64x64 纹理 UV。
+/// 兼容旧版 64x32 皮肤：左臂/左腿回退到右臂/右腿纹理区（旧版下半部分为空）。
 /// </summary>
 public class Skin3DPreview : UserControl
 {
@@ -19,10 +20,15 @@ public class Skin3DPreview : UserControl
     private readonly ImageBrush _skinBrush;
     private Point _lastMouse;
     private bool _dragging;
+    private bool _legacy;
 
     public static readonly DependencyProperty SkinBitmapProperty =
         DependencyProperty.Register(nameof(SkinBitmap), typeof(ImageSource), typeof(Skin3DPreview),
             new PropertyMetadata(null, OnSkinChanged));
+
+    public static readonly DependencyProperty LegacySkinProperty =
+        DependencyProperty.Register(nameof(LegacySkin), typeof(bool), typeof(Skin3DPreview),
+            new PropertyMetadata(false, OnLegacyChanged));
 
     public ImageSource? SkinBitmap
     {
@@ -30,10 +36,15 @@ public class Skin3DPreview : UserControl
         set => SetValue(SkinBitmapProperty, value);
     }
 
+    /// <summary>旧版 64x32 皮肤（下半部分为空，左肢用右肢纹理）。</summary>
+    public bool LegacySkin
+    {
+        get => (bool)GetValue(LegacySkinProperty);
+        set => SetValue(LegacySkinProperty, value);
+    }
+
     public Skin3DPreview()
     {
-        // 纹理 UV 用 0–1 相对坐标（ToUv 已除以 64），故用默认 RelativeToBoundingBox，
-        // 不能再设 Absolute（否则 UV 像素坐标 0–64 落在默认 1×1 Viewport 之外，纹理错位/不显示）。
         _skinBrush = new ImageBrush();
 
         _rotY = new AxisAngleRotation3D(new Vector3D(0, 1, 0), 30);
@@ -48,9 +59,9 @@ public class Skin3DPreview : UserControl
         var ambient = new ModelVisual3D();
         ambient.Content = new AmbientLight(Color.FromRgb(0x60, 0x60, 0x70));
 
-        _viewport = new Viewport3D { Width = 200, Height = 360, ClipToBounds = true };
+        _viewport = new Viewport3D { ClipToBounds = true };
         _camera = new PerspectiveCamera(
-            new Point3D(0, 0.3, 5), new Vector3D(0, 0, -1), new Vector3D(0, 1, 0), 45);
+            new Point3D(0, -0.2, 6), new Vector3D(0, 0, -1), new Vector3D(0, 1, 0), 45);
         _viewport.Camera = _camera;
 
         _viewport.Children.Add(modelVisual);
@@ -72,7 +83,8 @@ public class Skin3DPreview : UserControl
         _viewport.MouseLeftButtonUp += (_, _) => { _dragging = false; ReleaseMouseCapture(); };
         _viewport.MouseWheel += (_, e) =>
         {
-            _camera.Position = new Point3D(_camera.Position.X, _camera.Position.Y, _camera.Position.Z - e.Delta * 0.005);
+            var z = _camera.Position.Z - e.Delta * 0.005;
+            _camera.Position = new Point3D(_camera.Position.X, _camera.Position.Y, Math.Clamp(z, 2.5, 12));
         };
 
         BuildModel();
@@ -91,52 +103,60 @@ public class Skin3DPreview : UserControl
 
     private static void OnSkinChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is Skin3DPreview preview && e.NewValue is ImageSource)
+        if (d is Skin3DPreview preview && e.NewValue is ImageSource src)
+            preview._skinBrush.ImageSource = src;
+    }
+
+    private static void OnLegacyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is Skin3DPreview preview)
         {
-            preview._skinBrush.ImageSource = (ImageSource)e.NewValue;
+            preview._legacy = (bool)e.NewValue;
+            preview.BuildModel();
         }
     }
 
     private void BuildModel()
     {
-        // 头部 (8x8x8 px in texture → 1.0 unit)
+        _modelGroup.Children.Clear();
+
+        // 头部
         AddCuboid(0, 1.45, 0, 1.0, 1.0, 1.0,
-            (8, 8, 8, 16),  // front
-            (24,8, 32,16),  // back
-            (0, 8, 8, 16),  // right
-            (16,8, 24,16),  // left
-            (8, 0, 16, 8),  // top
-            (16,0, 24, 8)); // bottom
+            (8, 8, 8, 16), (24, 8, 32, 16), (0, 8, 8, 16),
+            (16, 8, 24, 16), (8, 0, 16, 8), (16, 0, 24, 8));
 
         // 身体
         AddCuboid(0, -0.15, 0, 1.0, 1.5, 0.5,
-            (20,16,28,28), (32,16,40,28),
-            (16,16,20,28), (28,16,32,28),
-            (20,28,28,32), (28,28,36,32));
+            (20, 16, 28, 28), (32, 16, 40, 28), (16, 16, 20, 28),
+            (28, 16, 32, 28), (20, 28, 28, 32), (28, 28, 36, 32));
 
-        // 右臂
+        // 右臂（新版）
+        var rArm = ((44, 16, 48, 28), (52, 16, 56, 28), (40, 16, 44, 28),
+                    (48, 16, 52, 28), (44, 28, 48, 32), (48, 28, 52, 32));
         AddCuboid(-0.75, -0.15, 0, 0.5, 1.5, 0.5,
-            (44,16,48,28), (52,16,56,28),
-            (40,16,44,28), (48,16,52,28),
-            (44,28,48,32), (48,28,52,32));
+            rArm.Item1, rArm.Item2, rArm.Item3, rArm.Item4, rArm.Item5, rArm.Item6);
 
-        // 左臂
+        // 左臂：新版用底部层，旧版回退到右臂纹理
+        var lArm = _legacy
+            ? rArm
+            : ((36, 48, 40, 60), (44, 48, 48, 60), (40, 48, 44, 60),
+               (32, 48, 36, 60), (36, 60, 40, 64), (40, 60, 44, 64));
         AddCuboid(0.75, -0.15, 0, 0.5, 1.5, 0.5,
-            (36,48,40,60), (44,48,48,60),
-            (40,48,44,60), (32,48,36,60),
-            (36,60,40,64), (40,60,44,64));
+            lArm.Item1, lArm.Item2, lArm.Item3, lArm.Item4, lArm.Item5, lArm.Item6);
 
-        // 右腿
+        // 右腿（新版）
+        var rLeg = ((4, 16, 8, 28), (12, 16, 16, 28), (0, 16, 4, 28),
+                    (8, 16, 12, 28), (4, 28, 8, 32), (8, 28, 12, 32));
         AddCuboid(-0.25, -1.65, 0, 0.5, 1.5, 0.5,
-            (4, 16,8, 28), (12,16,16,28),
-            (0, 16,4, 28), (8, 16,12,28),
-            (4, 28,8, 32), (8, 28,12,32));
+            rLeg.Item1, rLeg.Item2, rLeg.Item3, rLeg.Item4, rLeg.Item5, rLeg.Item6);
 
-        // 左腿
+        // 左腿：新版用底部层，旧版回退到右腿纹理
+        var lLeg = _legacy
+            ? rLeg
+            : ((20, 48, 24, 60), (28, 48, 32, 60), (16, 48, 20, 60),
+               (24, 48, 28, 60), (20, 60, 24, 64), (24, 60, 28, 64));
         AddCuboid(0.25, -1.65, 0, 0.5, 1.5, 0.5,
-            (20,48,24,60), (28,48,32,60),
-            (16,48,20,60), (24,48,28,60),
-            (20,60,24,64), (24,60,28,64));
+            lLeg.Item1, lLeg.Item2, lLeg.Item3, lLeg.Item4, lLeg.Item5, lLeg.Item6);
     }
 
     private void AddCuboid(double cx, double cy, double cz,
@@ -150,7 +170,6 @@ public class Skin3DPreview : UserControl
     {
         var hw = w / 2; var hh = h / 2; var hd = d / 2;
 
-        // 8 corners
         var p000 = new Point3D(cx - hw, cy - hh, cz + hd);
         var p100 = new Point3D(cx + hw, cy - hh, cz + hd);
         var p010 = new Point3D(cx - hw, cy + hh, cz + hd);
@@ -160,26 +179,23 @@ public class Skin3DPreview : UserControl
         var p011 = new Point3D(cx - hw, cy + hh, cz - hd);
         var p111 = new Point3D(cx + hw, cy + hh, cz - hd);
 
-        // Add each face
-        AddQuad(p000, p100, p110, p010, ToUv(front.x1, front.y1, front.x2, front.y2));    // front
-        AddQuad(p001, p101, p111, p011, ToUv(back.x1,  back.y1,  back.x2,  back.y2));      // back
-        AddQuad(p100, p101, p111, p110, ToUv(right.x1, right.y1, right.x2, right.y2));     // right
-        AddQuad(p000, p001, p011, p010, ToUv(left.x1,  left.y1,  left.x2,  left.y2));      // left
-        AddQuad(p010, p110, p111, p011, ToUv(top.x1,   top.y1,   top.x2,   top.y2));       // top
-        AddQuad(p000, p100, p101, p001, ToUv(bottom.x1,bottom.y1,bottom.x2,bottom.y2));    // bottom
+        AddQuad(p000, p100, p110, p010, ToUv(front.x1, front.y1, front.x2, front.y2));
+        AddQuad(p001, p101, p111, p011, ToUv(back.x1, back.y1, back.x2, back.y2));
+        AddQuad(p100, p101, p111, p110, ToUv(right.x1, right.y1, right.x2, right.y2));
+        AddQuad(p000, p001, p011, p010, ToUv(left.x1, left.y1, left.x2, left.y2));
+        AddQuad(p010, p110, p111, p011, ToUv(top.x1, top.y1, top.x2, top.y2));
+        AddQuad(p000, p100, p101, p001, ToUv(bottom.x1, bottom.y1, bottom.x2, bottom.y2));
     }
 
     private static Point[] ToUv(int x1, int y1, int x2, int y2)
     {
-        // UV 转 0–1 相对坐标（纹理为 64×64，ImageBrush 用默认 RelativeToBoundingBox）。
-        // Quad vertex order: tl, tr, br, bl
         const double s = 1.0 / 64.0;
         return new[]
         {
-            new Point(x1 * s, y1 * s),   // tl → top-left
-            new Point(x2 * s, y1 * s),   // tr → top-right
-            new Point(x2 * s, y2 * s),   // br → bottom-right
-            new Point(x1 * s, y2 * s)    // bl → bottom-left
+            new Point(x1 * s, y1 * s),
+            new Point(x2 * s, y1 * s),
+            new Point(x2 * s, y2 * s),
+            new Point(x1 * s, y2 * s)
         };
     }
 

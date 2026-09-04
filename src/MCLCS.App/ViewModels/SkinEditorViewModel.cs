@@ -36,6 +36,7 @@ public class SkinEditorViewModel : ObservableObject
     private bool _isEraser;
     private int _faceZoom = 10;
     private string _statusMessage = "";
+    private bool _isLegacySkin;
 
     // 调色板
     private Color? _colorPickerColor;
@@ -94,6 +95,8 @@ public class SkinEditorViewModel : ObservableObject
     public bool SymmetryEnabled { get => _symmetryEnabled; set => SetField(ref _symmetryEnabled, value); }
     public bool IsEraser { get => _isEraser; set => SetField(ref _isEraser, value); }
     public int FaceZoom { get => _faceZoom; set => SetField(ref _faceZoom, value); }
+    /// <summary>是否旧版 64x32 皮肤（下半部分为空，3D 预览需将左肢回退到右肢纹理）。</summary>
+    public bool IsLegacySkin { get => _isLegacySkin; set => SetField(ref _isLegacySkin, value); }
     public int FaceZoomedW => (SelectedFace?.W ?? 8) * FaceZoom;
     public int FaceZoomedH => (SelectedFace?.H ?? 8) * FaceZoom;
     public string StatusMessage { get => _statusMessage; set => SetField(ref _statusMessage, value); }
@@ -259,6 +262,7 @@ public class SkinEditorViewModel : ObservableObject
                 Array.Copy(src, y * converted.PixelWidth * 4,
                            _pixels, y * 64 * 4,
                            converted.PixelWidth * 4);
+            IsLegacySkin = frame.PixelHeight == 32;
             FlushFull(); UpdateFacePreview();
             StatusMessage = $"已导入 {Path.GetFileName(path)}";
         }

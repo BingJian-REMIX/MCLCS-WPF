@@ -125,7 +125,8 @@
 
             <!-- 3D 预览 -->
             <Grid Grid.Row="1" x:Name="Preview3D" Visibility="Collapsed">
-                <views:Skin3DPreview x:Name="Skin3D" SkinBitmap="{Binding FullBitmap, Mode=OneWay}"/>
+                <views:Skin3DPreview x:Name="Skin3D" SkinBitmap="{Binding FullBitmap, Mode=OneWay}"
+                                     LegacySkin="{Binding IsLegacySkin}"/>
             </Grid>
 
             <WrapPanel Grid.Row="2" Margin="0,4,0,0">
