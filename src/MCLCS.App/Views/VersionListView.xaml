@@ -28,6 +28,13 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid Margin="0,3">
+                            <Grid.ToolTip>
+                                <MultiBinding StringFormat="{}{0}　[{1}]&#x0a;{2}">
+                                    <Binding Path="DisplayName"/>
+                                    <Binding Path="IsolationText"/>
+                                    <Binding Path="EffectiveDir"/>
+                                </MultiBinding>
+                            </Grid.ToolTip>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>

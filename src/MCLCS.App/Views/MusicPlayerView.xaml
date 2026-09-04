@@ -115,9 +115,21 @@
                       BorderBrush="{DynamicResource InputBorder}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Button Content="{Binding Display}" Command="{Binding DataContext.PlayTrackCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                CommandParameter="{Binding}" HorizontalContentAlignment="Left" Padding="6,4"
-                                Background="Transparent" BorderThickness="0" Foreground="{DynamicResource InputForeground}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="{Binding Display}"
+                                    Command="{Binding DataContext.PlayTrackCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}" HorizontalContentAlignment="Left" Padding="6,4"
+                                    Background="Transparent" BorderThickness="0" Foreground="{DynamicResource InputForeground}"/>
+                            <Button Grid.Column="1" Content="✕" Width="26" Margin="4,0,0,0"
+                                    Command="{Binding DataContext.RemoveTrackCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}" ToolTip="删除曲目"
+                                    Background="Transparent" BorderThickness="0"
+                                    Foreground="{DynamicResource SecondaryForeground}" VerticalAlignment="Center"/>
+                        </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

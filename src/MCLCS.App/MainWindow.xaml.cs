@@ -245,11 +245,16 @@ public partial class MainWindow : Window
             };
             inner.Children.Add(title);
 
+            // bug2.txt #5：选中指示条改为「手机导航栏式」短条——不贯穿、居中、奶白色、胶囊圆角
             var underline = new Rectangle
             {
                 Height = MainTabs.UnderlineHeight,
+                Width = 22,
+                RadiusX = 2,
+                RadiusY = 2,
+                HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Bottom,
-                Fill = Brushes.White,
+                Fill = CreamUnderline,
                 Visibility = Visibility.Collapsed
             };
 
@@ -312,7 +317,7 @@ public partial class MainWindow : Window
             p.Underline.Visibility = isSel ? Visibility.Visible : Visibility.Collapsed;
             if (isSel)
             {
-                p.Underline.Fill = Brush($"Tab{def.Kind}UnderlineBrush");
+                p.Underline.Fill = CreamUnderline;
                 // 选中下划线：opacity 平滑渐显到 1（对齐 HTML 的 .tab.selected .underline{opacity:1}，无呼吸循环）
                 p.Underline.Opacity = 0;
                 if (AnimationsEnabled)
@@ -616,8 +621,19 @@ public partial class MainWindow : Window
         _collapseTimer.Start();
     }
 
+    // bug2.txt #5：四色索引贴选中指示条统一奶白色（不再按贴色变化）
+    private static readonly SolidColorBrush CreamUnderline = new(Color.FromRgb(0xF2, 0xE9, 0xD8));
+
     private void AnimateSidebar(double width, bool expanded)
     {
+        // bug2.txt #1：关闭「动画效果」时跳过过渡动画，直接落到终态
+        if (!AnimationsEnabled)
+        {
+            SidebarRoot.Width = width;
+            foreach (var p in _sidebarItems.Values)
+                p.Title.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+            return;
+        }
         SidebarRoot.BeginAnimation(FrameworkElement.WidthProperty,
             new DoubleAnimation(width, TimeSpan.FromMilliseconds(SidebarState.TransitionMs)));
         foreach (var p in _sidebarItems.Values)

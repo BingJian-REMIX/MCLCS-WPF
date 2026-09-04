@@ -493,14 +493,21 @@ public class SettingsViewModel : ObservableObject
     private void AddOfflineAccount()
     {
         if (string.IsNullOrWhiteSpace(NewOfflineName)) { StatusMessage = "请填写离线用户名"; return; }
+        var root = GameConstants.DefaultGameRoot;
         var session = new OfflineAuthenticator().AuthenticateAsync(NewOfflineName).GetAwaiter().GetResult();
-        AccountStore.Upsert(GameConstants.DefaultGameRoot, new AccountEntry
+        var entry = new AccountEntry
         {
             DisplayName = NewOfflineName,
             AuthType = "offline",
             Username = session.Username,
             Uuid = session.Uuid
-        });
+        };
+        // bug2.txt #3 同名规避：已存在同名离线账号则复用其 Id（覆盖刷新），避免重复添加
+        AccountEntry? offlineHit = null;
+        foreach (var a in AccountStore.Load(root))
+            if (a.AuthType == "offline" && a.Username == session.Username) { offlineHit = a; break; }
+        if (offlineHit is not null) entry.Id = offlineHit.Id;
+        AccountStore.Upsert(root, entry);
         NewOfflineName = "";
         RefreshAccounts();
         StatusMessage = $"已添加离线账号：{session.Username}";
@@ -521,7 +528,7 @@ public class SettingsViewModel : ObservableObject
             StatusMessage = "Authlib 登录中…";
             var auth = new AuthlibInjectorAuthenticator(new HttpClient(), serverUrl, email, password);
             var session = await auth.AuthenticateAsync(email);
-            AccountStore.Upsert(GameConstants.DefaultGameRoot, new AccountEntry
+            var entry = new AccountEntry
             {
                 DisplayName = session.Username,
                 AuthType = "authlib",
@@ -529,7 +536,13 @@ public class SettingsViewModel : ObservableObject
                 Uuid = session.Uuid,
                 AccessToken = session.AccessToken,
                 AuthlibServerUrl = serverUrl
-            });
+            };
+            // bug2.txt #3 同名规避：同服务器+同邮箱已存在则复用 Id（覆盖刷新令牌）
+            AccountEntry? authlibHit = null;
+            foreach (var a in AccountStore.Load(GameConstants.DefaultGameRoot))
+                if (a.AuthType == "authlib" && a.Username == session.Username && a.AuthlibServerUrl == serverUrl) { authlibHit = a; break; }
+            if (authlibHit is not null) entry.Id = authlibHit.Id;
+            AccountStore.Upsert(GameConstants.DefaultGameRoot, entry);
             AuthlibServerUrl = "";
             AuthlibEmail = "";
             AuthlibPassword = "";
@@ -553,14 +566,20 @@ public class SettingsViewModel : ObservableObject
             var auth = new MicrosoftAuthenticator(new HttpClient(), clientId,
                 msg => UIService.ShowMessage(msg, "微软登录"));
             var session = await auth.AuthenticateAsync(null);
-            AccountStore.Upsert(GameConstants.DefaultGameRoot, new AccountEntry
+            var entry = new AccountEntry
             {
                 DisplayName = session.Username,
                 AuthType = "microsoft",
                 Username = session.Username,
                 Uuid = session.Uuid,
                 AccessToken = session.AccessToken
-            });
+            };
+            // bug2.txt #3 同名规避：同 UUID 微软账号已存在则复用 Id（刷新令牌），避免重复添加
+            AccountEntry? msHit = null;
+            foreach (var a in AccountStore.Load(GameConstants.DefaultGameRoot))
+                if (a.AuthType == "microsoft" && a.Uuid == session.Uuid) { msHit = a; break; }
+            if (msHit is not null) entry.Id = msHit.Id;
+            AccountStore.Upsert(GameConstants.DefaultGameRoot, entry);
             RefreshAccounts();
             StatusMessage = $"已添加微软账号：{session.Username}";
         }

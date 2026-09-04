@@ -244,7 +244,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" Text="账号管理" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4">
@@ -256,8 +256,8 @@
                     </StackPanel>
                     <TextBlock Grid.Row="2" Text="微软登录采用设备代码流（device code flow），无需配置任何回跳地址（redirect_uri），兼容性最好。可留空使用内置默认 client_id；如需使用自己的 Azure 应用，填入对应 client_id 即可。保存设置后点击「登录微软」，按弹窗提示在浏览器输入设备代码完成登录。"
                                TextWrapping="Wrap" MaxWidth="640" Margin="0,0,0,8" FontSize="11" Foreground="{DynamicResource SecondaryForeground}"/>
-                    <ListBox Grid.Row="2" ItemsSource="{Binding Accounts}" SelectedItem="{Binding SelectedAccount, Mode=TwoWay}"
-                             Height="140" Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}" Margin="0,32,0,0">
+                    <ListBox Grid.Row="3" ItemsSource="{Binding Accounts}" SelectedItem="{Binding SelectedAccount, Mode=TwoWay}"
+                             Height="140" Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}" Margin="0,8,0,0">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -267,17 +267,17 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,8">
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,8">
                         <Button Content="设为当前" Command="{Binding SetActiveAccountCommand}" Width="90" Padding="0,2"/>
                         <Button Content="{theme:Loc btn.delete}" Command="{Binding RemoveAccountCommand}" CommandParameter="{Binding SelectedAccount}" Width="80" Margin="8,0,0,0" Padding="0,2"/>
                         <Button Content="登录微软" Command="{Binding LoginMicrosoftCommand}" Width="90" Margin="8,0,0,0" Padding="0,2"/>
                     </StackPanel>
-                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,6">
+                    <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,6">
                         <TextBox Text="{Binding NewOfflineName, UpdateSourceTrigger=PropertyChanged}" Width="160"
                                  Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}" BorderBrush="{DynamicResource InputBorder}" VerticalContentAlignment="Center"/>
                         <Button Content="{theme:Loc settings.add_offline}" Command="{Binding AddOfflineAccountCommand}" Width="110" Margin="8,0,0,0" Padding="0,2"/>
                     </StackPanel>
-                    <StackPanel Grid.Row="5" Margin="0,6">
+                    <StackPanel Grid.Row="6" Margin="0,6">
                         <TextBlock Text="Authlib-Injector 账号" FontWeight="Bold" Margin="0,0,0,4"/>
                         <TextBlock TextWrapping="Wrap" MaxWidth="640" Margin="0,0,0,6" Opacity="0.8" FontSize="12"
                                    Foreground="{DynamicResource SecondaryForeground}"

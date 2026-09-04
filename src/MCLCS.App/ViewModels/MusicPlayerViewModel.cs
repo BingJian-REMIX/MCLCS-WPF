@@ -82,6 +82,7 @@ public class MusicPlayerViewModel : ObservableObject
         PlayTrackCommand = new RelayCommand(p => PlayTrack(p as Track));
         ExpandCommand = new RelayCommand(_ => Expanded = !Expanded);
         SeekCommand = new RelayCommand(p => Seek(p));
+        RemoveTrackCommand = new RelayCommand(p => RemoveTrack(p as Track));
 
         var profile = ProfileStore.Load(GameConstants.DefaultGameRoot);
         _autoDuck = profile.MusicAutoDuck;
@@ -205,6 +206,9 @@ public class MusicPlayerViewModel : ObservableObject
 
     /// <summary>拖动进度条跳转（bug #10）。</summary>
     public ICommand SeekCommand { get; }
+
+    /// <summary>从播放列表删除指定曲目（本地与在线流媒体通用，bug2.txt #12）。</summary>
+    public ICommand RemoveTrackCommand { get; }
 
     public string SourceKind
     {
@@ -475,6 +479,46 @@ public class MusicPlayerViewModel : ObservableObject
             idx = _playlist.Count - 1;
         }
         SelectAndPlay(idx);
+    }
+
+    /// <summary>从播放列表删除指定曲目（本地与在线流媒体通用，bug2.txt #12）。
+    /// 若删除的是当前播放曲目，则停止播放并切换到调整后的当前曲（不自动续播）。</summary>
+    private void RemoveTrack(Track? track)
+    {
+        if (track is null) return;
+        int idx = _playlist.Tracks.ToList().IndexOf(track);
+        if (idx < 0) return;
+
+        bool isCurrent = CurrentTrack is not null && ReferenceEquals(_playlist.Tracks[idx], CurrentTrack);
+        if (isCurrent)
+        {
+            IsPlaying = false;
+            Host?.Stop();
+            StopProgressTimer();
+        }
+
+        _playlist.RemoveAt(idx);
+
+        if (isCurrent)
+        {
+            if (_playlist.Count > 0)
+            {
+                int next = _playlist.CurrentIndex >= 0 ? _playlist.CurrentIndex : 0;
+                _playlist.Select(next);
+                CurrentTrack = _playlist.Current;
+                StatusText = "已删除当前曲目，已切到下一首";
+            }
+            else
+            {
+                CurrentTrack = null;
+                StatusText = "播放列表已清空";
+            }
+        }
+        else
+        {
+            StatusText = "已删除曲目";
+        }
+        SyncTracks();
     }
 
     private void LoadLocalFolder()

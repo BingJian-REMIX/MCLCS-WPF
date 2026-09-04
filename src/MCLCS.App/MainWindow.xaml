@@ -57,7 +57,7 @@
                          KeyDown="GlobalSearch_KeyDown"/>
 
                 <!-- 下载进度按钮：显示当前队列进度，点击展开完整下载队列 -->
-                <Button x:Name="DownloadPopupBtn" Grid.Column="1" Width="40" Height="30"
+                <Button x:Name="DownloadPopupBtn" Grid.Column="1" Width="40" Height="40"
                         Margin="6,0,0,0" Cursor="Hand"
                         ToolTip="下载队列 / 进度" Click="DownloadPopupBtn_Click">
                     <Button.Style>
@@ -67,7 +67,7 @@
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4">
+                                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="20">
                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <ControlTemplate.Triggers>
