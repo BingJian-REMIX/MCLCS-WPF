@@ -241,7 +241,7 @@ public class SavesViewModel : ObservableObject
             // 同步刷新列表中各行的损坏状态
             foreach (var row in Saves)
             {
-                var hit = reports.FirstOrDefault(r => r.SaveName == row.SaveName);
+                var hit = reports.FirstOrDefault(r => r.SavePath == row.SavePath);
                 if (hit is null || hit.Severity == SaveCorruptionSeverity.Ok)
                 {
                     row.HasCorruption = false;
