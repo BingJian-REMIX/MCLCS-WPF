@@ -14,6 +14,9 @@ public class SaveRow : ObservableObject
     public string SaveName { get; init; } = "";
     public string SavePath { get; init; } = "";
 
+    /// <summary>存档所在位置（"saves"=共享目录；"versions/&lt;id&gt;"=版本隔离目录）。</summary>
+    public string Location { get; init; } = "saves";
+
     private string _currentVersion = "";
     private int _dataVersion;
     private string _compatText = "";
@@ -120,64 +123,76 @@ public class SavesViewModel : ObservableObject
             var target = TargetVersion;
             var rows = new ObservableCollection<SaveRow>();
 
-            var savesDir = SaveCompatibilityDetector.SavesDir(gameRoot);
-            if (!Directory.Exists(savesDir))
+            // 待扫描目录：共享 saves/ + 各版本隔离 versions/<id>/saves/
+            // （版本隔离存档此前未被扫描，是「扫描不全」的根因）
+            var scanRoots = new List<(string Dir, string Location)>();
+            var sharedSaves = SaveCompatibilityDetector.SavesDir(gameRoot);
+            if (Directory.Exists(sharedSaves))
+                scanRoots.Add((sharedSaves, "saves"));
+            foreach (var v in LauncherService.Instance.ListInstalledVersions())
+            {
+                var iso = Path.Combine(gameRoot, "versions", v.Id, "saves");
+                if (Directory.Exists(iso)) scanRoots.Add((iso, $"versions/{v.Id}"));
+            }
+
+            if (scanRoots.Count == 0)
             {
                 Saves = rows;
-                StatusMessage = "未找到 saves 目录。";
+                StatusMessage = "未找到任何 saves 目录。";
                 return;
             }
 
-            var reports = string.IsNullOrEmpty(target)
-                ? new List<SaveCompatibilityReport>()
-                : SaveCompatibilityDetector.Scan(gameRoot, target);
-
-            foreach (var dir in Directory.GetDirectories(savesDir))
+            foreach (var (savesDir, location) in scanRoots)
             {
-                var name = Path.GetFileName(dir);
-                if (System.Text.RegularExpressions.Regex.IsMatch(name, @"\.backup-\d{14}$")) continue;
+                foreach (var dir in Directory.GetDirectories(savesDir))
+                {
+                    var name = Path.GetFileName(dir);
+                    if (System.Text.RegularExpressions.Regex.IsMatch(name, @"\.backup-\d{14}$")) continue;
 
-                var dv = SaveDowngrader.GetSaveDataVersion(dir);
-                var curVer = DataVersionMap.DescribeDataVersion(dv);
-                var row = new SaveRow
-                {
-                    SaveName = name,
-                    SavePath = dir,
-                    CurrentVersion = curVer,
-                    DataVersion = dv
-                };
-
-                var rep = reports.FirstOrDefault(r => r.SaveName == name);
-                if (rep is not null)
-                {
-                    row.CompatText = rep.Message;
-                    row.SeverityColor = rep.Compatible ? "#5BBF6A"
-                        : rep.Severity == SaveCompatibilitySeverity.MuchNewer ? "#E0533A"
-                        : "#E0A040";
-                }
-                else
-                {
-                    var lvlPath = SaveCompatibilityDetector.LevelDatPath(dir);
-                    if (!File.Exists(lvlPath))
+                    var dv = SaveDowngrader.GetSaveDataVersion(dir);
+                    var curVer = DataVersionMap.DescribeDataVersion(dv);
+                    var row = new SaveRow
                     {
-                        // 无 level.dat：不是有效存档，标记警告而非误报为「兼容」
-                        row.CompatText = "缺少 level.dat，可能不是有效的 Minecraft 存档。";
-                        row.SeverityColor = "#E0A040";
+                        SaveName = name,
+                        SavePath = dir,
+                        Location = location,
+                        CurrentVersion = curVer,
+                        DataVersion = dv
+                    };
+
+                    // 单存档兼容性检测（共享/隔离目录统一走 CheckSingleSave；level.dat 缺失时返回 null）
+                    var rep = string.IsNullOrEmpty(target) ? null : SaveCompatibilityDetector.CheckSingleSave(dir, target);
+                    if (rep is not null)
+                    {
+                        row.CompatText = rep.Message;
+                        row.SeverityColor = rep.Compatible ? "#5BBF6A"
+                            : rep.Severity == SaveCompatibilitySeverity.MuchNewer ? "#E0533A"
+                            : "#E0A040";
                     }
                     else
                     {
-                        row.CompatText = string.IsNullOrEmpty(target)
-                            ? "选择目标游戏版本后可检测兼容性。"
-                            : "兼容。";
-                        row.SeverityColor = "#5BBF6A";
+                        var lvlPath = SaveCompatibilityDetector.LevelDatPath(dir);
+                        if (!File.Exists(lvlPath))
+                        {
+                            // 无 level.dat：不是有效存档，标记警告而非误报为「兼容」
+                            row.CompatText = "缺少 level.dat，可能不是有效的 Minecraft 存档。";
+                            row.SeverityColor = "#E0A040";
+                        }
+                        else
+                        {
+                            row.CompatText = string.IsNullOrEmpty(target)
+                                ? "选择目标游戏版本后可检测兼容性。"
+                                : "兼容。";
+                            row.SeverityColor = "#5BBF6A";
+                        }
                     }
-                }
 
-                var backups = SaveCompatibilityDetector.FindBackups(savesDir, name);
-                row.HasBackup = backups.Count > 0;
-                row.BackupText = backups.Count > 0
-                    ? $"{backups.Count} 个备份（最新 {backups[^1].CreatedUtc:yyyy-MM-dd HH:mm}）"
-                    : "无备份";
+                    // 备份发现：使用存档所在目录（而非固定共享 saves/），版本隔离存档的备份也能正确识别
+                    var backups = SaveCompatibilityDetector.FindBackups(Path.GetDirectoryName(dir) ?? savesDir, name);
+                    row.HasBackup = backups.Count > 0;
+                    row.BackupText = backups.Count > 0
+                        ? $"{backups.Count} 个备份（最新 {backups[^1].CreatedUtc:yyyy-MM-dd HH:mm}）"
+                        : "无备份";
 
                 // 存档损坏检测（只读，不修复）
                 var corrupt = SaveCorruptionDetector.ScanSingle(dir);
@@ -194,6 +209,7 @@ public class SavesViewModel : ObservableObject
                 }
 
                 rows.Add(row);
+            }
             }
 
             Saves = rows;
@@ -255,17 +271,16 @@ public class SavesViewModel : ObservableObject
         finally { IsBusy = false; }
     }
 
-    private async Task DowngradeAsync(string? saveName)
+    private async Task DowngradeAsync(string? savePath)
     {
-        if (string.IsNullOrEmpty(saveName) || string.IsNullOrEmpty(TargetVersion)) return;
+        if (string.IsNullOrEmpty(savePath) || string.IsNullOrEmpty(TargetVersion)) return;
         IsBusy = true;
         try
         {
-            var gameRoot = LauncherService.Instance.GameRoot;
-            var savePath = Path.Combine(SaveCompatibilityDetector.SavesDir(gameRoot), saveName);
+            var name = Path.GetFileName(savePath);
             var plan = await SaveDowngrader.DowngradeAsync(savePath, TargetVersion, DowngradeMethod.QuickModifyDataVersion);
             StatusMessage = plan.Success
-                ? $"已降级 {saveName} 到 {TargetVersion}（已备份原档）。"
+                ? $"已降级 {name} 到 {TargetVersion}（已备份原档）。"
                 : $"降级失败：{plan.ErrorMessage}";
         }
         catch (Exception ex)
@@ -279,24 +294,23 @@ public class SavesViewModel : ObservableObject
         }
     }
 
-    private async Task RestoreAsync(string? saveName)
+    private async Task RestoreAsync(string? savePath)
     {
-        if (string.IsNullOrEmpty(saveName)) return;
+        if (string.IsNullOrEmpty(savePath)) return;
         IsBusy = true;
         try
         {
-            var gameRoot = LauncherService.Instance.GameRoot;
-            var savesDir = SaveCompatibilityDetector.SavesDir(gameRoot);
-            var backups = SaveCompatibilityDetector.FindBackups(savesDir, saveName);
+            var name = Path.GetFileName(savePath);
+            // 备份存放在存档所在目录内（与共享/隔离位置一致），用实际目录查找
+            var backups = SaveCompatibilityDetector.FindBackups(Path.GetDirectoryName(savePath) ?? "", name);
             if (backups.Count == 0)
             {
-                StatusMessage = $"{saveName} 没有可回滚的备份。";
+                StatusMessage = $"{name} 没有可回滚的备份。";
                 return;
             }
             var latest = backups[^1];
-            var savePath = Path.Combine(savesDir, saveName);
             var replaced = SaveDowngrader.RestoreBackupAsync(latest.BackupPath, savePath);
-            StatusMessage = $"已回滚 {saveName} 到备份（当前档另存于 {Path.GetFileName(replaced)}）。";
+            StatusMessage = $"已回滚 {name} 到备份（当前档另存于 {Path.GetFileName(replaced)}）。";
         }
         catch (Exception ex)
         {
@@ -309,19 +323,19 @@ public class SavesViewModel : ObservableObject
         }
     }
 
-    private async Task BackupSaveAsync(string? saveName)
+    private async Task BackupSaveAsync(string? savePath)
     {
-        if (string.IsNullOrEmpty(saveName)) return;
+        if (string.IsNullOrEmpty(savePath)) return;
         IsBusy = true;
         try
         {
             var gameRoot = LauncherService.Instance.GameRoot;
-            var sourceDir = Path.Combine(SaveCompatibilityDetector.SavesDir(gameRoot), saveName);
+            var name = Path.GetFileName(savePath);
             var result = await Task.Run(() =>
-                MCLCS.Core.Toolbox.BackupManager.Create(gameRoot, sourceDir, MCLCS.Core.Toolbox.BackupKind.Save,
-                    $"手动备份 {saveName}", auto: false, policy: ProfileStore.Load(gameRoot).Backup));
+                MCLCS.Core.Toolbox.BackupManager.Create(gameRoot, savePath, MCLCS.Core.Toolbox.BackupKind.Save,
+                    $"手动备份 {name}", auto: false, policy: ProfileStore.Load(gameRoot).Backup));
             StatusMessage = result.Ok
-                ? $"已备份 {saveName}（{result.Record?.SizeText ?? "?"}）"
+                ? $"已备份 {name}（{result.Record?.SizeText ?? "?"}）"
                 : $"备份失败：{result.Error}";
         }
         catch (Exception ex)
@@ -331,21 +345,20 @@ public class SavesViewModel : ObservableObject
         finally { IsBusy = false; await ScanAsync(); }
     }
 
-    private async Task DeleteSaveAsync(string? saveName)
+    private async Task DeleteSaveAsync(string? savePath)
     {
-        if (string.IsNullOrEmpty(saveName)) return;
-        if (!UIService.Confirm($"确定删除存档「{saveName}」及其数据？操作不可撤销。", "确认删除")) return;
+        if (string.IsNullOrEmpty(savePath)) return;
+        var name = Path.GetFileName(savePath);
+        if (!UIService.Confirm($"确定删除存档「{name}」及其数据？操作不可撤销。", "确认删除")) return;
 
         IsBusy = true;
         try
         {
-            var gameRoot = LauncherService.Instance.GameRoot;
-            var saveDir = Path.Combine(SaveCompatibilityDetector.SavesDir(gameRoot), saveName);
             await Task.Run(() =>
             {
-                if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
+                if (Directory.Exists(savePath)) Directory.Delete(savePath, true);
             });
-            StatusMessage = $"已删除存档 {saveName}";
+            StatusMessage = $"已删除存档 {name}";
         }
         catch (Exception ex)
         {
@@ -354,13 +367,12 @@ public class SavesViewModel : ObservableObject
         finally { IsBusy = false; await ScanAsync(); }
     }
 
-    private void ExtractSeed(string? saveName)
+    private void ExtractSeed(string? savePath)
     {
-        if (string.IsNullOrEmpty(saveName)) return;
+        if (string.IsNullOrEmpty(savePath)) return;
         try
         {
-            var gameRoot = LauncherService.Instance.GameRoot;
-            var levelDat = Path.Combine(SaveCompatibilityDetector.SavesDir(gameRoot), saveName, "level.dat");
+            var levelDat = Path.Combine(savePath, "level.dat");
             if (!File.Exists(levelDat)) { StatusMessage = "找不到 level.dat"; return; }
             long seed = 0;
             try
@@ -378,7 +390,7 @@ public class SavesViewModel : ObservableObject
             catch { StatusMessage = "种子提取失败"; return; }
             System.Windows.Clipboard.SetText(seed.ToString());
             StatusMessage = $"种子 {seed} 已复制到剪贴板";
-            ToastService.Show("种子", $"{saveName}: {seed}", ToastKind.Success);
+            ToastService.Show("种子", $"{Path.GetFileName(savePath)}: {seed}", ToastKind.Success);
         }
         catch (Exception ex) { StatusMessage = $"提取失败: {ex.Message}"; }
     }

@@ -40,7 +40,7 @@
                                 <Rectangle Grid.Column="0" Fill="{Binding SeverityColor}" RadiusX="2" RadiusY="2"/>
 
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                                    <TextBlock FontWeight="Bold" FontSize="13" Text="{Binding SaveName}"/>
+                                    <TextBlock FontWeight="Bold" FontSize="13"><Run Text="{Binding SaveName}"/><Run Text="   "/><Run Text="📁 " Foreground="#7AB8FF" FontSize="11"/><Run Text="{Binding Location}" Foreground="#7AB8FF" FontSize="11"/></TextBlock>
                                     <TextBlock Margin="0,2,0,0">
                                         <Run Text="当前版本："/>
                                         <Run Text="{Binding CurrentVersion}"/>
@@ -63,19 +63,19 @@
                                     <Button Content="🌱" Padding="6,2" Margin="0,0,6,0"
                                             ToolTip="提取种子"
                                             Command="{Binding DataContext.ExtractSeedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding SaveName}"/>
+                                            CommandParameter="{Binding SavePath}"/>
                                     <Button Content="备份" Padding="6,2" Margin="0,0,6,0"
                                             Command="{Binding DataContext.BackupSaveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding SaveName}"/>
+                                            CommandParameter="{Binding SavePath}"/>
                                     <Button Content="降级" Padding="6,2" Margin="0,0,6,0"
                                             Command="{Binding DataContext.DowngradeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding SaveName}"/>
+                                            CommandParameter="{Binding SavePath}"/>
                                     <Button Content="回滚" Padding="6,2" Margin="0,0,6,0"
                                             Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding SaveName}"/>
+                                            CommandParameter="{Binding SavePath}"/>
                                     <Button Content="删除" Padding="6,2"
                                             Command="{Binding DataContext.DeleteSaveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding SaveName}"/>
+                                            CommandParameter="{Binding SavePath}"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
