@@ -5,7 +5,7 @@ using MCLCS.Core.Utils;
 namespace MCLCS.App.Services;
 
 /// <summary>
-/// 更新检测编排：检查新版本（GET EdgeOne Pages latest.json）→ 弹窗展示更新日志。
+/// 更新检测编排：检查新版本（GET GitHub Pages 托管的 latest.json）→ 弹窗展示更新日志。
 /// 供「设置页-检查更新」与「启动时自动检查」共用，避免逻辑重复。
 /// 不误报保证：<see cref="LauncherUpdater.IsNewer"/> 在当前版本等于最新版本时返回 false，
 /// 不会提示「更新到自身」（例如在 2.5.3 上不会弹出「更新到 2.5.3」）。
