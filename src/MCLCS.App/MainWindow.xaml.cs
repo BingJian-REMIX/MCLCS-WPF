@@ -104,6 +104,10 @@ public partial class MainWindow : Window
         PageHost.Content = _pages[MainTabKind.Game];
         _currentKind = MainTabKind.Game;
 
+        // bug #10：注册版本库大页导航（覆盖内容区）
+        BigPageNavigator.ShowHandler = ShowBigPage;
+        BigPageNavigator.CloseHandler = CloseBigPage;
+
         AnimationsEnabled = ProfileStore.Load(GameConstants.DefaultGameRoot).AnimationsEnabled;
 
         // bug #21（游戏目录切换）：页面在构造期一次性缓存，换目录后版本 / 存档列表仍是旧数据，
@@ -666,6 +670,21 @@ public partial class MainWindow : Window
         RouteSidebar(_sidebarState.SelectedId);
 
         if (AnimationsEnabled) PlayPageTransition();
+    }
+
+    // ===== 版本库大页（bug #10）=====
+
+    private void ShowBigPage(FrameworkElement page)
+    {
+        BigPageHost.Children.Clear();
+        BigPageHost.Children.Add(page);
+        BigPageHost.Visibility = Visibility.Visible;
+    }
+
+    private void CloseBigPage()
+    {
+        BigPageHost.Visibility = Visibility.Collapsed;
+        BigPageHost.Children.Clear();
     }
 
     private void PlayPageTransition()

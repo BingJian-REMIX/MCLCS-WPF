@@ -99,15 +99,6 @@ public class ToolboxViewModel : ObservableObject
         var items = new (string Id, string Icon, string Title, Func<UserControl> Factory)[]
         {
             ("log",        "\U0001F4CB", "日志管理",     () => new LogView()),
-            ("versionlist","\U0001F5C3", "版本列表",     () => new VersionListView()),
-            ("versionsettings", "\u2699", "版本设置", () => {
-                // 直接打开首个已安装版本的版本设置；未安装任何版本时回退到版本列表
-                var root = LauncherService.Instance.GameRoot;
-                var v = LauncherService.Instance.ListInstalledVersions().FirstOrDefault();
-                return string.IsNullOrEmpty(v.Id)
-                    ? new VersionListView()
-                    : new VersionSettingsView(root, v.Id, v.Type);
-            }),
             ("saves",      "\U0001F4BE", "存档管理",     () => new SavesView()),
             ("screenshot", "\U0001F4F7", "截图管理",     () => new ScreenshotView()),
             ("perf",       "\u26A1",     "性能/实例",    () => new PerfView()),

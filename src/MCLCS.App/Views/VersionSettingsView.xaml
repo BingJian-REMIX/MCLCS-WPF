@@ -31,11 +31,20 @@
 
     <Grid Margin="14">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+        <!-- bug #10：顶部左侧返回按钮（大页导航） -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+            <Button Content="← 返回" Click="BackButton_Click" Padding="10,3" Margin="0,0,10,0"
+                    ToolTip="返回上一页"/>
+            <TextBlock Text="版本设置" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"
+                       Foreground="{DynamicResource PrimaryForeground}"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
 
                 <!-- ① 基础信息 -->
@@ -243,7 +252,7 @@
         </ScrollViewer>
 
         <!-- 底部：状态 + 保存 -->
-        <Grid Grid.Row="1" Margin="0,10,0,0">
+        <Grid Grid.Row="2" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>

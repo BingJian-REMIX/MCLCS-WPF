@@ -107,6 +107,9 @@ public class VersionListViewModel : ObservableObject
     public ICommand LaunchCommand { get; }
     public ICommand OpenSettingsCommand { get; }
 
+    /// <summary>bug #10：请求以大页形式打开某版本的版本设置（由 VersionListView 订阅并导航）。</summary>
+    public event Action<VersionEntry>? SettingsRequested;
+
     public VersionListViewModel()
     {
         RefreshCommand = new RelayCommand(_ => Refresh());
@@ -172,6 +175,7 @@ public class VersionListViewModel : ObservableObject
             return;
         }
 
-        VersionSettingsWindow.Open(LauncherService.Instance.GameRoot, entry.Id, entry.Type, Refresh);
+        // bug #10：不再以模态窗口打开，改为大页导航（由 VersionListView 订阅 SettingsRequested）
+        SettingsRequested?.Invoke(entry);
     }
 }

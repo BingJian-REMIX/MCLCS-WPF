@@ -258,6 +258,10 @@
                     <ContentControl x:Name="PageHost" Panel.ZIndex="1"/>
                 </Grid>
             </Border>
+
+            <!-- bug #10：版本库大页覆盖层（覆盖内容区，默认隐藏） -->
+            <Grid x:Name="BigPageHost" Grid.Column="0" Grid.ColumnSpan="2" Panel.ZIndex="50"
+                  Visibility="Collapsed" Background="{DynamicResource WindowBackground}"/>
         </Grid>
 
         <!-- 音乐解码宿主（隐藏，仅用于后台播放） -->

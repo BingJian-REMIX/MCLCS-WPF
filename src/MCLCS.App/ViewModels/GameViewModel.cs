@@ -120,6 +120,7 @@ public class GameViewModel : ObservableObject
     public ICommand EditServerCommand { get; }
     public ICommand DeleteServerCommand { get; }
     public ICommand OpenAfkCommand { get; }
+    public ICommand OpenVersionLibraryCommand { get; }
 
     public GameViewModel()
     {
@@ -139,6 +140,7 @@ public class GameViewModel : ObservableObject
         EditServerCommand = new RelayCommand(p => EditServer(p as ServerEntry));
         DeleteServerCommand = new RelayCommand(p => DeleteServer(p as ServerEntry));
         OpenAfkCommand = new RelayCommand(_ => OpenAfk());
+        OpenVersionLibraryCommand = new RelayCommand(_ => OpenVersionLibrary());
 
         Versions.Refresh();
         LoadAccounts();
@@ -432,6 +434,16 @@ public class GameViewModel : ObservableObject
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
             win.Show();
+        });
+    }
+
+    /// <summary>bug #10：游戏页快速启动触发版本库大页（版本列表 / 版本设置独立于四色索引贴）。</summary>
+    private static void OpenVersionLibrary()
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var page = new VersionListView { OnBack = BigPageNavigator.Close };
+            BigPageNavigator.Show(page);
         });
     }
 
