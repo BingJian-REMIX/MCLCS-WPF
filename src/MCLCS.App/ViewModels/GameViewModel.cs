@@ -119,6 +119,7 @@ public class GameViewModel : ObservableObject
     public ICommand AddServerCommand { get; }
     public ICommand EditServerCommand { get; }
     public ICommand DeleteServerCommand { get; }
+    public ICommand OpenAfkCommand { get; }
 
     public GameViewModel()
     {
@@ -137,6 +138,7 @@ public class GameViewModel : ObservableObject
         AddServerCommand = new RelayCommand(_ => AddServer());
         EditServerCommand = new RelayCommand(p => EditServer(p as ServerEntry));
         DeleteServerCommand = new RelayCommand(p => DeleteServer(p as ServerEntry));
+        OpenAfkCommand = new RelayCommand(_ => OpenAfk());
 
         Versions.Refresh();
         LoadAccounts();
@@ -413,6 +415,24 @@ public class GameViewModel : ObservableObject
         ServerListStore.Save(Servers.ToList(), _gameRoot);
         ServersEmpty = Servers.Count == 0;
         ToastService.Show("服务器", $"已删除 {server.Name}", ToastKind.Info);
+    }
+
+    /// <summary>bug #14：游戏页触发挂机工作流——打开独立窗口承载 AfkWorkflowView，运行器自动接管正在运行的 MC 实例。</summary>
+    private static void OpenAfk()
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var win = new Window
+            {
+                Title = "挂机工作流",
+                Content = new AfkWorkflowView(),
+                Width = 880,
+                Height = 600,
+                Owner = Application.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            win.Show();
+        });
     }
 
     private static ServerEntry? ShowServerDialog(string? name, string? address)

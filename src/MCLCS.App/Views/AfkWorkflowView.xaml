@@ -63,11 +63,10 @@
                         <!-- bug #13：此前用 SelectedItem 绑定，选中值被赋成 ComboBoxItem 本身而非 Tag，
                              导致无论选哪种动作类型，生成/保存的都还是默认的帧率限制 (F)。 -->
                         <ComboBox SelectedValue="{Binding SelectedAction.ActionType, Mode=TwoWay}" SelectedValuePath="Tag" Width="140">
-                            <ComboBoxItem Content="帧率限制 (F)" Tag="F"/>
-                            <ComboBoxItem Content="渲染距离 (D)" Tag="D"/>
-                            <ComboBoxItem Content="音量 (V)" Tag="V"/>
-                            <ComboBoxItem Content="视角朝向 (L)" Tag="L"/>
-                            <ComboBoxItem Content="模拟按键 (K)" Tag="K"/>
+                            <ComboBoxItem Content="功能键 (F)" Tag="F"/>
+                            <ComboBoxItem Content="延时 (D)" Tag="D"/>
+                            <ComboBoxItem Content="长按 (L)" Tag="L"/>
+                            <ComboBoxItem Content="键码 (K)" Tag="K"/>
                             <ComboBoxItem Content="鼠标连点 (C)" Tag="C"/>
                             <ComboBoxItem Content="循环 (*)" Tag="*"/>
                         </ComboBox>
@@ -81,22 +80,34 @@
                                  Foreground="{DynamicResource InputForeground}"
                                  BorderBrush="{DynamicResource InputBorder}"/>
                     </WrapPanel>
+                    <TextBlock Margin="70,4,0,0" FontSize="11" Foreground="{DynamicResource SecondaryForeground}"
+                               Text="{Binding SelectedAction.ParamHint}"/>
                 </StackPanel>
             </Border>
 
-            <!-- Token 预览 -->
+            <!-- 运行 / 停止 + Token 预览 -->
             <Border Grid.Row="3" Background="{DynamicResource ControlBackground}" CornerRadius="6"
                     Padding="10,8" Margin="0,6,0,0">
                 <StackPanel>
                     <WrapPanel>
-                        <TextBlock Text="Token：" FontWeight="Bold" VerticalAlignment="Center"
+                        <Button Content="▶ 运行" Command="{Binding RunCommand}" Width="80" Padding="0,4"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisInvert}}"/>
+                        <Button Content="■ 停止" Command="{Binding StopCommand}" Width="80" Padding="0,4"
+                                Margin="8,0,0,0"
+                                Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Text="Token：" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                         <TextBlock Text="{Binding TokenText}" Margin="8,0,0,0" FontSize="12"
                                    Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis" MaxWidth="420"/>
+                                   TextTrimming="CharacterEllipsis" MaxWidth="360"/>
                         <Button Content="复制" Command="{Binding CopyTokenCommand}" Width="56" Padding="0,2"
                                 Margin="12,0,0,0"/>
                     </WrapPanel>
+                    <TextBlock Margin="0,6,0,0" FontSize="12" Foreground="{DynamicResource PrimaryForeground}"
+                               Text="{Binding TargetText}"/>
+                    <TextBlock Margin="0,2,0,0" FontSize="12" FontWeight="Bold"
+                               Foreground="{DynamicResource AccentBrush}" Text="{Binding RunStatus}"/>
                 </StackPanel>
             </Border>
         </Grid>
