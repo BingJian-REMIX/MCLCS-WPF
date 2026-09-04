@@ -77,7 +77,7 @@ MCLCS（Minecraft Launcher CSharp）是一个用 C# / WPF 实现的 Minecraft �
     -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableWindowsTargeting=true
   # 产物 mclcs.exe 复制到 GUI 发布目录（与 MCLCS Launcher.exe 同目录）
   ```
-- **合并打包**：将 `MCLCS Launcher.exe` 与 `mclcs.exe`（及各自的 `.dll` / `.pdb` 已内联为 single-file）放入同一目录，压缩为单个 `MCLCS-WPF-2.5.5-win-x64.zip` 即 CNB Release 资产。
+- **合并打包**：将 `MCLCS Launcher.exe` 与 `mclcs.exe`（及各自的 `.dll` / `.pdb` 已内联为 single-file）放入同一目录，压缩为单个 `MCLCS-2.5.5-win-x64.zip` 即 CNB Release 资产（Linux 版对应 `MCLCS-2.5.5-Linux-x64.zip`）。
 - **Linux 交叉编译校验**：可用 Roslyn 直接引用 .NET 10 参考程序集完成 App / CLI 层编译校验（详见 `docs/BUILD.md`）。
 - **CLI 命令**：`launch` / `list` / `install` / `modpack` / `mods` / `skin` / `version`。
 

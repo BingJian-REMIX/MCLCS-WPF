@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MCLCS.App.Views"
         mc:Ignorable="d"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False"
@@ -47,12 +48,11 @@
                             Click="Download_Click"/>
                 </Grid>
 
-                <!-- 更新日志（可滚动、可复制） -->
-                <TextBox x:Name="ChangelogBox" Margin="0,14,0,0" IsReadOnly="True" TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto" AcceptsReturn="True"
-                         BorderThickness="0" Background="Transparent"
-                         Foreground="{DynamicResource PrimaryForeground}" FontSize="13"
-                         VerticalContentAlignment="Top"/>
+                <!-- 更新日志（Markdown 渲染，可滚动） -->
+                <ScrollViewer x:Name="ChangelogScroll" Margin="0,14,0,0" VerticalScrollBarVisibility="Auto"
+                              MaxHeight="220">
+                    <local:MarkdownTextBlock x:Name="ChangelogBox" FontSize="13"/>
+                </ScrollViewer>
             </DockPanel>
         </Border>
     </Grid>

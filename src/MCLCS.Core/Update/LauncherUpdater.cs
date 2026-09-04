@@ -89,7 +89,7 @@ public static class LauncherUpdater
             {
                 result.Changelog = info.Changelog;
                 result.DownloadUrl = info.DownloadUrl
-                    ?? $"{GameConstants.CnbRepoUrl}/-/releases/download/v{info.Version}/MCLCS-v{info.Version}-win-x64.zip";
+                    ?? $"{GameConstants.CnbRepoUrl}/-/releases/download/v{info.Version}/MCLCS-{info.Version}-win-x64.zip";
                 result.SingleFileAvailable = info.SingleFileAvailable;
                 result.Mandatory = info.Mandatory;
             }
