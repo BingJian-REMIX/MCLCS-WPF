@@ -235,6 +235,7 @@ public partial class MainWindow : Window
             var inner = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
+                Height = MainTabs.TabHeight,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(10, 0, 10, 0)

@@ -172,7 +172,7 @@
 
             <!-- 四色索引贴主标签（bug #5：下移贴标题栏底部、下端直角齐平） -->
             <StackPanel x:Name="TabPanel" Grid.Column="2" Orientation="Horizontal"
-                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,8,0"/>
+                        HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,0"/>
 
             <!-- 窗口控制 -->
             <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
