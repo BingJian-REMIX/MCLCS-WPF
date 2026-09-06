@@ -46,14 +46,11 @@
                         <Button Content="{theme:Loc game.btn_start}" MinWidth="96" Height="34"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Command="{Binding LaunchCommand}"/>
-                        <!-- bug #14：游戏页触发挂机工作流 -->
-                        <Button Content="🕹 挂机" MinWidth="72" Height="34" Margin="8,0,0,0"
-                                Command="{Binding OpenAfkCommand}"
-                                ToolTip="打开挂机工作流（运行器自动接管正在运行的 MC 实例）"/>
-                        <!-- bug #10：游戏页触发版本库大页 -->
+                        <!-- bug #10/#78：游戏页仅保留版本库入口，无框图标按钮 -->
                         <Button Content="📦 版本库" MinWidth="72" Height="34" Margin="8,0,0,0"
+                                Style="{StaticResource GhostButtonStyle}"
                                 Command="{Binding OpenVersionLibraryCommand}"
-                                ToolTip="打开版本列表大页（版本设置一并移出四色索引贴）"/>
+                                ToolTip="打开版本列表大页"/>
                     </StackPanel>
 
                     <!-- 第二行标签 -->

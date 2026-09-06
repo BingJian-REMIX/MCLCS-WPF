@@ -109,34 +109,39 @@
 
         <!-- 列表 -->
         <Grid Grid.Row="3">
-            <!-- 本地 / 在线：统一播放列表 -->
-            <ListBox ItemsSource="{Binding Tracks}" Visibility="{Binding IsMcOst, Converter={StaticResource InvBoolToVisibility}}"
-                      Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
-                      BorderBrush="{DynamicResource InputBorder}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0" Content="{Binding Display}"
-                                    Command="{Binding DataContext.PlayTrackCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                    CommandParameter="{Binding}" HorizontalContentAlignment="Left" Padding="6,4"
-                                    Background="Transparent" BorderThickness="0" Foreground="{DynamicResource InputForeground}"/>
-                            <Button Grid.Column="1" Content="✕" Width="26" Margin="4,0,0,0"
-                                    Command="{Binding DataContext.RemoveTrackCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                    CommandParameter="{Binding}" ToolTip="删除曲目"
-                                    Background="Transparent" BorderThickness="0"
-                                    Foreground="{DynamicResource SecondaryForeground}" VerticalAlignment="Center"/>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <!-- 本地 / 在线：统一播放列表（#85：包 ScrollViewer 以约束高度并启用滚动） -->
+            <ScrollViewer Visibility="{Binding IsMcOst, Converter={StaticResource InvBoolToVisibility}}"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          MaxHeight="360">
+                <ListBox ItemsSource="{Binding Tracks}"
+                          Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
+                          BorderBrush="{DynamicResource InputBorder}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="{Binding Display}"
+                                        Command="{Binding DataContext.PlayTrackCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                        CommandParameter="{Binding}" HorizontalContentAlignment="Left" Padding="6,4"
+                                        Background="Transparent" BorderThickness="0" Foreground="{DynamicResource InputForeground}"/>
+                                <Button Grid.Column="1" Content="✕" Width="32" Margin="6,0,0,0"
+                                        Command="{Binding DataContext.RemoveTrackCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                        CommandParameter="{Binding}" ToolTip="删除曲目"
+                                        Background="Transparent" BorderThickness="0"
+                                        Foreground="{DynamicResource SecondaryForeground}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </ScrollViewer>
 
             <!-- MC 原声：按分类分组 -->
             <ScrollViewer Visibility="{Binding IsMcOst, Converter={StaticResource BoolToVisibility}}"
-                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          MaxHeight="360">
                 <ItemsControl ItemsSource="{Binding McOstGroups}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>

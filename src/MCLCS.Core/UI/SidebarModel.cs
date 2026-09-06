@@ -132,7 +132,7 @@ public class SidebarConfig
 
 /// <summary>
 /// 副标签注册表：按主标签分组。
-/// 游戏页无侧边栏（规格 2.1）；下载 5 项（2.2）；工具箱 18 项（2.3，开发工具拆 4 子项）；设置 8 项（2.4）。
+/// 游戏页无侧边栏（规格 2.1）；下载 5 项（2.2）；工具箱 16 项（2.3，开发工具拆 4 子项；版本列表/版本设置已拆出为游戏页大页入口）；设置 8 项（2.4）。
 /// </summary>
 public static class Sidebar
 {
@@ -158,20 +158,18 @@ public static class Sidebar
         new("datapack",   "tool.datapack",   "dp",        5, "tool.group.diag"),
 
         // 资源与内容
-        new("versionlist", "tool.versionlist", "pack",        6, "tool.group.resource"),
-        new("versionsettings", "version.settings.title", "general", 7, "tool.group.resource"),
-        new("saves",      "tool.saves",      "save",      8, "tool.group.resource"),
-        new("backup",     "tool.backup",     "backup",    9, "tool.group.resource"),
-        new("screenshot", "tool.screenshot", "shot",     10, "tool.group.resource"),
-        new("clean",      "tool.clean",      "clean",    11, "tool.group.resource"),
-        new("modpackio",  "tool.modpackio",  "modpack",  12, "tool.group.resource"),
-        new("music",      "tool.music",      "music",    13, "tool.group.resource"),
-        new("map",        "tool.map",        "map",      14, "tool.group.resource"),
+        new("saves",      "tool.saves",      "save",      6, "tool.group.resource"),
+        new("backup",     "tool.backup",     "backup",    7, "tool.group.resource"),
+        new("screenshot", "tool.screenshot", "shot",     8, "tool.group.resource"),
+        new("clean",      "tool.clean",      "clean",    9, "tool.group.resource"),
+        new("modpackio",  "tool.modpackio",  "modpack",  10, "tool.group.resource"),
+        new("music",      "tool.music",      "music",    11, "tool.group.resource"),
+        new("map",        "tool.map",        "map",      12, "tool.group.resource"),
 
         // 开发工具
-        new("moddev",     "tool.moddev",     "dev",      12, "tool.group.dev"),
-        new("packmaker",  "tool.packmaker",  "dev",      13, "tool.group.dev"),
-        new("nbt",        "tool.nbt",        "dev",      14, "tool.group.dev"),
+        new("moddev",     "tool.moddev",     "dev",      13, "tool.group.dev"),
+        new("packmaker",  "tool.packmaker",  "dev",      14, "tool.group.dev"),
+        new("nbt",        "tool.nbt",        "dev",      15, "tool.group.dev"),
         new("command",    "tool.command",    "dev",      15, "tool.group.dev"),
         new("skin",       "tool.skin",       "skin",     16, "tool.group.dev"),
         new("shortcut",   "tool.shortcut",   "shortcut", 17, "tool.group.dev"),

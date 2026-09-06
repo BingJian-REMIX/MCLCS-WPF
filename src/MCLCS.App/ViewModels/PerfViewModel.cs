@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Input;
 using System.Windows.Threading;
 using MCLCS.Core.MultiInstance;
@@ -39,6 +40,9 @@ public class PerfViewModel : ObservableObject, IDisposable
     private readonly PerformanceCounter? _cpuCounter;
     private readonly PerformanceCounter? _memCounter;
     private readonly DispatcherTimer _timer;
+    private readonly ObservableCollection<double> _cpuHistory = new();
+    private readonly ObservableCollection<double> _memHistory = new();
+    private const int HistoryCap = 60;
 
     public ObservableCollection<InstancePerf> Instances
     {
@@ -75,11 +79,21 @@ public class PerfViewModel : ObservableObject, IDisposable
     public string CpuUsageText => $"{SystemCpu:F0}%";
     public string MemoryUsageText => $"{MemoryAvailableMb:F0} MB 可用";
 
+    // bug2.txt #7：实时折线图历史（滚动缓冲）
+    public ObservableCollection<double> CpuHistory => _cpuHistory;
+    public ObservableCollection<double> MemHistory => _memHistory;
+
+    public double MemTotalMb { get; private set; }
+    public double MemUsedPercent => MemTotalMb > 0
+        ? Math.Min(100, Math.Max(0, (MemTotalMb - MemoryAvailableMb) / MemTotalMb * 100)) : 0;
+    public string MemUsedText => $"{MemUsedPercent:F0}%";
+
     public ICommand RefreshCommand { get; }
 
     public PerfViewModel()
     {
         RefreshCommand = new RelayCommand(_ => Sample());
+        MemTotalMb = QueryTotalPhysicalMemoryMb();
         try
         {
             _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total", true);
@@ -97,6 +111,33 @@ public class PerfViewModel : ObservableObject, IDisposable
         _timer.Tick += (_, _) => Sample();
         _timer.Start();
         Sample();
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MEMORYSTATUSEX
+    {
+        public uint dwLength;
+        public uint dwMemoryLoad;
+        public ulong ullTotalPhys;
+        public ulong ullAvailPhys;
+        public ulong ullTotalPageFile;
+        public ulong ullAvailPageFile;
+        public ulong ullTotalVirtual;
+        public ulong ullAvailVirtual;
+        public ulong ullAvailExtendedVirtual;
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
+
+    private static double QueryTotalPhysicalMemoryMb()
+    {
+        try
+        {
+            var info = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
+            return GlobalMemoryStatusEx(ref info) ? info.ullTotalPhys / 1048576.0 : 0;
+        }
+        catch { return 0; }
     }
 
     private void Sample()
@@ -144,6 +185,14 @@ public class PerfViewModel : ObservableObject, IDisposable
 
         try { if (_cpuCounter != null) SystemCpu = _cpuCounter.NextValue(); } catch { }
         try { if (_memCounter != null) MemoryAvailableMb = _memCounter.NextValue(); } catch { }
+
+        // bug2.txt #7：滚动历史缓冲，供实时折线图使用
+        _cpuHistory.Add(SystemCpu);
+        if (_cpuHistory.Count > HistoryCap) _cpuHistory.RemoveAt(0);
+        _memHistory.Add(MemUsedPercent);
+        if (_memHistory.Count > HistoryCap) _memHistory.RemoveAt(0);
+        OnPropertyChanged(nameof(MemUsedPercent));
+        OnPropertyChanged(nameof(MemUsedText));
 
         Stats = PlaytimeTracker.Load(LauncherService.Instance.GameRoot);
         StatusMessage = list.Count > 0

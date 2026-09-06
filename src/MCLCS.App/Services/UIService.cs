@@ -10,14 +10,15 @@ namespace MCLCS.App.Services;
 /// </summary>
 public static class UIService
 {
+    // bug2.txt #83：实时提示统一走右下角 Toast（非阻塞），不再弹模态 MessageBox
     public static void ShowMessage(string message, string title = "MCLCS")
     {
-        MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+        ToastService.Show(title, message, ToastKind.Info);
     }
 
     public static void ShowError(string message, string title = "错误")
     {
-        MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+        ToastService.Show(title, message, ToastKind.Error);
     }
 
     public static bool Confirm(string message, string title = "确认")

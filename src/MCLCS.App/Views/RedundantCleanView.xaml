@@ -22,21 +22,24 @@
                        Foreground="{DynamicResource PrimaryForeground}"/>
         </StackPanel>
 
-        <ListBox Grid.Row="1" ItemsSource="{Binding Files}"
-                 Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
-                 BorderBrush="{DynamicResource InputBorder}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalContentAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding RelativePath}" FontWeight="Bold" Margin="0,0,12,0"/>
-                            <TextBlock Text="{Binding SizeBytes, StringFormat={}{0:N0} B}"
-                                       Foreground="{DynamicResource SecondaryForeground}" FontSize="11"/>
-                        </StackPanel>
-                    </CheckBox>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      MaxHeight="420">
+            <ListBox ItemsSource="{Binding Files}"
+                     Background="{DynamicResource InputBackground}" Foreground="{DynamicResource InputForeground}"
+                     BorderBrush="{DynamicResource InputBorder}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalContentAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding RelativePath}" FontWeight="Bold" Margin="0,0,12,0"/>
+                                <TextBlock Text="{Binding SizeBytes, StringFormat={}{0:N0} B}"
+                                           Foreground="{DynamicResource SecondaryForeground}" FontSize="11"/>
+                            </StackPanel>
+                        </CheckBox>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </ScrollViewer>
 
         <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Foreground="{DynamicResource StatusForeground}" Margin="0,8,0,0"/>
     </Grid>

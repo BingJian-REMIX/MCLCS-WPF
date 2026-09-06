@@ -16,6 +16,7 @@ using MCLCS.App.Themes;
 using MCLCS.App.ViewModels;
 using MCLCS.App.Views;
 using System.Windows.Shapes;
+using System.Windows.Interop;
 using System.Runtime.InteropServices;
 
 namespace MCLCS.App;
@@ -39,6 +40,68 @@ public partial class MainWindow : Window
             DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref pref, sizeof(int));
         }
         catch { /* 非 Win11 或失败则忽略，保持直角 */ }
+    }
+
+    // ===== 最大化：限制到当前工作区，避免覆盖任务栏 =====
+    private const int WM_GETMINMAXINFO = 0x0024;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT { public int x; public int y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MINMAXINFO
+    {
+        public POINT ptReserved;
+        public POINT ptMaxSize;
+        public POINT ptMaxPosition;
+        public POINT ptMinTrackSize;
+        public POINT ptMaxTrackSize;
+    }
+
+    private void AttachMaximizeHook()
+    {
+        var helper = new WindowInteropHelper(this);
+        if (helper.Handle == IntPtr.Zero) return;
+        var source = HwndSource.FromHwnd(helper.Handle);
+        source?.AddHook(WndProcHook);
+    }
+
+    private static IntPtr WndProcHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WM_GETMINMAXINFO)
+        {
+            try
+            {
+                var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+                var source = HwndSource.FromHwnd(hwnd);
+                if (source?.CompositionTarget != null)
+                {
+                    var t = source.CompositionTarget.TransformToDevice;
+                    var work = SystemParameters.WorkArea;
+                    mmi.ptMaxSize.x = (int)(work.Width * t.M11);
+                    mmi.ptMaxSize.y = (int)(work.Height * t.M22);
+                    mmi.ptMaxPosition.x = (int)(work.Left * t.M11);
+                    mmi.ptMaxPosition.y = (int)(work.Top * t.M22);
+                    Marshal.StructureToPtr(mmi, lParam, false);
+                    handled = true;
+                }
+            }
+            catch { /* 失败则回退到默认最大化行为 */ }
+        }
+        return IntPtr.Zero;
+    }
+
+    private void BtnMax_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        RefreshMaximizeIcon();
+    }
+
+    private void RefreshMaximizeIcon()
+    {
+        var isMax = WindowState == WindowState.Maximized;
+        if (MaxIcon != null) MaxIcon.Visibility = isMax ? Visibility.Collapsed : Visibility.Visible;
+        if (RestoreIcon != null) RestoreIcon.Visibility = isMax ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // 主标签 → 页面
@@ -87,6 +150,10 @@ public partial class MainWindow : Window
         Loaded += (_, _) => PlayTabEntrance();
         // bug #12：Win11 圆角
         Loaded += (_, _) => EnableWin11Corners();
+        // bug #86：最大化按钮 + 限制到工作区（不覆盖任务栏）
+        SourceInitialized += (_, _) => AttachMaximizeHook();
+        Loaded += (_, _) => RefreshMaximizeIcon();
+        StateChanged += (_, _) => RefreshMaximizeIcon();
         // bug #10：窗口就绪后尝试断点续播（MediaElement 此时已可播放）
         Loaded += (_, _) => MusicPlayerViewModel.Instance.RestoreLastState();
 

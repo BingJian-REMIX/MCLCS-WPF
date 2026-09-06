@@ -390,6 +390,13 @@ public class GameViewModel : ObservableObject
         var result = ShowServerDialog(null, null);
         if (result is null) return;
 
+        // bug2.txt #82：避免添加同名服务器无提示
+        if (Servers.Any(s => s.Name == result.Name))
+        {
+            ToastService.Show("服务器", $"已存在同名服务器「{result.Name}」", ToastKind.Warning);
+            return;
+        }
+
         Servers.Add(result);
         ServerListStore.Save(Servers.ToList(), _gameRoot);
         ToastService.Show("服务器", $"已添加 {result.Name}", ToastKind.Success);
@@ -400,6 +407,13 @@ public class GameViewModel : ObservableObject
         if (server is null) return;
         var result = ShowServerDialog(server.Name, server.Address);
         if (result is null) return;
+
+        // bug2.txt #82：改名时若与别的服务器重名，提示并放弃保存
+        if (Servers.Any(s => s != server && s.Name == result.Name))
+        {
+            ToastService.Show("服务器", $"已存在同名服务器「{result.Name}」", ToastKind.Warning);
+            return;
+        }
 
         server.Name = result.Name;
         server.Address = result.Address;

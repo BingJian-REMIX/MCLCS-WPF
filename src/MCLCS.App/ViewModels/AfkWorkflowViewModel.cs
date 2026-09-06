@@ -127,6 +127,10 @@ public class AfkWorkflowViewModel : ObservableObject
     public string RunStatus { get => _runStatus; set => SetField(ref _runStatus, value); }
     public string TargetText { get => _targetText; set => SetField(ref _targetText, value); }
 
+    // bug #73：添加动作时弹出类型选择（复用全局模态弹窗样式）
+    private bool _isActionPickerOpen;
+    public bool IsActionPickerOpen { get => _isActionPickerOpen; set => SetField(ref _isActionPickerOpen, value); }
+
     public ICommand AddActionCommand { get; }
     public ICommand RemoveActionCommand { get; }
     public ICommand MoveUpCommand { get; }
@@ -138,12 +142,14 @@ public class AfkWorkflowViewModel : ObservableObject
     public ICommand CopyTokenCommand { get; }
     public ICommand RunCommand { get; }
     public ICommand StopCommand { get; }
+    public ICommand PickActionCommand { get; }
+    public ICommand CancelPickerCommand { get; }
 
     private CancellationTokenSource? _cts;
 
     public AfkWorkflowViewModel()
     {
-        AddActionCommand = new RelayCommand(_ => AddAction());
+        AddActionCommand = new RelayCommand(_ => { IsActionPickerOpen = true; OnPropertyChanged(nameof(IsActionPickerOpen)); });
         RemoveActionCommand = new RelayCommand(_ => RemoveAction(), _ => SelectedAction is not null);
         MoveUpCommand = new RelayCommand(_ => Move(-1));
         MoveDownCommand = new RelayCommand(_ => Move(1));
@@ -154,6 +160,8 @@ public class AfkWorkflowViewModel : ObservableObject
         CopyTokenCommand = new RelayCommand(_ => CopyToken());
         RunCommand = new RelayCommand(_ => _ = RunAsync(), _ => !IsRunning && Actions.Count > 0 && !string.IsNullOrWhiteSpace(TokenText));
         StopCommand = new RelayCommand(_ => Stop(), _ => IsRunning);
+        PickActionCommand = new RelayCommand(p => PickAction(p as string));
+        CancelPickerCommand = new RelayCommand(_ => { IsActionPickerOpen = false; OnPropertyChanged(nameof(IsActionPickerOpen)); });
 
         RefreshSavedList();
         RefreshTarget();
@@ -174,12 +182,20 @@ public class AfkWorkflowViewModel : ObservableObject
         SavedNames = new ObservableCollection<string>(profile.AfkWorkflows.Keys);
     }
 
-    private void AddAction()
+    // bug #73：从弹窗选择动作类型后添加，默认参数按类型给合理初值
+    private void PickAction(string? type)
     {
-        var item = new AfkActionItem();
+        if (type is not ("F" or "D" or "L" or "K" or "C" or "*")) return;
+        var defaults = new System.Collections.Generic.Dictionary<string, string>
+        {
+            ["F"] = "10", ["D"] = "1", ["L"] = "1", ["K"] = "87", ["C"] = "1-500", ["*"] = "0"
+        };
+        var item = new AfkActionItem { ActionType = type, Param = defaults[type] };
         item.Changed += () => OnPropertyChanged(nameof(TokenText));
         Actions.Add(item);
         SelectedAction = item;
+        IsActionPickerOpen = false;
+        OnPropertyChanged(nameof(IsActionPickerOpen));
         OnPropertyChanged(nameof(TokenText));
         (RemoveActionCommand as RelayCommand)?.RaiseCanExecuteChanged();
         (MoveUpCommand as RelayCommand)?.RaiseCanExecuteChanged();

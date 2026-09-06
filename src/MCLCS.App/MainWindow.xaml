@@ -56,31 +56,21 @@
                          ToolTip="{theme:Loc dl.search_hint}"
                          KeyDown="GlobalSearch_KeyDown"/>
 
-                <!-- 下载进度按钮：显示当前队列进度，点击展开完整下载队列 -->
+                <!-- 下载进度按钮：无框无底，仅保留环形进度条（bug2.txt #76） -->
                 <Button x:Name="DownloadPopupBtn" Grid.Column="1" Width="40" Height="40"
-                        Margin="6,0,0,0" Cursor="Hand"
+                        Margin="6,0,0,0" Cursor="Hand" Background="Transparent" BorderThickness="0"
                         ToolTip="下载队列 / 进度" Click="DownloadPopupBtn_Click">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Background" Value="#30FFFFFF"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="20">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="#50FFFFFF"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
                     <Grid>
+                        <!-- 环形进度：背景轨 + 进度环（无填充无边框） -->
+                        <Ellipse Width="34" Height="34" Stroke="{DynamicResource ControlBorder}" StrokeThickness="3" Fill="Transparent"/>
+                        <Ellipse Width="34" Height="34" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
+                                 StrokeDashArray="{Binding DownloadProgress, Source={x:Static vm:StatusBarViewModel.Current},
+                                    Converter={StaticResource ProgressToRingDashConverter}, ConverterParameter=94.25}"
+                                 StrokeDashCap="Round" Fill="Transparent" RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform>
+                                <RotateTransform Angle="-90"/>
+                            </Ellipse.RenderTransform>
+                        </Ellipse>
                         <theme:PngIcon Token="download" Size="14"/>
                         <!-- 队列项数角标 -->
                         <Border Background="#E53935" CornerRadius="7" MinWidth="14" Height="14"
@@ -178,6 +168,33 @@
             <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
                 <Button x:Name="BtnMin" Width="36" Height="30" Click="BtnMin_Click">
                     <theme:PngIcon Token="minimize" Size="12"/>
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#33FFFFFF" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button x:Name="BtnMax" Width="36" Height="30" Click="BtnMax_Click">
+                    <Grid>
+                        <TextBlock x:Name="MaxIcon" Text="&#x25A1;" FontSize="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Visible"/>
+                        <TextBlock x:Name="RestoreIcon" Text="&#x1F5D6;" FontSize="12" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                    </Grid>
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Background" Value="Transparent"/>

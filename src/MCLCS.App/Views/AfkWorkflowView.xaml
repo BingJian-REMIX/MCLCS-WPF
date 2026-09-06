@@ -5,8 +5,18 @@
     <UserControl.DataContext>
         <vm:AfkWorkflowViewModel/>
     </UserControl.DataContext>
+    <UserControl.Resources>
+        <Style x:Key="ActionTypeButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
+            <Setter Property="Background" Value="{DynamicResource ControlBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+    </UserControl.Resources>
 
-    <Grid Margin="12">
+    <Grid>
+        <Grid Margin="12">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="220"/>
@@ -177,5 +187,35 @@
             <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" Margin="0,10,0,0" FontSize="12"
                        TextWrapping="Wrap" Foreground="{DynamicResource AccentBrush}"/>
         </Grid>
+
+        <!-- bug #73：添加动作 → 复用全局模态弹窗样式选择动作类型 -->
+        <Grid Style="{StaticResource ModalOverlayStyle}" Visibility="{Binding IsActionPickerOpen, Converter={StaticResource BoolToVis}}">
+            <Border Style="{StaticResource ModalCardStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+                <StackPanel>
+                    <TextBlock Text="添加动作" FontSize="16" FontWeight="Bold" Margin="0,0,0,4"
+                               Foreground="{DynamicResource PrimaryForeground}"/>
+                    <TextBlock Text="选择要插入的动作类型" FontSize="12" Margin="0,0,0,12"
+                               Foreground="{DynamicResource SecondaryForeground}"/>
+                    <WrapPanel Orientation="Horizontal">
+                        <Button Content="功能键 (F)" Style="{StaticResource ActionTypeButtonStyle}"
+                                Command="{Binding PickActionCommand}" CommandParameter="F" Width="120" Margin="4"/>
+                        <Button Content="延时 (D)" Style="{StaticResource ActionTypeButtonStyle}"
+                                Command="{Binding PickActionCommand}" CommandParameter="D" Width="120" Margin="4"/>
+                        <Button Content="长按 (L)" Style="{StaticResource ActionTypeButtonStyle}"
+                                Command="{Binding PickActionCommand}" CommandParameter="L" Width="120" Margin="4"/>
+                        <Button Content="键码 (K)" Style="{StaticResource ActionTypeButtonStyle}"
+                                Command="{Binding PickActionCommand}" CommandParameter="K" Width="120" Margin="4"/>
+                        <Button Content="鼠标连点 (C)" Style="{StaticResource ActionTypeButtonStyle}"
+                                Command="{Binding PickActionCommand}" CommandParameter="C" Width="120" Margin="4"/>
+                        <Button Content="循环 (*)" Style="{StaticResource ActionTypeButtonStyle}"
+                                Command="{Binding PickActionCommand}" CommandParameter="*" Width="120" Margin="4"/>
+                    </WrapPanel>
+                        <Button Content="取消" Style="{StaticResource ActionTypeButtonStyle}"
+                                Command="{Binding CancelPickerCommand}" Width="80" Margin="4,12,0,0"
+                                HorizontalAlignment="Right"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
     </Grid>
 </UserControl>

@@ -53,18 +53,22 @@ public class Skin3DPreview : UserControl
         rotGroup.Children.Add(new RotateTransform3D(_rotY));
         rotGroup.Children.Add(new RotateTransform3D(_rotX));
 
-        var modelVisual = new ModelVisual3D();
-        modelVisual.Content = new DirectionalLight(
-            Colors.White, new Vector3D(0.5, -1, -0.7));
+        // bug #74：主光从相机方向照向模型正面（+z 面），避免正面发黑；
+        // 补一束左上方向光，环境光提亮到中性灰，整体可见。
+        var keyLight = new ModelVisual3D();
+        keyLight.Content = new DirectionalLight(Colors.White, new Vector3D(0, -0.25, -1));
+        var fillLight = new ModelVisual3D();
+        fillLight.Content = new DirectionalLight(Color.FromRgb(0xC8, 0xC8, 0xC8), new Vector3D(-0.6, -0.4, -0.6));
         var ambient = new ModelVisual3D();
-        ambient.Content = new AmbientLight(Color.FromRgb(0x60, 0x60, 0x70));
+        ambient.Content = new AmbientLight(Color.FromRgb(0x88, 0x88, 0x90));
 
         _viewport = new Viewport3D { ClipToBounds = true };
         _camera = new PerspectiveCamera(
-            new Point3D(0, -0.2, 6), new Vector3D(0, 0, -1), new Vector3D(0, 1, 0), 45);
+            new Point3D(0, -0.15, 6.2), new Vector3D(0, 0, -1), new Vector3D(0, 1, 0), 40);
         _viewport.Camera = _camera;
 
-        _viewport.Children.Add(modelVisual);
+        _viewport.Children.Add(keyLight);
+        _viewport.Children.Add(fillLight);
         _viewport.Children.Add(ambient);
 
         var root3D = new ModelVisual3D();
