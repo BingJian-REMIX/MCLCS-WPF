@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
 using MCLCS.App.Services;
 using MCLCS.Core.Update;
 using MCLCS.Core.Utils;
@@ -23,8 +24,17 @@ public partial class UpdateDialog : Window
         _result = result;
 
         TitleText.Text = $"发现新版本 v{result.LatestVersion}";
+
+        // 紧急更新（status=emgent）：显示红色横幅并置边框高亮，副标题强调立即安装。
+        if (result.Status == "emgent")
+        {
+            EmergencyBanner.Visibility = Visibility.Visible;
+            Card.BorderBrush = new SolidColorBrush(Color.FromRgb(0xC0, 0x39, 0x2B));
+        }
         SubtitleText.Text = $"当前 {result.CurrentVersion} → 最新 {result.LatestVersion}" +
-                            (result.Mandatory ? "（建议立即更新）" : "");
+                            (result.Status == "emgent"
+                                ? "（紧急更新，请尽快安装）"
+                                : (result.Mandatory ? "（建议立即更新）" : ""));
 
         ChangelogBox.Markdown = string.IsNullOrWhiteSpace(result.Changelog)
             ? "（无法获取更新日志，请点击下方「下载更新」在发布页查看详情）"

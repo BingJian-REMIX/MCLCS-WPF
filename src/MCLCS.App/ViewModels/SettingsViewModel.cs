@@ -673,7 +673,10 @@ public class SettingsViewModel : ObservableObject
         if (!string.IsNullOrEmpty(result.Error))
             UpdateMessage = $"检查更新失败：{result.Error}";
         else if (result.Available)
-            UpdateMessage = $"发现新版本 {result.LatestVersion}（当前 {result.CurrentVersion}）{(result.Mandatory ? "，建议立即更新" : "")} · singlefile 包已发布（GitHub Pages 可查更新，包托管于 CNB Release）";
+        {
+            var statusNote = result.Status == "emgent" ? "，紧急更新请尽快安装" : (result.Mandatory ? "，建议立即更新" : "");
+            UpdateMessage = $"发现新版本 {result.LatestVersion}（当前 {result.CurrentVersion}）{statusNote} · singlefile 包已发布（GitHub Pages 可查更新，包托管于 CNB Release）";
+        }
         else
             UpdateMessage = $"已是最新版本（{result.CurrentVersion}）";
     }

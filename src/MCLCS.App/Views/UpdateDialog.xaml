@@ -20,6 +20,12 @@
                 <DropShadowEffect Color="Black" BlurRadius="24" ShadowDepth="0" Opacity="0.45"/>
             </Border.Effect>
             <DockPanel LastChildFill="True">
+                <!-- 紧急更新横幅（默认隐藏，status=emgent 时由代码显示并配红边） -->
+                <Border x:Name="EmergencyBanner" DockPanel.Dock="Top" Visibility="Collapsed"
+                        Background="#C0392B" CornerRadius="8" Padding="10,8" Margin="0,0,0,12">
+                    <TextBlock Foreground="White" FontSize="13" FontWeight="Bold"
+                               Text="紧急更新：此版本含重要修复或安全更新，建议立即安装"/>
+                </Border>
                 <TextBlock x:Name="TitleText" DockPanel.Dock="Top" FontSize="19" FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryForeground}" Text="发现新版本"/>
                 <TextBlock x:Name="SubtitleText" DockPanel.Dock="Top" Margin="0,4,0,0" FontSize="12"

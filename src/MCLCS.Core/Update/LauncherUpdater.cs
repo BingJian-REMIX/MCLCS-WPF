@@ -19,6 +19,8 @@ public class UpdateCheckResult
     /// <summary>singlefile 包是否已在 CNB Release 发布（latest.json 的 singleFileAvailable 字段）。</summary>
     public bool SingleFileAvailable { get; set; }
     public bool Mandatory { get; set; }
+    /// <summary>更新状态（latest.json 的 status 字段）："false"=冻结/撤回（即便有新版本也强制不提示，坏版本止血用）、"true"=普通可选更新、"emgent"=紧急更新（强制提示并置必更 Mandatory）。缺省/未知值等同 "true"。</summary>
+    public string? Status { get; set; }
     public string? Error { get; set; }
 }
 
@@ -54,6 +56,19 @@ public static class LauncherUpdater
             if (int.TryParse(new string(part.Where(char.IsDigit).ToArray()), out var n))
                 list.Add(n);
         return list;
+    }
+
+    /// <summary>归一化 latest.json 的 status 字段为内部取值：false / true / emgent（空或未知值返回空串，按 "true" 处理）。大小写不敏感，emgent/emergency 等价。</summary>
+    private static string NormalizeStatus(string? raw)
+    {
+        var s = (raw ?? "").Trim().ToLowerInvariant();
+        return s switch
+        {
+            "false" => "false",
+            "true" => "true",
+            "emgent" or "emergency" => "emgent",
+            _ => ""
+        };
     }
 
     /// <summary>检查更新；异常 / 解析失败时返回 Available=false（带 Error）。</summary>
@@ -94,13 +109,24 @@ public static class LauncherUpdater
             result.LatestVersion = info.Version;
             // 仅当最新版本严格大于当前版本才提示更新（当前==最新不会误报「更新到自身」）。
             result.Available = IsNewer(currentVersion, info.Version);
+            result.Status = NormalizeStatus(info.Status);
+
+            // status 字段可覆盖版本比较的结果，表达「更新紧急度 / 是否撤回」：
+            //  - "false"：冻结/撤回，即便有新版本也强制不提示（坏版本止血用）。
+            //  - "emgent"：紧急更新，强制提示并置为必更（Mandatory=true）。
+            //  - "true"/缺省：尊重 IsNewer 的常规可选更新。
+            if (result.Status == "false")
+                result.Available = false;
+            else if (result.Status == "emgent" && result.Available)
+                result.Mandatory = true;
+
             if (result.Available)
             {
                 result.Changelog = info.Changelog;
                 result.DownloadUrl = info.DownloadUrl
                     ?? $"{GameConstants.CnbReleaseBase}/-/releases/download/v{info.Version}/MCLCS-{info.Version}-win-x64.zip";
                 result.SingleFileAvailable = info.SingleFileAvailable;
-                result.Mandatory = info.Mandatory;
+                result.Mandatory = result.Mandatory || info.Mandatory;
             }
         }
         catch (Exception ex)
@@ -120,6 +146,7 @@ public static class LauncherUpdater
         [JsonPropertyName("version")] public string? Version { get; set; }
         [JsonPropertyName("channel")] public string? Channel { get; set; }
         [JsonPropertyName("mandatory")] public bool Mandatory { get; set; }
+        [JsonPropertyName("status")] public string? Status { get; set; }
         [JsonPropertyName("releaseDate")] public string? ReleaseDate { get; set; }
         [JsonPropertyName("downloadUrl")] public string? DownloadUrl { get; set; }
         [JsonPropertyName("singleFileAvailable")] public bool SingleFileAvailable { get; set; }
