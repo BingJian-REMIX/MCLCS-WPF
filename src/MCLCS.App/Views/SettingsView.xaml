@@ -85,14 +85,14 @@
                         <TextBlock Text="{theme:Loc tool.filewatch}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
                     </WrapPanel>
-                    <WrapPanel Grid.Row="8" Margin="0,3">
-                        <TextBlock Text="新建版本默认隔离：" VerticalAlignment="Center" Width="120"/>
-                        <ComboBox Width="170" SelectedValue="{Binding DefaultVersionIsolation, Mode=TwoWay}" SelectedValuePath="Tag"
+                    <StackPanel Grid.Row="8" Orientation="Horizontal" Margin="0,3">
+                        <TextBlock Text="新建版本默认隔离：" VerticalAlignment="Center" Width="150"/>
+                        <ComboBox Width="170" Margin="8,0,0,0" SelectedValue="{Binding DefaultVersionIsolation, Mode=TwoWay}" SelectedValuePath="Tag"
                                   ToolTip="新建版本时自动套用的隔离模式：共享=同一 .minecraft；隔离=各自 versions/&lt;id&gt;">
                             <ComboBoxItem Content="共享（同一 .minecraft）" Tag="Shared"/>
                             <ComboBoxItem Content="隔离（各自 versions/&lt;id&gt;）" Tag="Auto"/>
                         </ComboBox>
-                    </WrapPanel>
+                    </StackPanel>
                 </Grid>
 
                 <!-- 启动 -->
