@@ -60,10 +60,14 @@
                 <Button x:Name="DownloadPopupBtn" Grid.Column="1" Width="40" Height="40"
                         Margin="6,0,0,0" Cursor="Hand" Background="Transparent" BorderThickness="0"
                         ToolTip="下载队列 / 进度" Click="DownloadPopupBtn_Click">
-                    <Grid>
-                        <!-- 环形进度：背景轨 + 进度环（无填充无边框） -->
-                        <Ellipse Width="34" Height="34" Stroke="{DynamicResource ControlBorder}" StrokeThickness="3" Fill="Transparent"/>
-                        <Ellipse Width="34" Height="34" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
+                <Grid>
+                    <!-- 环形进度：仅在有下载任务时显示（无任务不显环，bug3.txt #2） -->
+                    <Grid Visibility="{Binding IsDownloading, Source={x:Static vm:StatusBarViewModel.Current},
+                                Converter={StaticResource BoolToVisibility}, FallbackValue=Collapsed}">
+                        <!-- 背景轨：半透明白，避免暗色下出现黑环 -->
+                        <Ellipse Width="34" Height="34" Stroke="#40FFFFFF" StrokeThickness="3" Fill="Transparent"/>
+                        <!-- 进度环：白色，实时，以图标中心为圆心 -->
+                        <Ellipse Width="34" Height="34" Stroke="White" StrokeThickness="3"
                                  StrokeDashArray="{Binding DownloadProgress, Source={x:Static vm:StatusBarViewModel.Current},
                                     Converter={StaticResource ProgressToRingDash}, ConverterParameter=94.25}"
                                  StrokeDashCap="Round" Fill="Transparent" RenderTransformOrigin="0.5,0.5">
@@ -71,17 +75,18 @@
                                 <RotateTransform Angle="-90"/>
                             </Ellipse.RenderTransform>
                         </Ellipse>
-                        <theme:PngIcon Token="download" Size="14"/>
-                        <!-- 队列项数角标 -->
-                        <Border Background="#E53935" CornerRadius="7" MinWidth="14" Height="14"
-                                HorizontalAlignment="Right" VerticalAlignment="Top"
-                                Margin="0,-6,-8,0" Padding="3,0"
-                                Visibility="{Binding HasQueue, Converter={StaticResource BoolToVisibility}, FallbackValue=Collapsed}">
-                            <TextBlock Text="{Binding QueueCount}"
-                                       Foreground="White" FontSize="9" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
                     </Grid>
+                    <theme:PngIcon Token="download" Size="14"/>
+                    <!-- 队列项数角标 -->
+                    <Border Background="#E53935" CornerRadius="7" MinWidth="14" Height="14"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,-6,-8,0" Padding="3,0"
+                            Visibility="{Binding HasQueue, Converter={StaticResource BoolToVisibility}, FallbackValue=Collapsed}">
+                        <TextBlock Text="{Binding QueueCount}"
+                                   Foreground="White" FontSize="9" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Grid>
                 </Button>
             </Grid>
 

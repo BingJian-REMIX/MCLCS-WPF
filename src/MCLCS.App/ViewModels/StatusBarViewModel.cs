@@ -47,8 +47,16 @@ public class StatusBarViewModel : ObservableObject
     public double DownloadProgress
     {
         get => _downloadProgress;
-        set => SetField(ref _downloadProgress, value);
+        set
+        {
+            if (!SetField(ref _downloadProgress, value)) return;
+            // 进度在 (0,100) 之间表示有下载任务在进行中；0/100 视为空闲（含完成后归零）
+            OnPropertyChanged(nameof(IsDownloading));
+        }
     }
+
+    /// <summary>是否有正在进行的下载任务（驱动标题栏下载按钮的环形进度显隐）。</summary>
+    public bool IsDownloading => _downloadProgress is > 0 and < 100;
 
     public string DownloadText
     {

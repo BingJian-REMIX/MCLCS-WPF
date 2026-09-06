@@ -76,7 +76,7 @@
                     <StackPanel>
                         <TextBlock Text="③ 模组加载器" Style="{StaticResource GroupHeaderStyle}"/>
                         <WrapPanel Margin="0,0,0,4">
-                            <TextBlock FontSize="12" VerticalAlignment="Center">
+                            <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryForeground}">
                                 <Run Text="当前：" Foreground="{DynamicResource SecondaryForeground}"/>
                                 <Run Text="{Binding DetectedLoaderText, Mode=OneWay}" FontWeight="SemiBold"/>
                             </TextBlock>

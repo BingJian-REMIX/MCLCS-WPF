@@ -108,6 +108,11 @@ public partial class MainWindow : Window
     private readonly Dictionary<MainTabKind, FrameworkElement> _pages = new();
     private MainTabKind _currentKind = (MainTabKind)(-1);
     /// <summary>
+    /// 当前打开的「版本大页」（版本库 / 版本设置）。版本大页属于游戏页的子导航，
+    /// 切到其它大页时隐藏、回到游戏页时恢复（bug3.txt #3）。
+    /// </summary>
+    private FrameworkElement? _gameBigPage;
+    /// <summary>
     /// 页面切换动画开关。设置页修改后需即时生效（此前只在窗口构造时读一次，必须重启才生效）。
     /// </summary>
     public static bool AnimationsEnabled { get; set; } = true;
@@ -737,13 +742,21 @@ public partial class MainWindow : Window
         // 进入各主视图时同步加载当前选中的副标签内容（规格 1.4 / 2.2）
         RouteSidebar(_sidebarState.SelectedId);
 
+        // bug3.txt #3：版本大页（版本库 / 版本设置）绑定在游戏页下。
+        // 离开游戏页时隐藏版本大页（仍可切大页），回到游戏页且曾打开时恢复（保留状态）。
+        if (kind == MainTabKind.Game && _gameBigPage is not null)
+            BigPageHost.Visibility = Visibility.Visible;
+        else
+            BigPageHost.Visibility = Visibility.Collapsed;
+
         if (AnimationsEnabled) PlayPageTransition();
     }
 
-    // ===== 版本库大页（bug #10）=====
+    // ===== 版本库大页（bug #10，bug3.txt #3 绑定游戏页）=====
 
     private void ShowBigPage(FrameworkElement page)
     {
+        _gameBigPage = page;
         BigPageHost.Children.Clear();
         BigPageHost.Children.Add(page);
         BigPageHost.Visibility = Visibility.Visible;
@@ -751,6 +764,7 @@ public partial class MainWindow : Window
 
     private void CloseBigPage()
     {
+        _gameBigPage = null;
         BigPageHost.Visibility = Visibility.Collapsed;
         BigPageHost.Children.Clear();
     }
