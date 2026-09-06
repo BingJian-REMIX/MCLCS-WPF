@@ -734,8 +734,8 @@ public class DownloadPageViewModel : ObservableObject
             // 首次加载且未手动选择时，默认选中最新原版版本（跳过已装项以保留旧行为）
             if (string.IsNullOrWhiteSpace(_selectedGameVersion))
             {
-                var first = GameVersions.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v) && !v.IsInstalled)
-                            ?? GameVersions.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+                var first = GameVersions.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v.Id) && !v.IsInstalled)
+                            ?? GameVersions.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v.Id));
                 if (first is not null)
                 {
                     _selectedGameVersion = first.Id;
