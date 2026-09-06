@@ -19,14 +19,14 @@
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
             <TextBox Width="240" Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" ToolTip="搜索关键词"/>
             <Button Content="搜索" Command="{Binding SearchCommand}" Margin="8,0,0,0" Padding="8,2"/>
-            <ComboBox Width="120" Margin="8,0,0,0" ItemsSource="{Binding Loaders}" SelectedItem="{Binding SelectedLoader}" ToolTip="加载器"/>
+            <ComboBox Width="120" Margin="8,0,0,0" ItemsSource="{Binding Loaders}" SelectedValue="{Binding SelectedLoader}" SelectedValuePath="." ToolTip="加载器"/>
             <ComboBox Width="120" Margin="8,0,0,0"
                       ItemsSource="{Binding GameVersions}"
                       DisplayMemberPath="Display"
                       SelectedValuePath="Id"
                       SelectedValue="{Binding SelectedGameVersion}"
                       ToolTip="游戏版本"/>
-            <ComboBox Width="140" Margin="8,0,0,0" ItemsSource="{Binding ProjectTypes}" SelectedItem="{Binding SelectedProjectType}" ToolTip="类型"/>
+            <ComboBox Width="140" Margin="8,0,0,0" ItemsSource="{Binding ProjectTypes}" SelectedValue="{Binding SelectedProjectType}" SelectedValuePath="." ToolTip="类型"/>
         </StackPanel>
 
         <ListBox Grid.Row="2" ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult}"
