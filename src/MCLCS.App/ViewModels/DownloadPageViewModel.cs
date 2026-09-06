@@ -146,7 +146,7 @@ public class DownloadPageViewModel : ObservableObject
     public ObservableCollection<string> Loaders { get; } =
         new() { "Any", "Fabric", "Forge", "Quilt", "NeoForge" };
 
-    public ObservableCollection<string> GameVersions { get; } = new() { "" };
+    public ObservableCollection<GameVersionItem> GameVersions { get; } = new() { new GameVersionItem() };
     public ObservableCollection<PixelMapCategory> MapCategories { get; } = new();
     public ObservableCollection<string> MapVersions { get; } = new() { "" };
 
@@ -712,18 +712,33 @@ public class DownloadPageViewModel : ObservableObject
         // 否则离线 / 镜像不可达时会产生未观测任务异常（bug #6：进入下载页崩溃）。
         try
         {
-            var versions = await LauncherService.Instance.GetVanillaVersionsAsync();
             GameVersions.Clear();
-            GameVersions.Add("");
-            foreach (var v in versions) GameVersions.Add(v);
+            // 「全部版本」（空 Id = 不过滤），始终置顶
+            GameVersions.Add(new GameVersionItem { Id = "", IsInstalled = false });
 
-            // 首次加载且未手动选择时，默认选中最新游戏版本（列表中第一个非空项）
+            // 已安装版本（来自 versions/ 目录）置顶并标注「已装」
+            var installed = LauncherService.Instance.ListInstalledVersions()
+                .Select(t => t.Id)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToHashSet();
+
+            foreach (var id in installed)
+                GameVersions.Add(new GameVersionItem { Id = id, IsInstalled = true });
+
+            // 其余原版版本列于其后
+            var versions = await LauncherService.Instance.GetVanillaVersionsAsync();
+            foreach (var v in versions)
+                if (!installed.Contains(v))
+                    GameVersions.Add(new GameVersionItem { Id = v, IsInstalled = false });
+
+            // 首次加载且未手动选择时，默认选中最新原版版本（跳过已装项以保留旧行为）
             if (string.IsNullOrWhiteSpace(_selectedGameVersion))
             {
-                var first = GameVersions.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+                var first = GameVersions.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v) && !v.IsInstalled)
+                            ?? GameVersions.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
                 if (first is not null)
                 {
-                    _selectedGameVersion = first;
+                    _selectedGameVersion = first.Id;
                     OnPropertyChanged(nameof(SelectedGameVersion));
                     if (!IsMap && !IsMinecraft)
                         _ = SearchAsync();
@@ -732,7 +747,7 @@ public class DownloadPageViewModel : ObservableObject
         }
         catch
         {
-            if (GameVersions.Count == 0) GameVersions.Add("");
+            if (GameVersions.Count == 0) GameVersions.Add(new GameVersionItem());
         }
     }
 

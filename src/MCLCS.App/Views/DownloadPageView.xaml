@@ -136,7 +136,8 @@
         <!-- 筛选行：Modrinth 风格（版本 + 加载器，不含整合包） -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="12,0,12,8"
                     Visibility="{Binding ModrinthFilterVisible, Converter={StaticResource BoolToVisibility}}">
-            <ComboBox Width="140" ItemsSource="{Binding GameVersions}" SelectedItem="{Binding SelectedGameVersion}" ToolTip="游戏版本"/>
+            <ComboBox Width="140" ItemsSource="{Binding GameVersions}" DisplayMemberPath="Display"
+                      SelectedValuePath="Id" SelectedValue="{Binding SelectedGameVersion}" ToolTip="游戏版本"/>
             <ComboBox Width="120" Margin="8,0,0,0" ItemsSource="{Binding Loaders}" SelectedItem="{Binding SelectedLoader}" ToolTip="加载器"
                       Visibility="{Binding IsMod, Converter={StaticResource BoolToVisibility}}"/>
         </StackPanel>
@@ -144,7 +145,8 @@
         <!-- 筛选行：整合包（版本 + 加载器 + 来源） -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="12,0,12,8"
                     Visibility="{Binding ModpackSourceVisible, Converter={StaticResource BoolToVisibility}}">
-            <ComboBox Width="140" ItemsSource="{Binding GameVersions}" SelectedItem="{Binding SelectedGameVersion}" ToolTip="游戏版本"/>
+            <ComboBox Width="140" ItemsSource="{Binding GameVersions}" DisplayMemberPath="Display"
+                      SelectedValuePath="Id" SelectedValue="{Binding SelectedGameVersion}" ToolTip="游戏版本"/>
             <ComboBox Width="120" Margin="8,0,0,0" ItemsSource="{Binding Loaders}" SelectedItem="{Binding SelectedLoader}" ToolTip="加载器"/>
             <ComboBox Width="150" Margin="8,0,0,0"
                       ItemsSource="{Binding ModpackSources}" SelectedValue="{Binding SelectedModpackSource}" SelectedValuePath="Id"

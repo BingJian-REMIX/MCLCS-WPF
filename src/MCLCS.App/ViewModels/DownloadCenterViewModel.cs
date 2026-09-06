@@ -95,7 +95,7 @@ public class DownloadCenterViewModel : ObservableObject
 
     public ObservableCollection<string> Loaders { get; } = new() { "Any", "Fabric", "Forge", "Quilt" };
     public ObservableCollection<string> ProjectTypes { get; } = new() { "mod", "shader", "resourcepack" };
-    public ObservableCollection<string> GameVersions { get; } = new() { "" };
+    public ObservableCollection<GameVersionItem> GameVersions { get; } = new() { new GameVersionItem() };
 
     public string Query
     {
@@ -175,10 +175,24 @@ public class DownloadCenterViewModel : ObservableObject
 
     private async Task LoadGameVersionsAsync()
     {
-        var versions = await LauncherService.Instance.GetVanillaVersionsAsync();
         GameVersions.Clear();
-        GameVersions.Add(""); // Any
-        foreach (var v in versions) GameVersions.Add(v);
+        // 「全部版本」（空 Id = 不过滤），始终置顶
+        GameVersions.Add(new GameVersionItem { Id = "", IsInstalled = false });
+
+        // 已安装版本（来自 versions/ 目录）置顶并标注「已装」
+        var installed = LauncherService.Instance.ListInstalledVersions()
+            .Select(t => t.Id)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToHashSet();
+
+        foreach (var id in installed)
+            GameVersions.Add(new GameVersionItem { Id = id, IsInstalled = true });
+
+        // 其余原版版本列于其后
+        var versions = await LauncherService.Instance.GetVanillaVersionsAsync();
+        foreach (var v in versions)
+            if (!installed.Contains(v))
+                GameVersions.Add(new GameVersionItem { Id = v, IsInstalled = false });
     }
 
     private async Task SearchAsync()
