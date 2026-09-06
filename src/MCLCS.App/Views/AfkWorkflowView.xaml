@@ -188,9 +188,15 @@
                        TextWrapping="Wrap" Foreground="{DynamicResource AccentBrush}"/>
         </Grid>
 
-        <!-- bug #73：添加动作 → 复用全局模态弹窗样式选择动作类型 -->
-        <Grid Style="{StaticResource ModalOverlayStyle}" Visibility="{Binding IsActionPickerOpen, Converter={StaticResource BoolToVis}}">
-            <Border Style="{StaticResource ModalCardStyle}" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+        <!-- bug #73：添加动作 → 整页居中模态弹窗。
+             改用 Popup 并以 Placement=Center 绑定整个 Window，使卡片真正居中于整窗
+             （而非仅居中于 AFK 视图这一小块区域）。 -->
+        <Popup IsOpen="{Binding IsActionPickerOpen}"
+               Placement="Center"
+               PlacementTarget="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+               StaysOpen="False"
+               AllowsTransparency="True">
+            <Border Style="{StaticResource ModalCardStyle}" MaxWidth="420">
                 <StackPanel>
                     <TextBlock Text="添加动作" FontSize="16" FontWeight="Bold" Margin="0,0,0,4"
                                Foreground="{DynamicResource PrimaryForeground}"/>
@@ -210,12 +216,12 @@
                         <Button Content="循环 (*)" Style="{StaticResource ActionTypeButtonStyle}"
                                 Command="{Binding PickActionCommand}" CommandParameter="*" Width="120" Margin="4"/>
                     </WrapPanel>
-                        <Button Content="取消" Style="{StaticResource ActionTypeButtonStyle}"
-                                Command="{Binding CancelPickerCommand}" Width="80" Margin="4,12,0,0"
-                                HorizontalAlignment="Right"/>
+                    <Button Content="取消" Style="{StaticResource ActionTypeButtonStyle}"
+                            Command="{Binding CancelPickerCommand}" Width="80" Margin="4,12,0,0"
+                            HorizontalAlignment="Right"/>
                 </StackPanel>
             </Border>
-        </Grid>
+        </Popup>
     </Grid>
     </Grid>
 </UserControl>
