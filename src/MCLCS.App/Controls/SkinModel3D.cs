@@ -82,8 +82,9 @@ public static class SkinModel3D
 
         if (def.IsArm && slim) uv = SlimUv(uv);
 
-        // 位于 +X 侧的肢体（左臂/左腿），其内外侧面与默认(-X 侧)相反，须交换 Left/Right 纹理。
-        if (cx > 0) uv = uv with { Left = uv.Right, Right = uv.Left };
+        // 注意：每个肢体的 uv.Left / uv.Right 已在 UV 表中相对它实际所在侧正确定义
+        // （右臂 -X、左臂 +X，各自的内外纹理都已取对），AddBox 永远把 uv.Left 贴 -X 面、
+        // uv.Right 贴 +X 面。这套映射本身正确，无需按 cx 交换——交换反而会左右内外贴反。
 
         double expand = 0.0;
         if (useOverlay)

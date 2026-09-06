@@ -142,6 +142,19 @@ public class PerfViewModel : ObservableObject, IDisposable
 
     private void Sample()
     {
+        try
+        {
+            SampleCore();
+        }
+        catch (Exception ex)
+        {
+            // 任何采样异常都不能冒泡到构造器 / Dispatcher，否则性能页直接加载失败。
+            StatusMessage = "采样异常：" + ex.Message;
+        }
+    }
+
+    private void SampleCore()
+    {
         var list = InstanceTracker.ListActive();
         var now = DateTime.Now;
         var rows = new List<InstancePerf>();
