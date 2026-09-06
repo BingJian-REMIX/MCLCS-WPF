@@ -76,8 +76,10 @@ public static class SkinModel3D
             var p = FirstLayer[i];
             bool isArm = i is 2 or 3;
             double w = (isArm && slim) ? 3 : p.W;   // slim：双臂均收窄为 3px
-            // slim 手臂贴住躯干侧面，宽度减少的 1px 全部从外侧收回，故中心向内移 0.5。
-            double cx = (isArm && slim) ? (i == 2 ? p.Cx - 0.5 : p.Cx + 0.5) : p.Cx;
+            // 原版正面约定：角色右手在观察者左侧(-X)，故取 -Cx（头/躯干 Cx=0 不受影）。
+            // slim 手臂宽度减少的 1px 全部从外侧收回，向身体中心(0)移 0.5。
+            double cx = -p.Cx;
+            if (isArm && slim) cx -= Math.Sign(cx) * 0.5;
 
             Uv uv = p.Uv;
             if (legacy)
@@ -87,6 +89,9 @@ public static class SkinModel3D
                 else if (i == 5) uv = LegacyLeftLeg;
             }
             if (isArm && slim) uv = SlimUv(uv);
+            // 位于 -X 侧的肢体，其内(朝身体)/外(背离身体)侧面与默认(+X 侧)相反，
+            // 须交换 Left/Right 纹理，否则左臂/左腿内外贴反。
+            if (cx < 0) uv = uv with { Left = uv.Right, Right = uv.Left };
 
             AddBox(group, material, cx, p.Cy - CenterY, 0, w, p.H, p.D, uv, tw, th);
         }
@@ -104,8 +109,10 @@ public static class SkinModel3D
                 bool isArm = i is 2 or 3;
                 double expand = isHead ? 1.0 : 0.5;              // 帽子 0.5/边；衣裤 0.25/边
                 double w = (isArm && slim) ? 3 + expand : p.W + expand;
-                double cx = (isArm && slim) ? (i == 2 ? p.Cx - 0.5 : p.Cx + 0.5) : p.Cx;
+                double cx = -p.Cx;
+                if (isArm && slim) cx -= Math.Sign(cx) * 0.5;
                 Uv uv = (isArm && slim) ? SlimUv(Overlay[i]) : Overlay[i];
+                if (cx < 0) uv = uv with { Left = uv.Right, Right = uv.Left };
                 AddBox(group, material, cx, p.Cy - CenterY, 0, w, p.H + expand, p.D + expand, uv, tw, th);
             }
         }
