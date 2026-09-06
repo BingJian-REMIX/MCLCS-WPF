@@ -65,7 +65,7 @@
                         <Ellipse Width="34" Height="34" Stroke="{DynamicResource ControlBorder}" StrokeThickness="3" Fill="Transparent"/>
                         <Ellipse Width="34" Height="34" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                  StrokeDashArray="{Binding DownloadProgress, Source={x:Static vm:StatusBarViewModel.Current},
-                                    Converter={StaticResource ProgressToRingDashConverter}, ConverterParameter=94.25}"
+                                    Converter={StaticResource ProgressToRingDash}, ConverterParameter=94.25}"
                                  StrokeDashCap="Round" Fill="Transparent" RenderTransformOrigin="0.5,0.5">
                             <Ellipse.RenderTransform>
                                 <RotateTransform Angle="-90"/>

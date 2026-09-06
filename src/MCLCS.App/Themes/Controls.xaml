@@ -449,7 +449,7 @@
     <!--
         ===== CheckBox / RadioButton：强制继承主题前景，避免暗色下退回系统黑字 =====
     -->
-    <Style TargetType="CheckBox">
+    <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="{DynamicResource InputBorder}"/>
@@ -457,7 +457,7 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
-    <Style TargetType="RadioButton">
+    <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="{DynamicResource InputBorder}"/>
@@ -479,9 +479,6 @@
         <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
         <Setter Property="Background" Value="{DynamicResource InputBackground}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource InputBorder}"/>
-    </Style>
-    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
     </Style>
     <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
         <Setter Property="Foreground" Value="{DynamicResource InputForeground}"/>
